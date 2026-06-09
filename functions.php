@@ -39,11 +39,24 @@ function dry65_scripts() {
 }
 add_action('wp_enqueue_scripts', 'dry65_scripts');
 
-/* ---- Google Fonts + preconnect directly in head ---- */
+/* ---- Google Fonts: async + reduced weights ----
+   - Smanjeni weights (samo oni koji se koriste) — manje CDN trafika
+   - Async load preko preload trick-a — ne blokira render */
 function dry65_head_fonts() {
+    // Samo weights koji se realno koriste
+    $url = 'https://fonts.googleapis.com/css2?'
+         . 'family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300'
+         . '&family=Oooh+Baby'
+         . '&family=Baloo+2:wght@700'
+         . '&family=Hanken+Grotesk:wght@400;500;600'
+         . '&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500'
+         . '&display=swap';
+
     echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
     echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
-    echo '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Oooh+Baby&family=Baloo+2:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet">' . "\n";
+    // Async load (preload kao style, posle render-a postaje stylesheet)
+    echo '<link rel="preload" as="style" href="' . esc_url($url) . '" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n";
+    echo '<noscript><link rel="stylesheet" href="' . esc_url($url) . '"></noscript>' . "\n";
 }
 add_action('wp_head', 'dry65_head_fonts', 1);
 
