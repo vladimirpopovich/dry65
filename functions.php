@@ -8,6 +8,15 @@ require_once get_template_directory() . '/inc/cpt.php';
 require_once get_template_directory() . '/inc/acf-fields.php';
 require_once get_template_directory() . '/inc/google-reviews.php';
 
+/* ---- WebP kao podrazumevani output za thumbnaile ----
+   Bez ovog WP generise .jpg thumbnaile cak i ako je original .webp.
+   Sa ovim svi -300x214, -768x547, -1024x731 itd. su .webp. */
+add_filter('image_editor_output_format', function($formats) {
+    $formats['image/jpeg'] = 'image/webp';
+    $formats['image/jpg']  = 'image/webp';
+    return $formats;
+});
+
 /* ---- Theme setup ---- */
 function dry65_setup() {
     add_theme_support('title-tag');
