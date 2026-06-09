@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home2/dry65/public_html/wp-content/themes/dry65/
+    - /bin/rsync -av --exclude='.git' --exclude='.gitignore' --exclude='.cpanel.yml' --exclude='.DS_Store' --exclude='*.zip' ./ $DEPLOYPATH
