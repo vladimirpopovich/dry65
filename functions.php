@@ -60,6 +60,17 @@ function dry65_head_fonts() {
 }
 add_action('wp_head', 'dry65_head_fonts', 1);
 
+/* ---- Preload LCP image on homepage ----
+   Hero slika je salon/s06.webp na homepage. Preload je ranije u network
+   priority, sto pomaze Lighthouse da identifikuje LCP element. */
+function dry65_preload_lcp() {
+    if (is_front_page()) {
+        $tpl = get_template_directory_uri();
+        echo '<link rel="preload" as="image" href="' . esc_url($tpl . '/assets/salon/s06.webp') . '" fetchpriority="high">' . "\n";
+    }
+}
+add_action('wp_head', 'dry65_preload_lcp', 1);
+
 /* ---- Favicon ---- */
 function dry65_favicon() {
     $tpl = get_template_directory_uri();

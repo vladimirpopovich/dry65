@@ -41,7 +41,10 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 
       <div class="reveal" style="position:relative;">
         <div style="border-radius:1000px;overflow:hidden;aspect-ratio:4/5;">
-          <img src="<?php echo $tpl; ?>/assets/salon/s06.webp" alt="Dry65 walk-in salon na Novom Beogradu — feniranje bez zakazivanja" loading="eager"
+          <img src="<?php echo $tpl; ?>/assets/salon/s06.webp"
+            alt="Dry65 walk-in salon na Novom Beogradu — feniranje bez zakazivanja"
+            width="1600" height="2133"
+            loading="eager" fetchpriority="high" decoding="async"
             style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
         </div>
       </div>
