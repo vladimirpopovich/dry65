@@ -46,10 +46,10 @@ function dry65_biz() {
 /* ---- LENGTHS ---- */
 function dry65_lengths() {
     $defaults = [
-        ['id' => 'kratka',  'label' => 'Kratka',     'price' => 1400, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/kratka-kosa.jpg'],
-        ['id' => 'srednja', 'label' => 'Srednja',    'price' => 1800, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/srednja-kosa.jpg'],
-        ['id' => 'duga',    'label' => 'Duga',       'price' => 2000, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/duga-kosa.jpg'],
-        ['id' => 'extra',   'label' => 'Extra duga', 'price' => 2200, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/veoma-duga-kosa.jpg'],
+        ['id' => 'kratka',  'label' => 'Kratka',     'price' => 1400, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/kratka-kosa.webp'],
+        ['id' => 'srednja', 'label' => 'Srednja',    'price' => 1800, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/srednja-kosa.webp'],
+        ['id' => 'duga',    'label' => 'Duga',       'price' => 2000, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/duga-kosa.webp'],
+        ['id' => 'extra',   'label' => 'Extra duga', 'price' => 2200, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/veoma-duga-kosa.webp'],
     ];
     $ids = ['kratka', 'srednja', 'duga', 'extra'];
     $out = [];
@@ -131,17 +131,17 @@ function dry65_services() {
     if (empty($posts)) {
         // Fallback
         return [
-            ['id' => 'feniranje', 'kicker' => '01', 'title' => 'Pranje i feniranje', 'short' => 'Naš potpis. Pranje i savršeno feniranje.', 'body' => 'Sve počinje i završava se feniranjem.', 'img' => 'assets/services/feniranje.jpg', 'points' => ['Pranje kose', 'Stilizovanje prema dužini', 'Bez zakazivanja']],
-            ['id' => 'stilizovanje', 'kicker' => '02', 'title' => 'Stilizovanje kose', 'short' => 'Talasi, glatko, volumen, look za svaku priliku.', 'body' => '', 'img' => 'assets/services/stilizovanje.jpg', 'points' => ['Talasi i lokne', 'Glatko / sleek finiš', 'Look za događaj']],
-            ['id' => 'nega', 'kicker' => '03', 'title' => 'Nega i održavanje', 'short' => 'Tretmani koji čine da feniranje traje.', 'body' => '', 'img' => 'assets/services/nega.jpg', 'points' => ['Dubinska hidratacija', 'Obnova i zaštita', 'Poklon uz pakete']],
+            ['id' => 'feniranje', 'kicker' => '01', 'title' => 'Pranje i feniranje', 'short' => 'Naš potpis. Pranje i savršeno feniranje.', 'body' => 'Sve počinje i završava se feniranjem.', 'img' => 'assets/services/feniranje.webp', 'points' => ['Pranje kose', 'Stilizovanje prema dužini', 'Bez zakazivanja']],
+            ['id' => 'stilizovanje', 'kicker' => '02', 'title' => 'Stilizovanje kose', 'short' => 'Talasi, glatko, volumen, look za svaku priliku.', 'body' => '', 'img' => 'assets/services/stilizovanje.webp', 'points' => ['Talasi i lokne', 'Glatko / sleek finiš', 'Look za događaj']],
+            ['id' => 'nega', 'kicker' => '03', 'title' => 'Nega i održavanje', 'short' => 'Tretmani koji čine da feniranje traje.', 'body' => '', 'img' => 'assets/services/nega.webp', 'points' => ['Dubinska hidratacija', 'Obnova i zaštita', 'Poklon uz pakete']],
         ];
     }
 
     // Fallback slike po slug-u
     $fallback_images = [
-        'feniranje'    => 'assets/services/feniranje.jpg',
-        'stilizovanje' => 'assets/services/stilizovanje.jpg',
-        'nega'         => 'assets/services/nega.jpg',
+        'feniranje'    => 'assets/services/feniranje.webp',
+        'stilizovanje' => 'assets/services/stilizovanje.webp',
+        'nega'         => 'assets/services/nega.webp',
     ];
 
     $out = [];
@@ -153,7 +153,7 @@ function dry65_services() {
         ]);
         $img = dry65_get_field('image', $p->ID);
         if (!$img) {
-            $img = $fallback_images[$p->post_name] ?? 'assets/services/feniranje.jpg';
+            $img = $fallback_images[$p->post_name] ?? 'assets/services/feniranje.webp';
         }
         $out[] = [
             'id'     => $p->post_name,
@@ -179,16 +179,16 @@ function dry65_packages() {
 
     if (empty($posts)) {
         return [
-            ['id' => 'essential', 'name' => 'Essential', 'img' => 'assets/packages/essential.png', 'count' => 4, 'cadence' => '4 tretmana mesečno', 'blurb' => 'Savršen izbor za održavanje besprekorne frizure tokom nedelje.', 'gift' => 'Deep Hair Infusion na poklon', 'gift_val' => 2000, 'featured' => false, 'features' => ['4 tretmana feniranja mesečno', 'Bez zakazivanja, prioritet u redu', 'Deep Hair Infusion na poklon']],
-            ['id' => 'signature', 'name' => 'Signature', 'img' => 'assets/packages/signature.png', 'count' => 8, 'cadence' => '8 tretmana mesečno', 'blurb' => 'Kreirano za žene koje vole besprekoran styling dva puta nedeljno.', 'gift' => 'Signature Hair Mask na poklon', 'gift_val' => 4000, 'featured' => true, 'features' => ['8 tretmana feniranja mesečno', 'Prioritet u redu', 'Signature Hair Mask na poklon', 'Popust na dodatne usluge']],
-            ['id' => 'premium', 'name' => 'Premium', 'img' => 'assets/packages/premium.png', 'count' => 12, 'cadence' => '12 tretmana mesečno', 'blurb' => 'Ultimativni ritual za savršeno stilizovanu kosu tokom cele nedelje.', 'gift' => 'Premium Boost Steam Ritual na poklon', 'gift_val' => 6000, 'featured' => false, 'features' => ['12 tretmana feniranja mesečno', 'Najviši prioritet, dry65 Club', 'Premium Boost Steam Ritual na poklon', 'Popust na dodatne usluge']],
+            ['id' => 'essential', 'name' => 'Essential', 'img' => 'assets/packages/essential.webp', 'count' => 4, 'cadence' => '4 tretmana mesečno', 'blurb' => 'Savršen izbor za održavanje besprekorne frizure tokom nedelje.', 'gift' => 'Deep Hair Infusion na poklon', 'gift_val' => 2000, 'featured' => false, 'features' => ['4 tretmana feniranja mesečno', 'Bez zakazivanja, prioritet u redu', 'Deep Hair Infusion na poklon']],
+            ['id' => 'signature', 'name' => 'Signature', 'img' => 'assets/packages/signature.webp', 'count' => 8, 'cadence' => '8 tretmana mesečno', 'blurb' => 'Kreirano za žene koje vole besprekoran styling dva puta nedeljno.', 'gift' => 'Signature Hair Mask na poklon', 'gift_val' => 4000, 'featured' => true, 'features' => ['8 tretmana feniranja mesečno', 'Prioritet u redu', 'Signature Hair Mask na poklon', 'Popust na dodatne usluge']],
+            ['id' => 'premium', 'name' => 'Premium', 'img' => 'assets/packages/premium.webp', 'count' => 12, 'cadence' => '12 tretmana mesečno', 'blurb' => 'Ultimativni ritual za savršeno stilizovanu kosu tokom cele nedelje.', 'gift' => 'Premium Boost Steam Ritual na poklon', 'gift_val' => 6000, 'featured' => false, 'features' => ['12 tretmana feniranja mesečno', 'Najviši prioritet, dry65 Club', 'Premium Boost Steam Ritual na poklon', 'Popust na dodatne usluge']],
         ];
     }
 
     $fallback_pkg = [
-        'essential' => 'assets/packages/essential.png',
-        'signature' => 'assets/packages/signature.png',
-        'premium'   => 'assets/packages/premium.png',
+        'essential' => 'assets/packages/essential.webp',
+        'signature' => 'assets/packages/signature.webp',
+        'premium'   => 'assets/packages/premium.webp',
     ];
 
     $out = [];
@@ -201,7 +201,7 @@ function dry65_packages() {
             dry65_get_field('feature_5', $p->ID),
         ]);
         $pimg = dry65_get_field('image', $p->ID);
-        if (!$pimg) $pimg = $fallback_pkg[$p->post_name] ?? 'assets/packages/essential.png';
+        if (!$pimg) $pimg = $fallback_pkg[$p->post_name] ?? 'assets/packages/essential.webp';
         $out[] = [
             'id'       => $p->post_name,
             'name'     => $p->post_title,
