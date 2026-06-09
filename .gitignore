@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Node / build artifacts (ako se kasnije doda)
+node_modules/
+package-lock.json
+yarn.lock
+.cache/
+dist/
+build/
+
+# Logs
+*.log
+debug.log
+error_log
+
+# Backup
+*.bak
+*.orig
+*.zip
+
+# OS-specific
+desktop.ini
