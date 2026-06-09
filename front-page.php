@@ -19,7 +19,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
   <div class="wrap" style="padding-top:clamp(24px,3vw,48px);padding-bottom:clamp(40px,6vw,72px);">
     <div style="display:grid;grid-template-columns:1.05fr 0.95fr;gap:clamp(28px,4vw,56px);align-items:center;" class="hero-grid">
 
-      <div class="reveal">
+      <div>
         <span class="script" style="font-size:clamp(28px,4vw,46px);display:block;margin-bottom:18px;line-height:1.15;">
           feniranje bez zakazivanja
         </span>
@@ -39,7 +39,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         </div>
       </div>
 
-      <div class="reveal" style="position:relative;">
+      <div style="position:relative;">
         <div style="border-radius:1000px;overflow:hidden;aspect-ratio:4/5;">
           <img src="<?php echo $tpl; ?>/assets/salon/s06.webp"
             alt="Dry65 walk-in salon na Novom Beogradu — feniranje bez zakazivanja"
