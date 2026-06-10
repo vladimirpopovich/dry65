@@ -133,8 +133,8 @@ section[class*="section"] + section.section-sm {
   white-space: nowrap;
 }
 .btn:hover { transform: translateY(-2px); }
-.btn-primary { background: var(--clay); color: #fff; }
-.btn-primary:hover { background: var(--oxblood); }
+.btn-primary { background: var(--cream); color: var(--ink); }
+.btn-primary:hover { background: var(--cream-deep); }
 .btn-dark { background: var(--ink); color: var(--cream); }
 .btn-dark:hover { background: var(--oxblood); }
 .btn-outline { background: transparent; color: var(--ink); border-color: var(--ink); }
