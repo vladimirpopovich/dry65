@@ -28,7 +28,7 @@
     </div>
   </div>
 
-  <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+  <div class="mobile-menu" id="mobile-menu" aria-hidden="true" inert>
     <?php dry65_nav_links(true); ?>
   </div>
 </header>

@@ -12,6 +12,9 @@
       const open = menu.classList.toggle('open');
       burger.setAttribute('aria-expanded', open);
       menu.setAttribute('aria-hidden', !open);
+      // inert: kad je meni zatvoren, svi linkovi unutar nisu focusable
+      if (open) menu.removeAttribute('inert');
+      else menu.setAttribute('inert', '');
       document.body.style.overflow = open ? 'hidden' : '';
       const spans = burger.querySelectorAll('span');
       if (open) {
@@ -30,6 +33,7 @@
         menu.classList.remove('open');
         burger.setAttribute('aria-expanded', 'false');
         menu.setAttribute('aria-hidden', 'true');
+        menu.setAttribute('inert', '');
         document.body.style.overflow = '';
         burger.querySelectorAll('span').forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
       });
