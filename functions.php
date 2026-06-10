@@ -60,16 +60,10 @@ function dry65_head_fonts() {
 }
 add_action('wp_head', 'dry65_head_fonts', 1);
 
-/* ---- Preload LCP image on homepage ----
-   Hero slika je salon/s06.webp na homepage. Preload je ranije u network
-   priority, sto pomaze Lighthouse da identifikuje LCP element. */
-function dry65_preload_lcp() {
-    if (is_front_page()) {
-        $tpl = get_template_directory_uri();
-        echo '<link rel="preload" as="image" href="' . esc_url($tpl . '/assets/salon/s06.webp') . '" fetchpriority="high">' . "\n";
-    }
-}
-add_action('wp_head', 'dry65_preload_lcp', 1);
+/* ---- Hero preload uklonjen kao eksperiment za NO_LCP ----
+   Preload je trebao da pomogne, ali Lighthouse i dalje ne detektuje LCP.
+   Mozda preload izaziva da slika bude "prerano u cache-u" i Lighthouse
+   je ne registruje kao LCP. Test sa uklonjenim preload-om. */
 
 /* ---- Favicon ---- */
 function dry65_favicon() {
