@@ -30,7 +30,7 @@ add_action('after_setup_theme', 'dry65_setup');
 
 /* ---- Enqueue ---- */
 function dry65_scripts() {
-    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.0.2');
+    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.0.3');
     wp_enqueue_script('dry65-js', get_template_directory_uri() . '/assets/js/dry65.js', [], '1.2.0', true);
     wp_localize_script('dry65-js', 'dry65', [
         'themeUrl' => get_template_directory_uri(),

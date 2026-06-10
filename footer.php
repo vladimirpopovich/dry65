@@ -26,7 +26,7 @@ $tpl  = get_template_directory_uri();
       </div>
 
       <div>
-        <h4>Stranice</h4>
+        <h3 class="footer-h">Stranice</h3>
         <ul>
           <?php foreach ($col1 as $item):
             $url = get_permalink(get_page_by_path($item['slug'])) ?: home_url('/' . $item['slug'] . '/'); ?>
@@ -36,7 +36,7 @@ $tpl  = get_template_directory_uri();
       </div>
 
       <div>
-        <h4>Više</h4>
+        <h3 class="footer-h">Više</h3>
         <ul>
           <?php foreach ($col2 as $item):
             $url = get_permalink(get_page_by_path($item['slug'])) ?: home_url('/' . $item['slug'] . '/'); ?>
@@ -46,7 +46,7 @@ $tpl  = get_template_directory_uri();
       </div>
 
       <div>
-        <h4>Kontakt</h4>
+        <h3 class="footer-h">Kontakt</h3>
         <ul>
           <li><?php echo esc_html($biz['address']); ?></li>
           <li><a href="tel:<?php echo esc_attr($biz['phone']); ?>"><?php echo esc_html($biz['phone_display']); ?></a></li>
