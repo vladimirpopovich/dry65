@@ -26,8 +26,10 @@ $tpl      = get_template_directory_uri();
     <?php foreach ($services as $i => $s): ?>
     <div class="reveal svc-row" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,64px);align-items:center;direction:<?php echo $i % 2 ? 'rtl' : 'ltr'; ?>;">
       <div style="direction:ltr;aspect-ratio:4/3;border-radius:var(--radius-lg);overflow:hidden;">
-        <img src="<?php echo esc_url(preg_match('#^https?://#', $s['img']) ? $s['img'] : $tpl . '/' . $s['img']); ?>" alt="<?php echo esc_attr($s['title']); ?>" loading="lazy"
-          style="width:100%;height:100%;object-fit:cover;display:block;">
+        <?php echo dry65_picture($s['img'], $s['title'], [
+          'loading' => 'lazy',
+          'style'   => 'width:100%;height:100%;object-fit:cover;display:block;',
+        ]); ?>
       </div>
       <div style="direction:ltr;">
         <span class="mono" style="color:var(--clay);"><?php echo esc_html($s['kicker']); ?></span>

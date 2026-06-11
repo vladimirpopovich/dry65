@@ -89,8 +89,10 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
       <?php foreach ($services as $i => $s): $usl_url = get_permalink(get_page_by_path('usluge')); ?>
       <a href="<?php echo esc_url($usl_url); ?>" class="reveal card hover svc-card" style="height:100%;display:flex;flex-direction:column;color:inherit;text-decoration:none;" data-delay="<?php echo $i * 80; ?>">
         <div style="aspect-ratio:4/3;overflow:hidden;">
-          <img src="<?php echo esc_url(preg_match('#^https?://#', $s['img']) ? $s['img'] : $tpl . '/' . $s['img']); ?>" alt="<?php echo esc_attr($s['title']); ?>" loading="lazy"
-            style="width:100%;height:100%;object-fit:cover;display:block;">
+          <?php echo dry65_picture($s['img'], $s['title'], [
+            'loading' => 'lazy',
+            'style'   => 'width:100%;height:100%;object-fit:cover;display:block;',
+          ]); ?>
         </div>
         <div style="padding:26px 24px 28px;display:flex;flex-direction:column;flex:1;">
           <span class="mono" style="color:var(--clay);"><?php echo esc_html($s['kicker']); ?></span>
