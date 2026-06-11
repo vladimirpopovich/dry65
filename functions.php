@@ -209,6 +209,44 @@ function dry65_nav_links($mobile = false) {
     }
 }
 
+/* ---- Picture helper: auto <picture> sa mobile/desktop varianta ----
+   Ako postoji "-mobile.webp" varianta slike u temi, automatski je koristi
+   za viewport < 860px. Inace samo standardni <img>. */
+function dry65_picture($src, $alt = '', $attrs = []) {
+    $tpl = get_template_directory_uri();
+    $tpl_dir = get_template_directory();
+
+    // Apsolutni URL — bez mobile zamene
+    if (preg_match('#^https?://#', $src)) {
+        $img_url = $src;
+        $mobile_url = null;
+    } else {
+        $src = ltrim($src, '/');
+        $img_url = $tpl . '/' . $src;
+        // Proveri da li postoji -mobile.webp
+        $mobile_rel = preg_replace('/\.(webp|jpg|jpeg|png)$/i', '-mobile.$1', $src);
+        if ($mobile_rel !== $src && file_exists($tpl_dir . '/' . $mobile_rel)) {
+            $mobile_url = $tpl . '/' . $mobile_rel;
+        } else {
+            $mobile_url = null;
+        }
+    }
+
+    $attr_str = '';
+    foreach ($attrs as $k => $v) {
+        $attr_str .= ' ' . esc_attr($k) . '="' . esc_attr($v) . '"';
+    }
+
+    $out = '<picture>';
+    if ($mobile_url) {
+        $out .= '<source media="(max-width: 860px)" srcset="' . esc_url($mobile_url) . '">';
+    }
+    $out .= '<img src="' . esc_url($img_url) . '" alt="' . esc_attr($alt) . '"' . $attr_str . '>';
+    $out .= '</picture>';
+
+    return $out;
+}
+
 /* ---- Excerpt ---- */
 function dry65_excerpt_length() { return 20; }
 add_filter('excerpt_length', 'dry65_excerpt_length');

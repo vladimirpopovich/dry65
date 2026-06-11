@@ -32,8 +32,10 @@ $ratios  = ['3/4','1/1','4/5','4/5','3/4','4/5','1/1','3/4','4/5'];
       <div style="break-inside:avoid;margin-bottom:clamp(16px,2vw,26px);">
         <div class="reveal" data-delay="<?php echo ($i % 3) * 60; ?>">
           <div style="aspect-ratio:<?php echo $ratio; ?>;border-radius:var(--radius-lg);overflow:hidden;">
-            <img src="<?php echo esc_url(preg_match('#^https?://#', $g['img']) ? $g['img'] : $tpl . '/' . $g['img']); ?>" alt="<?php echo esc_attr($g['tag']); ?>" loading="lazy"
-              style="width:100%;height:100%;object-fit:cover;display:block;">
+            <?php echo dry65_picture($g['img'], $g['tag'], [
+              'loading' => 'lazy',
+              'style'   => 'width:100%;height:100%;object-fit:cover;display:block;',
+            ]); ?>
           </div>
         </div>
       </div>

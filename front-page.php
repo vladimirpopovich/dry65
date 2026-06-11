@@ -122,8 +122,10 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
       <?php foreach (array_slice($gallery, 0, 3) as $i => $g): ?>
       <div class="reveal" data-delay="<?php echo $i * 70; ?>">
         <div style="aspect-ratio:4/5;border-radius:var(--radius-lg);overflow:hidden;">
-          <img src="<?php echo esc_url(preg_match('#^https?://#', $g['img']) ? $g['img'] : $tpl . '/' . $g['img']); ?>" alt="<?php echo esc_attr($g['tag']); ?>" loading="lazy"
-            style="width:100%;height:100%;object-fit:cover;object-position:<?php echo $i === 0 ? 'center' : 'center top'; ?>;display:block;">
+          <?php echo dry65_picture($g['img'], $g['tag'], [
+            'loading' => 'lazy',
+            'style'   => 'width:100%;height:100%;object-fit:cover;object-position:' . ($i === 0 ? 'center' : 'center top') . ';display:block;',
+          ]); ?>
         </div>
       </div>
       <?php endforeach; ?>
