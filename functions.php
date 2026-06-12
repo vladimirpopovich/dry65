@@ -209,6 +209,24 @@ function dry65_nav_links($mobile = false) {
     }
 }
 
+/* ---- Robots.txt: blokiraj stare URL-ove koji su ostali u Google indeksu ----
+   - twentytwentyfive: default WP tema (vise se ne koristi)
+   - team-member-detail.html: stari demo HTML fajl
+   - Plus standardni WP excludes za bolji SEO crawl budget */
+add_filter('robots_txt', function($output, $public) {
+    if ($public != 1) return $output;
+
+    $extra  = "\n";
+    $extra .= "# Blokiraj stare/nevazne URL-ove\n";
+    $extra .= "Disallow: /wp-content/themes/twentytwentyfive/\n";
+    $extra .= "Disallow: /team-member-detail.html\n";
+    $extra .= "Disallow: /wp-content/uploads/*.zip\n";
+    $extra .= "Disallow: /?s=\n";
+    $extra .= "Disallow: /search/\n";
+
+    return $output . $extra;
+}, 10, 2);
+
 /* ---- Picture helper: auto <picture> sa mobile/desktop varianta ----
    Ako postoji "-mobile.webp" varianta slike u temi, automatski je koristi
    za viewport < 860px. Inace samo standardni <img>. */
