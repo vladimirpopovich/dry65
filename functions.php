@@ -7,6 +7,7 @@ require_once get_template_directory() . '/inc/data.php';
 require_once get_template_directory() . '/inc/cpt.php';
 require_once get_template_directory() . '/inc/acf-fields.php';
 require_once get_template_directory() . '/inc/google-reviews.php';
+require_once get_template_directory() . '/inc/blog-helpers.php';
 
 /* ---- WebP kao podrazumevani output za thumbnaile ----
    Bez ovog WP generise .jpg thumbnaile cak i ako je original .webp.
@@ -30,8 +31,8 @@ add_action('after_setup_theme', 'dry65_setup');
 
 /* ---- Enqueue ---- */
 function dry65_scripts() {
-    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.0.3');
-    wp_enqueue_script('dry65-js', get_template_directory_uri() . '/assets/js/dry65.js', [], '1.2.0', true);
+    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.1.0');
+    wp_enqueue_script('dry65-js', get_template_directory_uri() . '/assets/js/dry65.js', [], '1.3.0', true);
     wp_localize_script('dry65-js', 'dry65', [
         'themeUrl' => get_template_directory_uri(),
         'lengths'  => dry65_lengths(),
