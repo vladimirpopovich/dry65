@@ -209,20 +209,46 @@ function dry65_nav_links($mobile = false) {
     }
 }
 
-/* ---- Robots.txt: blokiraj stare URL-ove koji su ostali u Google indeksu ----
-   - twentytwentyfive: default WP tema (vise se ne koristi)
-   - team-member-detail.html: stari demo HTML fajl
-   - Plus standardni WP excludes za bolji SEO crawl budget */
+/* ---- Robots.txt: optimizovan za SEO crawl budget ----
+   Resava 9 'Not found (404)' grešaka koje vidi Search Console:
+   - WP system fajlove (wp-admin, wp-content folderi, wp-*.php)
+   - Cloudflare email protection endpoint (cdn-cgi)
+   - Stare demo URL-ove (twentytwentyfive, team-member-detail.html)
+   - WordPress search rezultate (duplicate content) */
 add_filter('robots_txt', function($output, $public) {
     if ($public != 1) return $output;
 
     $extra  = "\n";
-    $extra .= "# Blokiraj stare/nevazne URL-ove\n";
+    $extra .= "# Stari/nevazni URL-ovi (iz prethodne teme)\n";
     $extra .= "Disallow: /wp-content/themes/twentytwentyfive/\n";
     $extra .= "Disallow: /team-member-detail.html\n";
+    $extra .= "\n";
+    $extra .= "# WP sistem fajlovi - ne treba da budu indeksirani\n";
+    $extra .= "Disallow: /wp-content/plugins/\n";
+    $extra .= "Disallow: /wp-content/themes/\n";
+    $extra .= "Disallow: /wp-content/cache/\n";
     $extra .= "Disallow: /wp-content/uploads/*.zip\n";
+    $extra .= "Disallow: /wp-content/uploads/*.sql\n";
+    $extra .= "Disallow: /wp-content/uploads/*.log\n";
+    $extra .= "Disallow: /wp-login.php\n";
+    $extra .= "Disallow: /wp-register.php\n";
+    $extra .= "Disallow: /xmlrpc.php\n";
+    $extra .= "Disallow: /readme.html\n";
+    $extra .= "Disallow: /license.txt\n";
+    $extra .= "\n";
+    $extra .= "# Cloudflare interni endpoint\n";
+    $extra .= "Disallow: /cdn-cgi/\n";
+    $extra .= "\n";
+    $extra .= "# WP search (duplicate content)\n";
     $extra .= "Disallow: /?s=\n";
     $extra .= "Disallow: /search/\n";
+    $extra .= "\n";
+    $extra .= "# Dozvoli AJAX (koristi se za neke plugin funkcije)\n";
+    $extra .= "Allow: /wp-admin/admin-ajax.php\n";
+    $extra .= "\n";
+    $extra .= "# Dozvoli slike i fajlove iz uploads/ (za Media Library)\n";
+    $extra .= "Allow: /wp-content/uploads/\n";
+    $extra .= "Allow: /wp-content/themes/dry65/assets/\n";
 
     return $output . $extra;
 }, 10, 2);
