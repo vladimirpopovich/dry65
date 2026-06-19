@@ -219,6 +219,8 @@ add_filter('robots_txt', function($output, $public) {
     if ($public != 1) return $output;
 
     $extra  = "\n";
+    $extra .= "User-agent: *\n";
+    $extra .= "\n";
     $extra .= "# Stari/nevazni URL-ovi (iz prethodne teme)\n";
     $extra .= "Disallow: /wp-content/themes/twentytwentyfive/\n";
     $extra .= "Disallow: /team-member-detail.html\n";
