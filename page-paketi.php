@@ -18,7 +18,7 @@ $lengths_json = json_encode(array_map(fn($l) => [
   <div class="wrap">
     <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">Mesečni paketi</span>
     <h1 class="display caps" style="font-size:clamp(30px,4.2vw,52px);margin-top:4px;max-width:28ch;line-height:1.0;letter-spacing:0.01em;">
-      Mesečni paketi feniranja u Dry65.
+      Mesečni paketi feniranja — Dry65 Novi Beograd
     </h1>
     <p class="lead" style="margin-top:26px;max-width:680px;">
       Članstvo za klijentkinje kojima je feniranje deo nedeljne rutine. Mogućnost izbora između 4, 8 ili 12 feniranja mesečno, sa ili bez zakazivanja uz članstvo. Cena prati dužinu kose. Uz svaki paket sledi masaža glave i profesionalni tretman nege kose.
