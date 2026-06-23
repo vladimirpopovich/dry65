@@ -15,7 +15,7 @@ $ratios  = ['3/4','1/1','4/5','4/5','3/4','4/5','1/1','3/4','4/5'];
   <div class="wrap">
     <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">Ambijent</span>
     <h1 class="display caps" style="font-size:clamp(30px,4.2vw,52px);margin-top:4px;max-width:28ch;line-height:1.0;letter-spacing:0.01em;">
-      Ambijent salona Dry65 — Novi Beograd
+      Ambijent salona Dry65, Novi Beograd
     </h1>
     <p class="lead" style="margin-top:26px;max-width:680px;">
       Ambijent osmišljen tako da se osećate prijatno. Imate svoj prostor, svoje vreme i komfor koji Vam je potreban da izađete sa najboljom frizurom.

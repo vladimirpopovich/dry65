@@ -21,7 +21,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 
       <div>
         <h1 class="script" style="font-size:clamp(28px,4vw,46px);display:block;margin:0 0 18px;line-height:1.15;font-weight:400;">
-          feniranje na Novom Beogradu — bez zakazivanja
+          feniranje na Novom Beogradu, bez zakazivanja
         </h1>
         <h2 class="display caps" style="font-size:clamp(38px,5.5vw,76px);margin:0;line-height:1.02;letter-spacing:0.005em;color:var(--ink);font-weight:300;white-space:nowrap;">
           Samo dođeš
@@ -44,7 +44,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
           <picture>
             <source media="(max-width: 860px)" srcset="<?php echo $tpl; ?>/assets/salon/s06-mobile.webp">
             <img src="<?php echo $tpl; ?>/assets/salon/s06.webp"
-              alt="Dry65 walk-in salon na Novom Beogradu — feniranje bez zakazivanja"
+              alt="Dry65 walk-in salon na Novom Beogradu, feniranje bez zakazivanja"
               width="1200" height="1600"
               loading="eager" fetchpriority="high" decoding="async"
               style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
