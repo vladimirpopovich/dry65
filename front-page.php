@@ -20,12 +20,12 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
     <div style="display:grid;grid-template-columns:1.05fr 0.95fr;gap:clamp(28px,4vw,56px);align-items:center;" class="hero-grid">
 
       <div>
-        <span class="script" style="font-size:clamp(28px,4vw,46px);display:block;margin-bottom:18px;line-height:1.15;">
-          feniranje bez zakazivanja
-        </span>
-        <h1 class="display caps" style="font-size:clamp(38px,5.5vw,76px);margin-top:0;line-height:1.02;letter-spacing:0.005em;color:var(--ink);font-weight:300;white-space:nowrap;">
-          Samo dođeš
+        <h1 class="script" style="font-size:clamp(28px,4vw,46px);display:block;margin:0 0 18px;line-height:1.15;font-weight:400;">
+          feniranje na Novom Beogradu — bez zakazivanja
         </h1>
+        <h2 class="display caps" style="font-size:clamp(38px,5.5vw,76px);margin:0;line-height:1.02;letter-spacing:0.005em;color:var(--ink);font-weight:300;white-space:nowrap;">
+          Samo dođeš
+        </h2>
         <p class="lead" style="margin-top:30px;max-width:480px;">
           Dry65 je <strong>walk-in salon na Novom Beogradu, u West 65</strong>. Feniranje i stilizovanje kose, lokne, volumen ili ravno. Bez zakazivanja, samo dođeš.
         </p>
