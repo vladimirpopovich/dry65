@@ -18,6 +18,9 @@ $tpl      = get_template_directory_uri();
     <p class="lead" style="margin-top:26px;max-width:680px;">
       Pranje i feniranje, stilizovanje (talasi, lokne, ravno, volumen, na unutra, na spolja) i dubinska nega kose. Sve bez zakazivanja, u srcu Novog Beograda.
     </p>
+    <p class="lead" style="margin-top:14px;max-width:680px;font-size:15px;color:var(--muted);">
+      Koristimo isključivo <a href="https://www.schwarzkopf-professional.com/" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Schwarzkopf Professional</a> proizvode — vodeću svetsku marku za profesionalne salone.
+    </p>
   </div>
 </section>
 

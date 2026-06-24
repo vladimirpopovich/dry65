@@ -25,6 +25,9 @@ $stats = [
     <p class="lead" style="margin-top:26px;max-width:640px;">
       Walk-in salon na Novom Beogradu, u West 65. Radimo jednu stvar, feniramo, i u tome smo najbolji.
     </p>
+    <p class="lead" style="margin-top:14px;max-width:640px;font-size:15px;color:var(--muted);">
+      Radimo isključivo sa <a href="https://www.schwarzkopf-professional.com/" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Schwarzkopf Professional</a> proizvodima, vodećim svetskim brendom za salonsku negu kose.
+    </p>
   </div>
 </section>
 

@@ -122,10 +122,18 @@ function dry65_schema() {
             'longitude' => 20.4144,
         ],
         'openingHoursSpecification' => $hours_spec,
-        'sameAs' => [$biz['instagram_url']],
+        'sameAs' => [
+            $biz['instagram_url'],
+            'https://www.schwarzkopf-professional.com/',
+        ],
         'hasMap' => $biz['maps_url'],
         'paymentAccepted' => 'Cash, Credit Card',
         'currenciesAccepted' => 'RSD',
+        'brand' => [
+            '@type' => 'Brand',
+            'name' => 'Schwarzkopf Professional',
+            'url'  => 'https://www.schwarzkopf-professional.com/',
+        ],
     ];
     echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>' . "\n";
 }
