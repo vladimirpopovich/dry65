@@ -131,9 +131,33 @@ function dry65_services() {
     if (empty($posts)) {
         // Fallback
         return [
-            ['id' => 'feniranje', 'kicker' => '01', 'title' => 'Pranje i feniranje', 'short' => 'Naš potpis. Pranje i savršeno feniranje.', 'body' => 'Sve počinje i završava se feniranjem.', 'img' => 'assets/services/feniranje.webp', 'points' => ['Pranje kose', 'Stilizovanje prema dužini', 'Bez zakazivanja']],
-            ['id' => 'stilizovanje', 'kicker' => '02', 'title' => 'Stilizovanje kose', 'short' => 'Talasi, glatko, volumen, look za svaku priliku.', 'body' => '', 'img' => 'assets/services/stilizovanje.webp', 'points' => ['Talasi i lokne', 'Glatko / sleek finiš', 'Look za događaj']],
-            ['id' => 'nega', 'kicker' => '03', 'title' => 'Nega i održavanje', 'short' => 'Tretmani koji čine da feniranje traje.', 'body' => '', 'img' => 'assets/services/nega.webp', 'points' => ['Dubinska hidratacija', 'Obnova i zaštita', 'Poklon uz pakete']],
+            [
+                'id' => 'feniranje',
+                'kicker' => '01',
+                'title' => 'Pranje i feniranje',
+                'short' => 'Naš potpis. Pranje i savršeno feniranje koje drži danima.',
+                'body' => 'Sve počinje pranjem, a završava se feniranjem. Ovo je naš potpis i ono što radimo najbolje. Tvoju kosu peremo profesionalnim Schwarzkopf Professional proizvodima, pripremamo je i feniramo prema tvojoj dužini i tipu kose. Feniranjem oblikujemo kosu na ravno, na unutra, na spolja, na volumen, a fenom i četkom postižemo i mekane lokne ili prirodne talase. Rezultat je sređena, sjajna frizura koja drži danima. Cena feniranja prati dužinu kose, sve bez zakazivanja.',
+                'img' => 'assets/services/feniranje.webp',
+                'points' => ['Pranje + feniranje', 'Schwarzkopf Professional', 'Bez zakazivanja'],
+            ],
+            [
+                'id' => 'stilizovanje',
+                'kicker' => '02',
+                'title' => 'Stilizovanje kose: lokne, talasi i sleek',
+                'short' => 'Lokne, talasi ili sleek glatko, look za svaku priliku.',
+                'body' => 'Posle pranja i sušenja, kosu oblikujemo vrućim alatom, curlerima, peglom i specijalnim uređajima koji daju dugotrajniji i izraženiji izgled. Ovako stilizovane lokne i talasi drže znatno duže nego klasično feniranje, a baš na tanjoj kosi daju najbolji rezultat. Lokne dobijaju mekane, definisane uvojke, savršene za izlazak, proslavu ili kad želiš da se istakneš. Talasi izgledaju opuštenije i prirodnije, idealni za neobavezan stil koji ipak izgleda sređeno. A za glatku, sjajnu i potpuno ravnu kosu, sleek stilizovanje peglom daje uredan look koji se lako nosi u svakoj prilici. Svaki stil prilagođavamo tvojoj kosi i prilici, uz vrhunske preparate koji ga čuvaju duže. Sve bez zakazivanja, samo svrati.',
+                'img' => 'assets/services/stilizovanje.webp',
+                'points' => ['Lokne i talasi', 'Sleek pegla', 'Drži duže od feniranja'],
+            ],
+            [
+                'id' => 'nega',
+                'kicker' => '03',
+                'title' => 'Nega i održavanje kose',
+                'short' => 'Dubinska nega i tretmani koji vraćaju kosi snagu i sjaj.',
+                'body' => 'Lepa frizura počinje od zdrave kose. Zato nudimo dubinsku negu i tretmane koji vraćaju kosi sjaj, snagu i hidrataciju: hair infusion, maske za kosu, parnu stanicu, bustere i ritualne nege premium klase. Posebno preporučujemo za farbanu kosu, sedu kosu, kosu posle keratina i sve kojima treba oporavak i zaštita. Nega kose je uključena uz mesečne pakete, a u zavisnosti od izbora paketa vrednost tretmana može ići i do 6.000 dinara. Sve u našem walk-in salonu u West65 na Novom Beogradu, bez zakazivanja.',
+                'img' => 'assets/services/nega.webp',
+                'points' => ['Hair Mask + Hair Infusion', 'Parna stanica', 'Uključeno uz pakete'],
+            ],
         ];
     }
 
