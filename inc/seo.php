@@ -20,7 +20,7 @@ add_action('after_setup_theme', function() {
 function dry65_seo_map() {
     return [
         'home' => [
-            'title' => 'Dry65 - Feniranje na Novom Beogradu | Walk-in Blowout Salon',
+            'title' => 'Dry65 - Feniranje Novi Beograd | Walk-in Blowout Salon',
             'desc'  => 'Profesionalno feniranje na Novom Beogradu bez zakazivanja. Walk-in blowout salon u West65 mall-u. Cene od 1.400 din. Otvoreni Pon-Pet 8-20h, Sub 10-18h.',
         ],
         'o-nama' => [
