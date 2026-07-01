@@ -315,6 +315,42 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 </section>
 
 
+<!-- ======================================================
+     KARIJERA — job announcement (pred footer)
+     ====================================================== -->
+<section class="section-sm bg-paper2">
+  <div class="wrap">
+    <?php $karijera_url = get_permalink(get_page_by_path('karijera')) ?: home_url('/karijera/'); ?>
+    <div class="reveal" style="display:grid;grid-template-columns:1fr auto;gap:clamp(24px,4vw,48px);align-items:center;" class="karijera-cta">
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:8px;background:var(--cream);color:var(--ink);border:1px solid var(--cream-deep);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:16px;">
+          <span style="width:6px;height:6px;background:var(--clay);border-radius:50%;"></span>
+          Posao
+        </div>
+        <h2 class="display" style="font-size:clamp(26px,3.6vw,40px);margin:0;line-height:1.15;">
+          Otvorili smo poziciju za asistenta u radu
+        </h2>
+        <p class="lead" style="margin:16px 0 0;max-width:560px;font-size:16px;">
+          Tražimo osobu koja želi da uči zanat pored najboljih, u modernom walk-in salonu na Novom Beogradu. Plaćena praksa, put ka poziciji blowout specijaliste.
+        </p>
+      </div>
+      <div style="flex-shrink:0;">
+        <a href="<?php echo esc_url($karijera_url); ?>" class="btn btn-dark">
+          Vidi detalje <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+@media (max-width: 720px) {
+  section.section-sm.bg-paper2 > .wrap > .reveal[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
+
 </main>
 
 <?php get_footer(); ?>
