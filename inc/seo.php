@@ -49,7 +49,7 @@ function dry65_seo_map() {
         ],
         'karijera' => [
             'title' => 'Karijera - Posao u salonu na Novom Beogradu | Dry65',
-            'desc'  => 'Otvorene pozicije u Dry65 walk-in salonu na Novom Beogradu: blowout specijalista, recepcionar, asistent u radu. Rad sa Schwarzkopf Professional proizvodima.',
+            'desc'  => 'Otvorene pozicije u Dry65 walk-in salonu na Novom Beogradu: blowout specijalista, recepcionar, asistent u radu. Prijavi se ili pošalji CV.',
         ],
         'blog' => [
             'title' => 'Blog - Saveti za Kosu i Feniranje | Dry65 Novi Beograd',

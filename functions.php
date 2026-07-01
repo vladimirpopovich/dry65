@@ -167,7 +167,7 @@ function dry65_jobposting_schema() {
     $positions = [
         [
             'title' => 'Blowout specijalista',
-            'desc'  => 'Ključna članica tima. Osoba koja svaki dan pravi da klijentkinje izlaze sa savršenim feniranjem u Dry65 walk-in salonu na Novom Beogradu. Rad sa Schwarzkopf Professional proizvodima.',
+            'desc'  => 'Ključna članica tima. Osoba koja svaki dan pravi da klijentkinje izlaze sa savršenim feniranjem u Dry65 walk-in salonu na Novom Beogradu.',
         ],
         [
             'title' => 'Recepcionar',

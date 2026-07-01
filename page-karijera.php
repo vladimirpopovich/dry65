@@ -19,7 +19,6 @@ $positions = [
         ],
         'offer' => [
             'Stimulativna zarada + procenti',
-            'Rad sa Schwarzkopf Professional proizvodima',
             'Edukacije i usavršavanja',
             'Moderan salon u West65 mall-u',
             'Stabilan tim i prijatna atmosfera',
@@ -33,7 +32,7 @@ $positions = [
         'reqs' => [
             'Komunikativnost i pozitivna energija',
             'Osnovni rad na računaru',
-            'Poznavanje engleskog jezika (poželjno)',
+            'Poznavanje engleskog jezika',
             'Organizovanost i pouzdanost',
         ],
         'offer' => [
@@ -59,7 +58,6 @@ $positions = [
             'Plaćena praksa uz mentore',
             'Realno iskustvo u walk-in salonu',
             'Put ka poziciji blowout specijaliste',
-            'Rad sa Schwarzkopf proizvodima',
             'Prijatan i podržavajući tim',
         ],
     ],
@@ -78,7 +76,7 @@ $positions = [
       Postani deo Dry65 tima
     </h1>
     <p class="lead" style="margin-top:26px;max-width:680px;">
-      Tražimo ljude sa energijom, strašću za rad i željom da rastu uz nas. Ako želiš da radiš u modernom walk-in blowout salonu na Novom Beogradu, uz Schwarzkopf Professional proizvode i tim koji se pazi, pogledaj naše otvorene pozicije.
+      Tražimo ljude sa energijom, strašću za rad i željom da rastu uz nas. Ako želiš da radiš u modernom walk-in blowout salonu na Novom Beogradu, uz tim koji se pazi, pogledaj naše otvorene pozicije.
     </p>
   </div>
 </section>
