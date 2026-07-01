@@ -47,6 +47,10 @@ function dry65_seo_map() {
             'title' => 'Kontakt - Adresa, Telefon, Mapa | Dry65 Novi Beograd',
             'desc'  => 'Dry65 walk-in salon: Omladinskih Brigada 86Ž, West65 mall, Novi Beograd. Telefon +381 60 6900655. Pon-Pet 8-20h, Sub 10-18h.',
         ],
+        'karijera' => [
+            'title' => 'Karijera - Posao u salonu na Novom Beogradu | Dry65',
+            'desc'  => 'Otvorene pozicije u Dry65 walk-in salonu na Novom Beogradu: blowout specijalista, recepcionar, asistent u radu. Rad sa Schwarzkopf Professional proizvodima.',
+        ],
         'blog' => [
             'title' => 'Blog - Saveti za Kosu i Feniranje | Dry65 Novi Beograd',
             'desc'  => 'Saveti o feniranju, nezi kose i stilizovanju iz Dry65 walk-in salona u West65 mall-u, Novi Beograd. Mali vodiči za zdraviju kosu.',

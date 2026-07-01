@@ -139,6 +139,66 @@ function dry65_schema() {
 }
 add_action('wp_head', 'dry65_schema', 5);
 
+/* ---- JobPosting Schema (samo na /karijera/ stranici) ----
+   Google prikazuje job listings direktno u pretrazi kada vidi
+   validnu JobPosting Schema markup. */
+function dry65_jobposting_schema() {
+    if (!is_page('karijera')) return;
+
+    $biz = dry65_biz();
+    $base_org = [
+        '@type' => 'Organization',
+        'name'  => 'Dry65',
+        'sameAs' => home_url('/'),
+        'logo'  => get_template_directory_uri() . '/assets/favicon/favicon-512.png',
+    ];
+    $base_location = [
+        '@type' => 'Place',
+        'address' => [
+            '@type' => 'PostalAddress',
+            'streetAddress'   => 'Omladinskih Brigada 86Ž',
+            'addressLocality' => 'Novi Beograd',
+            'addressRegion'   => 'Beograd',
+            'postalCode'      => '11070',
+            'addressCountry'  => 'RS',
+        ],
+    ];
+
+    $positions = [
+        [
+            'title' => 'Blowout specijalista',
+            'desc'  => 'Ključna članica tima. Osoba koja svaki dan pravi da klijentkinje izlaze sa savršenim feniranjem u Dry65 walk-in salonu na Novom Beogradu. Rad sa Schwarzkopf Professional proizvodima.',
+        ],
+        [
+            'title' => 'Recepcionar',
+            'desc'  => 'Prvi kontakt sa klijentkinjama. Osoba koja pravi da svako iskustvo u Dry65 salonu počinje toplo i profesionalno. Salon u West65 mall-u, Novi Beograd.',
+        ],
+        [
+            'title' => 'Asistent u radu',
+            'desc'  => 'Podrška tima u Dry65 walk-in salonu na Novom Beogradu. Osoba koja uči zanat pored najboljih, uz konkretno praktično iskustvo od prvog dana.',
+        ],
+    ];
+
+    $today = date('Y-m-d');
+    $valid_through = date('Y-m-d', strtotime('+90 days'));
+
+    foreach ($positions as $pos) {
+        $job = [
+            '@context' => 'https://schema.org',
+            '@type'    => 'JobPosting',
+            'title'    => $pos['title'],
+            'description' => $pos['desc'],
+            'datePosted'   => $today,
+            'validThrough' => $valid_through,
+            'employmentType' => 'FULL_TIME',
+            'hiringOrganization' => $base_org,
+            'jobLocation' => $base_location,
+        ];
+        echo '<script type="application/ld+json">' . wp_json_encode($job, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>' . "\n";
+    }
+}
+add_action('wp_head', 'dry65_jobposting_schema', 6);
+
 /* ---- Auto-create pages on theme activation ---- */
 function dry65_activate() {
     $pages = [
@@ -148,7 +208,8 @@ function dry65_activate() {
         ['title' => 'Paketi',   'slug' => 'paketi',   'template' => 'page-paketi.php',   'order' => 4],
         ['title' => 'Ambijent', 'slug' => 'ambijent', 'template' => 'page-ambijent.php', 'order' => 5],
         ['title' => 'Blog',     'slug' => 'blog',     'template' => '',                  'order' => 6],
-        ['title' => 'Kontakt',  'slug' => 'kontakt',  'template' => 'page-kontakt.php',  'order' => 7],
+        ['title' => 'Karijera', 'slug' => 'karijera', 'template' => 'page-karijera.php', 'order' => 7],
+        ['title' => 'Kontakt',  'slug' => 'kontakt',  'template' => 'page-kontakt.php',  'order' => 8],
     ];
 
     foreach ($pages as $p) {

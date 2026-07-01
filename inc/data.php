@@ -340,6 +340,7 @@ function dry65_nav() {
         ['id' => 'paketi',    'label' => 'Paketi',    'slug' => 'paketi'],
         ['id' => 'ambijent',  'label' => 'Ambijent',  'slug' => 'ambijent'],
         // ['id' => 'blog',      'label' => 'Blog',      'slug' => 'blog'], // privremeno sakriveno, vraćamo kad bude sadržaja
+        ['id' => 'karijera',  'label' => 'Karijera',  'slug' => 'karijera'],
         ['id' => 'kontakt',   'label' => 'Kontakt',   'slug' => 'kontakt'],
     ];
 }
