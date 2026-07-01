@@ -16,7 +16,6 @@ $positions = [
             'Interesovanje za rad u frizerskoj industriji',
             'Volja za učenjem i predanost',
             'Odgovornost i timski duh',
-            'Formalno obrazovanje nije uslov',
         ],
         'offer' => [
             'Plaćena praksa uz mentore',
