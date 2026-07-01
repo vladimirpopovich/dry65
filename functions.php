@@ -164,15 +164,9 @@ function dry65_jobposting_schema() {
         ],
     ];
 
+    // Samo AKTIVNE pozicije (status='open') se prikazuju u JobPosting Schema.
+    // Google indeksira Google Jobs samo pozicije koje su otvorene za prijave.
     $positions = [
-        [
-            'title' => 'Blowout specijalista',
-            'desc'  => 'Ključna članica tima. Osoba koja svaki dan pravi da klijentkinje izlaze sa savršenim feniranjem u Dry65 walk-in salonu na Novom Beogradu.',
-        ],
-        [
-            'title' => 'Recepcionar',
-            'desc'  => 'Prvi kontakt sa klijentkinjama. Osoba koja pravi da svako iskustvo u Dry65 salonu počinje toplo i profesionalno. Salon u West65 mall-u, Novi Beograd.',
-        ],
         [
             'title' => 'Asistent u radu',
             'desc'  => 'Podrška tima u Dry65 walk-in salonu na Novom Beogradu. Osoba koja uči zanat pored najboljih, uz konkretno praktično iskustvo od prvog dana.',

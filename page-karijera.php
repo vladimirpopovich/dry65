@@ -7,8 +7,28 @@ $biz = dry65_biz();
 
 $positions = [
     [
-        'id'       => 'blowout',
+        'id'       => 'asistent',
         'kicker'   => '01',
+        'status'   => 'open',
+        'title'    => 'Asistent u radu',
+        'lead'     => 'Podrška tima. Osoba koja uči zanat pored najboljih, uz konkretno praktično iskustvo od prvog dana.',
+        'reqs' => [
+            'Interesovanje za rad u frizerskoj industriji',
+            'Volja za učenjem i predanost',
+            'Odgovornost i timski duh',
+            'Formalno obrazovanje nije uslov',
+        ],
+        'offer' => [
+            'Plaćena praksa uz mentore',
+            'Realno iskustvo u walk-in salonu',
+            'Put ka poziciji blowout specijaliste',
+            'Prijatan i podržavajući tim',
+        ],
+    ],
+    [
+        'id'       => 'blowout',
+        'kicker'   => '02',
+        'status'   => 'soon',
         'title'    => 'Blowout specijalista',
         'lead'     => 'Ključna članica tima. Osoba koja svaki dan pravi da klijentkinje izlaze sa savršenim feniranjem.',
         'reqs' => [
@@ -26,7 +46,8 @@ $positions = [
     ],
     [
         'id'       => 'recepcionar',
-        'kicker'   => '02',
+        'kicker'   => '03',
+        'status'   => 'soon',
         'title'    => 'Recepcionar',
         'lead'     => 'Prvi kontakt sa klijentkinjama. Osoba koja pravi da svako iskustvo u salonu počinje toplo i profesionalno.',
         'reqs' => [
@@ -41,24 +62,6 @@ $positions = [
             'Obuka za rad u salonu',
             'Prijatno okruženje u West65',
             'Prostor za napredovanje',
-        ],
-    ],
-    [
-        'id'       => 'asistent',
-        'kicker'   => '03',
-        'title'    => 'Asistent u radu',
-        'lead'     => 'Podrška tima. Osoba koja uči zanat pored najboljih, uz konkretno praktično iskustvo od prvog dana.',
-        'reqs' => [
-            'Interesovanje za rad u frizerskoj industriji',
-            'Volja za učenjem i predanost',
-            'Odgovornost i timski duh',
-            'Formalno obrazovanje nije uslov',
-        ],
-        'offer' => [
-            'Plaćena praksa uz mentore',
-            'Realno iskustvo u walk-in salonu',
-            'Put ka poziciji blowout specijaliste',
-            'Prijatan i podržavajući tim',
         ],
     ],
 ];
@@ -87,15 +90,23 @@ $positions = [
 <section class="section">
   <div class="wrap stack" style="gap:clamp(40px,6vw,72px);">
 
-    <?php foreach ($positions as $p): ?>
-    <article class="reveal karijera-card" id="<?php echo esc_attr($p['id']); ?>" style="background:var(--paper);border:1px solid var(--sage-line);border-radius:var(--radius-lg);padding:clamp(28px,4vw,48px);">
+    <?php foreach ($positions as $p): $is_soon = ($p['status'] ?? 'open') === 'soon'; ?>
+    <article class="reveal karijera-card <?php echo $is_soon ? 'is-soon' : ''; ?>" id="<?php echo esc_attr($p['id']); ?>" style="background:var(--paper);border:1px solid var(--sage-line);border-radius:var(--radius-lg);padding:clamp(28px,4vw,48px);<?php echo $is_soon ? 'opacity:0.72;' : ''; ?>">
 
       <div style="display:grid;grid-template-columns:1fr;gap:clamp(20px,3vw,32px);">
 
         <!-- Header pozicije -->
         <div>
-          <span class="mono" style="color:var(--clay);font-size:14px;"><?php echo esc_html($p['kicker']); ?></span>
-          <h2 class="display" style="font-size:clamp(28px,3.6vw,42px);margin:8px 0 0;line-height:1.1;">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <span class="mono" style="color:var(--clay);font-size:14px;"><?php echo esc_html($p['kicker']); ?></span>
+            <?php if ($is_soon): ?>
+            <span class="soon-badge" style="display:inline-flex;align-items:center;gap:6px;background:var(--cream);color:var(--ink);border:1px solid var(--cream-deep);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">
+              <span style="width:6px;height:6px;background:var(--clay);border-radius:50%;"></span>
+              Uskoro
+            </span>
+            <?php endif; ?>
+          </div>
+          <h2 class="display" style="font-size:clamp(28px,3.6vw,42px);margin:10px 0 0;line-height:1.1;">
             <?php echo esc_html($p['title']); ?>
           </h2>
           <p class="lead" style="margin:16px 0 0;max-width:640px;">
@@ -138,12 +149,18 @@ $positions = [
 
         <!-- CTA -->
         <div style="margin-top:12px;padding-top:24px;border-top:1px solid var(--sage-line);">
+          <?php if ($is_soon): ?>
+          <p style="margin:0;color:var(--muted);font-size:15px;line-height:1.6;">
+            Konkurs za ovu poziciju otvaramo <strong style="color:var(--ink);">uskoro</strong>. Prati nas na <a href="<?php echo esc_url($biz['instagram_url']); ?>" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Instagramu</a> ili pošalji CV unapred na <a href="mailto:<?php echo esc_attr($biz['email']); ?>?subject=Prijava%20unapred:%20<?php echo rawurlencode($p['title']); ?>" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;"><?php echo esc_html($biz['email']); ?></a>.
+          </p>
+          <?php else: ?>
           <a href="mailto:<?php echo esc_attr($biz['email']); ?>?subject=Prijava%20za%20poziciju:%20<?php echo rawurlencode($p['title']); ?>&body=Zdravo,%20zainteresovan%20sam%20za%20poziciju%20<?php echo rawurlencode($p['title']); ?>%20u%20Dry65.%20U%20nastavku%20su%20moji%20podaci..." class="btn btn-dark">
             Prijavi se <span class="arrow">→</span>
           </a>
           <a href="mailto:<?php echo esc_attr($biz['email']); ?>" class="btn btn-outline" style="margin-left:10px;">
             Pošalji CV
           </a>
+          <?php endif; ?>
         </div>
 
       </div>
