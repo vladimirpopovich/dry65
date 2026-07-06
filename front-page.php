@@ -27,7 +27,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
           Samo dođeš
         </h2>
         <p class="lead" style="margin-top:28px;max-width:480px;">
-          Dry65 je <strong>frizerski salon na Novom Beogradu, u West 65</strong>, specijalizovan za feniranje. Walk-in, bez zakazivanja. Lokne, talasi, glatko, volumen — sve za savršenu frizuru koja drži danima.
+          Dry65 je <strong>frizerski salon na Novom Beogradu, u West 65</strong>, specijalizovan za feniranje. Walk-in, bez zakazivanja. Lokne, talasi, glatko, volumen, sve za savršenu frizuru koja drži danima.
         </p>
         <div class="btn-row" style="margin-top:34px;">
           <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">
