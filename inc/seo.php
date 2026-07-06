@@ -18,41 +18,53 @@ add_action('after_setup_theme', function() {
    Format: 'page-slug' => ['title' => '...', 'desc' => '...']
    Home koristi key 'home'. */
 function dry65_seo_map() {
+    // TITLE DIVERSIFICATION strategija: svaka stranica cilja
+    // razlicit primary keyword da izbegnemo cannibalization.
+    // Svaki title ima najbitniji keyword na POCETKU (Google podeblja).
     return [
         'home' => [
+            // Fokus: "feniranje bez zakazivanja" + "Novi Beograd"
             'title' => 'Feniranje bez zakazivanja - Novi Beograd | Dry65 West65',
             'desc'  => 'Frizerski salon specijalizovan za feniranje, na Novom Beogradu u West65. Walk-in blowout hair bar - samo dođeš, bez termina. Cene od 1.400 din.',
         ],
         'o-nama' => [
-            'title' => 'O nama - Frizerski salon na Novom Beogradu | Dry65 West65',
+            // Fokus: "frizerski salon Novi Beograd"
+            'title' => 'Frizerski salon Novi Beograd - O Dry65 blowout hair bar-u',
             'desc'  => 'Dry65 je frizerski salon specijalizovan za feniranje, u West65 mall-u na Novom Beogradu. Walk-in koncept, bez zakazivanja - samo dođeš.',
         ],
         'usluge' => [
-            'title' => 'Usluge - Feniranje, Lokne, Talasi, Glatko | Dry65 Novi Beograd',
-            'desc'  => 'Profesionalno feniranje, stilizovanje (lokne, talasi, glatko, volumen) i Hair Mask tretmani u walk-in salonu na Novom Beogradu. Bez zakazivanja.',
+            // Fokus: "frizerski salon West65" + tehnike stilizovanja
+            'title' => 'Frizerski salon West65 - Feniranje, lokne, talasi | Dry65',
+            'desc'  => 'Profesionalno feniranje, stilizovanje (lokne, talasi, glatko, volumen) i Hair Mask tretmani. Frizerski salon Dry65 u West65 mall-u, Novi Beograd.',
         ],
         'cenovnik' => [
-            'title' => 'Cenovnik Feniranja - od 1.400 din | Dry65 Novi Beograd',
-            'desc'  => 'Cene feniranja u Dry65: kratka kosa 1.400 din, srednja 1.800 din, duga 2.000 din, extra duga 2.200 din. Walk-in salon, West65 mall, Novi Beograd.',
+            // Fokus: "cenovnik feniranja Novi Beograd" + cena od 1.400
+            'title' => 'Cenovnik feniranja Novi Beograd, od 1.400 din | Dry65 West65',
+            'desc'  => 'Cene feniranja u Dry65: kratka 1.400 din, srednja 1.800 din, duga 2.000 din, extra duga 2.200 din. Frizerski salon West65, Novi Beograd, bez zakazivanja.',
         ],
         'paketi' => [
-            'title' => 'Mesečni Paket Feniranja - 8 Termina | Dry65 Novi Beograd',
-            'desc'  => 'Mesečni paket od 8 feniranja - idealno za žene koje feniraju 2-3 puta nedeljno. Walk-in blowout salon u West65 mall-u na Novom Beogradu.',
+            // Fokus: "mesečni paket feniranja" + benefit
+            'title' => 'Mesečni paket feniranja - 8 termina | Dry65 Novi Beograd',
+            'desc'  => 'Mesečni paket od 8 feniranja - idealno za žene koje feniraju 2-3 puta nedeljno. Frizerski salon u West65 mall-u na Novom Beogradu.',
         ],
         'ambijent' => [
-            'title' => 'Ambijent Salona - Galerija | Dry65 Feniranje Novi Beograd',
-            'desc'  => 'Pogledaj ambijent Dry65 walk-in blowout salona u West65 mall-u na Novom Beogradu. Moderno opremljen prostor za profesionalno feniranje.',
+            // Fokus: "blowout hair bar Novi Beograd" + galerija
+            'title' => 'Blowout hair bar Novi Beograd - Ambijent salona | Dry65',
+            'desc'  => 'Pogledaj ambijent Dry65 walk-in blowout hair bar-a u West65 mall-u na Novom Beogradu. Moderno opremljen frizerski salon za profesionalno feniranje.',
         ],
         'kontakt' => [
+            // Fokus: "frizerski salon West65" + adresa/kontakt
             'title' => 'Kontakt - Frizerski salon West65, Novi Beograd | Dry65',
             'desc'  => 'Dry65 frizerski salon: Omladinskih Brigada 86Ž, West65 mall, Novi Beograd. Telefon +381 60 6900655. Pon-Pet 8-20h, Sub 10-18h. Walk-in, bez zakazivanja.',
         ],
         'karijera' => [
-            'title' => 'Karijera - Posao u salonu na Novom Beogradu | Dry65',
-            'desc'  => 'Otvorene pozicije u Dry65 walk-in salonu na Novom Beogradu: blowout specijalista, recepcionar, asistent u radu. Prijavi se ili pošalji CV.',
+            // Fokus: "posao frizer / salon Novi Beograd"
+            'title' => 'Karijera - Posao u frizerskom salonu Novi Beograd | Dry65',
+            'desc'  => 'Otvorene pozicije u Dry65 frizerskom salonu na Novom Beogradu: asistent u radu, blowout specijalista, recepcionar. Prijavi se ili pošalji CV.',
         ],
         'blog' => [
-            'title' => 'Blog - Saveti za Kosu i Feniranje | Dry65 Novi Beograd',
+            // Fokus: "saveti za kosu" + edukativno
+            'title' => 'Saveti za feniranje i negu kose | Blog Dry65 Novi Beograd',
             'desc'  => 'Saveti o feniranju, nezi kose i stilizovanju iz Dry65 walk-in salona u West65 mall-u, Novi Beograd. Mali vodiči za zdraviju kosu.',
         ],
     ];
