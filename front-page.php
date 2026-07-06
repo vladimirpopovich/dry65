@@ -116,7 +116,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
     <div class="row" style="justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;margin-bottom:32px;">
       <div>
         <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;">ambijent</span>
-        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;">Kako izgleda kod nas.</h2>
+        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;">Kako izgleda Dry65 frizerski salon.</h2>
       </div>
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('ambijent'))); ?>" class="textlink">Pogledaj sve <span>→</span></a>
     </div>
