@@ -21,11 +21,11 @@ function dry65_seo_map() {
     return [
         'home' => [
             'title' => 'Feniranje bez zakazivanja - Novi Beograd | Dry65 West65',
-            'desc'  => 'Feniranje bez zakazivanja na Novom Beogradu. Walk-in blowout hair bar u West65 mall-u. Samo dođeš, bez termina, bez čekanja. Cene od 1.400 din.',
+            'desc'  => 'Frizerski salon specijalizovan za feniranje, na Novom Beogradu u West65. Walk-in blowout hair bar - samo dođeš, bez termina. Cene od 1.400 din.',
         ],
         'o-nama' => [
-            'title' => 'O nama - Walk-in Blowout Hair Bar na Novom Beogradu | Dry65',
-            'desc'  => 'Dry65 je walk-in blowout hair bar u West65 mall-u, Novi Beograd. Profesionalno feniranje bez zakazivanja - samo dođeš. Saznaj više o nama.',
+            'title' => 'O nama - Frizerski salon na Novom Beogradu | Dry65 West65',
+            'desc'  => 'Dry65 je frizerski salon specijalizovan za feniranje, u West65 mall-u na Novom Beogradu. Walk-in koncept, bez zakazivanja - samo dođeš.',
         ],
         'usluge' => [
             'title' => 'Usluge - Feniranje, Lokne, Talasi, Glatko | Dry65 Novi Beograd',
@@ -44,8 +44,8 @@ function dry65_seo_map() {
             'desc'  => 'Pogledaj ambijent Dry65 walk-in blowout salona u West65 mall-u na Novom Beogradu. Moderno opremljen prostor za profesionalno feniranje.',
         ],
         'kontakt' => [
-            'title' => 'Kontakt - Adresa, Telefon, Mapa | Dry65 Novi Beograd',
-            'desc'  => 'Dry65 walk-in salon: Omladinskih Brigada 86Ž, West65 mall, Novi Beograd. Telefon +381 60 6900655. Pon-Pet 8-20h, Sub 10-18h.',
+            'title' => 'Kontakt - Frizerski salon West65, Novi Beograd | Dry65',
+            'desc'  => 'Dry65 frizerski salon: Omladinskih Brigada 86Ž, West65 mall, Novi Beograd. Telefon +381 60 6900655. Pon-Pet 8-20h, Sub 10-18h. Walk-in, bez zakazivanja.',
         ],
         'karijera' => [
             'title' => 'Karijera - Posao u salonu na Novom Beogradu | Dry65',

@@ -21,7 +21,7 @@ $rows = [
       Dry65, walk-in salon na Novom Beogradu
     </h1>
     <p class="lead" style="margin-top:20px;max-width:680px;">
-      Nema zakazivanja. Samo dođi.
+      Frizerski salon specijalizovan za feniranje, u West 65 mall-u na Novom Beogradu. Nema zakazivanja, samo dođi.
     </p>
   </div>
 </section>

@@ -102,7 +102,7 @@ function dry65_schema() {
         '@type' => ['HairSalon', 'LocalBusiness'],
         '@id' => home_url('/#business'),
         'name' => $biz['name'],
-        'description' => 'Walk-in blowout hair bar na Novom Beogradu, u West65 mall-u. Profesionalno feniranje bez zakazivanja, samo dođeš. Cene od 1.400 din. Otvoreni Pon-Pet 8-20h, Sub 10-18h.',
+        'description' => 'Frizerski salon specijalizovan za feniranje, na Novom Beogradu u West65 mall-u. Walk-in blowout hair bar, bez zakazivanja - samo dođeš. Cene od 1.400 din. Otvoreni Pon-Pet 8-20h, Sub 10-18h.',
         'url' => home_url('/'),
         'telephone' => $biz['phone'],
         'email' => $biz['email'],
