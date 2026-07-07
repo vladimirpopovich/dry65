@@ -27,9 +27,9 @@ Text Domain: dry65
   --muted: #6E6A60;
   --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --font-script: "Oooh Baby", "Cormorant Garamond", cursive;
-  --font-logo: "Baloo 2", system-ui, sans-serif;
+  --font-logo: system-ui, sans-serif;
   --font-sans: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
-  --font-num: "Newsreader", "Cormorant Garamond", Georgia, serif;
+  --font-num: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --maxw: 1240px;
   --gutter: clamp(20px, 5vw, 64px);
   --nav-h: 76px;
@@ -52,7 +52,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Brojevi koriste Newsreader (cena, big-num, length-price, ptable cena) */
+/* Brojevi koriste Cormorant (cena, big-num, length-price, ptable cena) */
 .price, .length-price, .big-num,
 .ptable .price, .ptable .pcell,
 .num, .cenovnik-cena,

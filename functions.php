@@ -31,7 +31,7 @@ add_action('after_setup_theme', 'dry65_setup');
 
 /* ---- Enqueue ---- */
 function dry65_scripts() {
-    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.0.3');
+    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.0.4');
     wp_enqueue_script('dry65-js', get_template_directory_uri() . '/assets/js/dry65.js', [], '1.2.0', true);
     wp_localize_script('dry65-js', 'dry65', [
         'themeUrl' => get_template_directory_uri(),
@@ -41,30 +41,38 @@ function dry65_scripts() {
 add_action('wp_enqueue_scripts', 'dry65_scripts');
 
 /* ---- Google Fonts: async + reduced weights ----
-   - Smanjeni weights (samo oni koji se koriste) — manje CDN trafika
+   - Samo Cormorant, Oooh Baby, Hanken Grotesk (Baloo i Newsreader izbaceni)
    - Async load preko preload trick-a — ne blokira render */
 function dry65_head_fonts() {
-    // Samo weights koji se realno koriste
     $url = 'https://fonts.googleapis.com/css2?'
          . 'family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300'
          . '&family=Oooh+Baby'
-         . '&family=Baloo+2:wght@700'
          . '&family=Hanken+Grotesk:wght@400;500;600'
-         . '&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500'
          . '&display=swap';
 
     echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
     echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
-    // Async load (preload kao style, posle render-a postaje stylesheet)
     echo '<link rel="preload" as="style" href="' . esc_url($url) . '" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n";
     echo '<noscript><link rel="stylesheet" href="' . esc_url($url) . '"></noscript>' . "\n";
 }
 add_action('wp_head', 'dry65_head_fonts', 1);
 
-/* ---- Hero preload uklonjen kao eksperiment za NO_LCP ----
-   Preload je trebao da pomogne, ali Lighthouse i dalje ne detektuje LCP.
-   Mozda preload izaziva da slika bude "prerano u cache-u" i Lighthouse
-   je ne registruje kao LCP. Test sa uklonjenim preload-om. */
+/* ---- Hero image preload (LCP optimizacija) ----
+   Media queries osiguravaju da svaki uredjaj load-uje samo svoju sliku.
+   Bez ovoga, browser ceka ~490ms pre nego pocne download hero-a. */
+function dry65_hero_preload() {
+    if (!is_front_page()) return;
+    $tpl = get_template_directory_uri();
+
+    echo '<link rel="preload" as="image" '
+       . 'href="' . esc_url($tpl) . '/assets/salon/s06-mobile.webp" '
+       . 'media="(max-width: 860px)" fetchpriority="high">' . "\n";
+
+    echo '<link rel="preload" as="image" '
+       . 'href="' . esc_url($tpl) . '/assets/salon/s06.webp" '
+       . 'media="(min-width: 861px)" fetchpriority="high">' . "\n";
+}
+add_action('wp_head', 'dry65_hero_preload', 1);
 
 /* ---- Favicon ---- */
 function dry65_favicon() {
