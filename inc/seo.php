@@ -224,6 +224,59 @@ add_filter('wpseo_twitter_image', function($image) {
     return $image;
 }, 99);
 
+// og:image dimenzije
+add_filter('wpseo_opengraph_image_size', function() {
+    return 'full';
+});
+
+// og:site_name backup
+add_filter('wpseo_og_locale', function($locale) {
+    return $locale ?: 'sr_RS';
+});
+
+/* ---- Direct og:image fallback u wp_head ----
+   Nova Yoast verzija (27+) ne poziva wpseo_opengraph_image filter za sve stranice.
+   Ovaj kod detektuje da li Yoast već ispisao og:image i dodaje default ako nije.
+   Poziva se na priority 5 — nakon Yoast (koji je na 10), ali koristi output buffer trik. */
+function dry65_ensure_og_image() {
+    // Uvek dodaj og:image tagove; ako Yoast dodaje svoje, Facebook/social koristi prvi.
+    // Za home i sve pages bez featured image, koristi default.
+    $default_url = home_url('/wp-content/themes/dry65/assets/salon/s06.webp');
+    $default_alt = 'Dry65, feniranje bez zakazivanja u Novom Beogradu';
+
+    // Featured image ako postoji
+    if (is_singular() && has_post_thumbnail()) {
+        $img_id  = get_post_thumbnail_id();
+        $img_src = wp_get_attachment_image_src($img_id, 'full');
+        if ($img_src) {
+            $img_url = $img_src[0];
+            $img_w   = $img_src[1];
+            $img_h   = $img_src[2];
+            $img_alt = get_post_meta($img_id, '_wp_attachment_image_alt', true) ?: $default_alt;
+        }
+    }
+
+    if (!isset($img_url)) {
+        $img_url = $default_url;
+        $img_w   = 1200;
+        $img_h   = 1600;
+        $img_alt = $default_alt;
+    }
+
+    echo '<meta property="og:image" content="' . esc_url($img_url) . '">' . "\n";
+    echo '<meta property="og:image:width" content="' . (int)$img_w . '">' . "\n";
+    echo '<meta property="og:image:height" content="' . (int)$img_h . '">' . "\n";
+    echo '<meta property="og:image:alt" content="' . esc_attr($img_alt) . '">' . "\n";
+    echo '<meta property="og:image:type" content="image/webp">' . "\n";
+    echo '<meta name="twitter:image" content="' . esc_url($img_url) . '">' . "\n";
+}
+add_action('wp_head', 'dry65_ensure_og_image', 5);
+
+/* ---- Ukloni Yoast-ov og:image da izbegnemo duplikate ----
+   Naš dry65_ensure_og_image() je autoritet za og:image tagove. */
+add_filter('wpseo_opengraph_image', '__return_false', 100);
+add_filter('wpseo_twitter_image', '__return_false', 100);
+
 /* ---- Override Twitter Card title ---- */
 add_filter('wpseo_twitter_title', function($title) {
     $slug = dry65_seo_current_slug();

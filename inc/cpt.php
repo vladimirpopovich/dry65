@@ -103,20 +103,29 @@ function dry65_register_cpts() {
 }
 add_action('init', 'dry65_register_cpts');
 
-/* ---- Create hidden "Settings" page on theme activation ---- */
+/* ---- Create hidden "Settings" page on theme activation ----
+   Stranica je 'private' status — samo logovani admini je vide.
+   Ne pojavljuje se u sitemap-u, orphan page issue-u. */
 function dry65_create_settings_page() {
     $existing = get_page_by_path('dry65-podesavanja');
     if (!$existing) {
         wp_insert_post([
             'post_title'   => 'Dry65 Podešavanja',
             'post_name'    => 'dry65-podesavanja',
-            'post_status'  => 'publish',
+            'post_status'  => 'private', // samo admin vidi, ne u sitemap-u
             'post_type'    => 'page',
             'post_content' => 'Ova stranica sadrži globalna podešavanja sajta (kontakt, radno vreme, navigacija). Ne briši je.',
+        ]);
+    } else if ($existing->post_status !== 'private') {
+        // Ako je postojeca stranica publish, prebaci na private (fix za orphan issue)
+        wp_update_post([
+            'ID'          => $existing->ID,
+            'post_status' => 'private',
         ]);
     }
 }
 add_action('after_switch_theme', 'dry65_create_settings_page');
+add_action('init', 'dry65_create_settings_page'); // Radi i bez theme reactivation
 
 /* ---- Admin menu link to settings page ---- */
 function dry65_admin_settings_link() {
