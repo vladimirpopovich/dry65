@@ -148,10 +148,12 @@ function dry65_schema() {
             'longitude' => 20.4144,
         ],
         'openingHoursSpecification' => $hours_spec,
-        'sameAs' => [
-            $biz['instagram_url'],
+        'sameAs' => array_filter([
+            $biz['instagram_url'] ?? '',
+            $biz['tiktok_url']    ?? '',
+            $biz['youtube_url']   ?? '',
             'https://www.schwarzkopf-professional.com/',
-        ],
+        ]),
         'hasMap' => $biz['maps_url'],
         'paymentAccepted' => 'Cash, Credit Card',
         'currenciesAccepted' => 'RSD',

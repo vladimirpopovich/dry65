@@ -32,7 +32,11 @@ function dry65_biz() {
         'phone'         => dry65_setting('biz_phone', '+381606900655'),
         'email'         => dry65_setting('biz_email', 'office@dry65.com'),
         'instagram'     => dry65_setting('biz_instagram', '@dry65belgrade'),
-        'instagram_url' => dry65_setting('biz_instagram_url', 'https://instagram.com/dry65belgrade'),
+        'instagram_url' => dry65_setting('biz_instagram_url', 'https://www.instagram.com/dry65belgrade'),
+        'tiktok'        => dry65_setting('biz_tiktok', '@dry65belgrade'),
+        'tiktok_url'    => dry65_setting('biz_tiktok_url', 'https://www.tiktok.com/@dry65belgrade'),
+        'youtube'       => dry65_setting('biz_youtube', '@dry65belgrade'),
+        'youtube_url'   => dry65_setting('biz_youtube_url', 'https://www.youtube.com/@dry65belgrade'),
         'maps_url'      => dry65_setting('biz_maps_url', 'https://www.google.com/maps/place/dry65/data=!4m2!3m1!1s0x0:0x7a2ec93c7757eebd?sa=X&ved=1t:2428&ictx=111'),
         'reviews_url'   => dry65_setting('biz_reviews_url', 'https://www.google.com/search?sca_esv=c378b476f9719619&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOR6dpUKKNGrrr-_pFK37PHACJKHIDVlI3ia9lcLXcHI7gT4tEHi6TWaJcPQF5O-Iayxrj0tC1xRq-Jq-cxMN9mVHswUq&q=dry65+Reviews&sa=X&ved=2ahUKEwjErtGWw-6UAxUFNxAIHdcaM5IQ0bkNegQIJBAI'),
         'hours' => [
