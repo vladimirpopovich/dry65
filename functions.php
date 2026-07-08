@@ -74,6 +74,24 @@ function dry65_hero_preload() {
 }
 add_action('wp_head', 'dry65_hero_preload', 1);
 
+/* ---- Google Analytics 4 (gtag.js) ----
+   Async load, samo frontend, skip za logovane admine da ne merimo sebe. */
+function dry65_google_analytics() {
+    if (is_admin()) return;
+    if (is_user_logged_in() && current_user_can('manage_options')) return;
+    ?>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LWNT24N69L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-LWNT24N69L');
+    </script>
+    <?php
+}
+add_action('wp_head', 'dry65_google_analytics', 5);
+
 /* ---- Favicon ---- */
 function dry65_favicon() {
     $tpl = get_template_directory_uri();
