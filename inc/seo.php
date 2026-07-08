@@ -98,6 +98,16 @@ add_filter('wpseo_metadesc', function($desc) {
     if ($slug && isset($map[$slug])) {
         return $map[$slug]['desc'];
     }
+    // Fallback za blog postove ili druge stranice bez custom desc
+    if (is_singular('post') && (empty($desc) || mb_strlen($desc) < 120)) {
+        $excerpt = get_the_excerpt();
+        if (!empty($excerpt) && mb_strlen($excerpt) >= 120) {
+            return $excerpt;
+        }
+        // Ako je excerpt prekratak, dopuni sa brand tail-om
+        $tail = ' Dry65 blog, frizerski salon specijalizovan za feniranje na Novom Beogradu, u West65 mall-u.';
+        return trim(($excerpt ?: '') . $tail);
+    }
     return $desc;
 }, 99);
 
@@ -119,6 +129,22 @@ add_filter('wpseo_opengraph_desc', function($desc) {
         return $map[$slug]['desc'];
     }
     return $desc;
+}, 99);
+
+/* ---- Default OG image za sve stranice bez featured image ----
+   Sprečava "Open Graph tags incomplete" u SEO audit-u. */
+add_filter('wpseo_opengraph_image', function($image) {
+    if (empty($image)) {
+        return get_template_directory_uri() . '/assets/salon/s06.webp';
+    }
+    return $image;
+}, 99);
+
+add_filter('wpseo_twitter_image', function($image) {
+    if (empty($image)) {
+        return get_template_directory_uri() . '/assets/salon/s06.webp';
+    }
+    return $image;
 }, 99);
 
 /* ---- Override Twitter Card title ---- */

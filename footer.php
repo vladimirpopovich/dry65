@@ -67,8 +67,16 @@ $tpl  = get_template_directory_uri();
     <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:14px;margin-top:52px;padding-top:24px;border-top:1px solid rgba(242,225,190,0.18);font-size:13px;color:rgba(242,225,190,0.6);">
       <span>© <?php echo date('Y'); ?> Dry65. Sva prava zadržana.</span>
       <span class="row" style="gap:20px;">
-        <a href="#">Politika privatnosti</a>
-        <a href="#">Uslovi korišćenja</a>
+        <?php
+        $privacy = get_page_by_path('politika-privatnosti');
+        $terms   = get_page_by_path('uslovi-koriscenja');
+        ?>
+        <?php if ($privacy): ?>
+          <a href="<?php echo esc_url(get_permalink($privacy)); ?>">Politika privatnosti</a>
+        <?php endif; ?>
+        <?php if ($terms): ?>
+          <a href="<?php echo esc_url(get_permalink($terms)); ?>">Uslovi korišćenja</a>
+        <?php endif; ?>
       </span>
     </div>
   </div>
