@@ -58,6 +58,39 @@ add_filter('wpseo_canonical', function($canonical) {
     return $canonical;
 });
 
+/* ---- Redirect attachment pages na roditeljski post (ili home) ----
+   WordPress pravi posebnu stranicu za svaki upload — duplirani sadrzaj,
+   non-canonical konflikti u Ahrefs. Ova redirekcija ih uklanja iz index-a. */
+add_action('template_redirect', function() {
+    if (is_attachment()) {
+        global $post;
+        // Ako slika ima roditelja (post/page), redirect tamo
+        if ($post && $post->post_parent) {
+            wp_safe_redirect(get_permalink($post->post_parent), 301);
+            exit;
+        }
+        // Ako nema roditelja, redirect na home
+        wp_safe_redirect(home_url('/'), 301);
+        exit;
+    }
+});
+
+// Iskljuci attachment sitemap iz Yoast
+add_filter('wpseo_sitemap_exclude_post_type', function($excluded, $post_type) {
+    if ($post_type === 'attachment') {
+        return true;
+    }
+    return $excluded;
+}, 10, 2);
+
+// Noindex za attachment pages (backup ako redirect ne stigne na vreme)
+add_filter('wpseo_robots', function($robots) {
+    if (is_attachment()) {
+        return 'noindex,follow';
+    }
+    return $robots;
+}, 100);
+
 /* ---- SEO meta po slug-u stranice ----
    Format: 'page-slug' => ['title' => '...', 'desc' => '...']
    Home koristi key 'home'. */
