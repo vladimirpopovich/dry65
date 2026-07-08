@@ -14,6 +14,50 @@ add_action('after_setup_theme', function() {
     }
 });
 
+/* ---- NOINDEX za kategorije, tagove i arhive ----
+   Sprečava "Non-canonical page in sitemap" u audit-u.
+   Ove stranice se ne prikazuju u Google search rezultatima. */
+
+// Noindex robots meta tag
+add_action('wp_head', function() {
+    if (is_category() || is_tag() || is_author() || is_date() || is_search()) {
+        echo '<meta name="robots" content="noindex, follow">' . "\n";
+    }
+}, 1);
+
+// Uklanja kategorije, tagove, autor arhive i date arhive iz Yoast sitemap-a
+add_filter('wpseo_sitemap_exclude_taxonomy', function($excluded, $taxonomy) {
+    if (in_array($taxonomy, ['category', 'post_tag'], true)) {
+        return true;
+    }
+    return $excluded;
+}, 10, 2);
+
+// Uklanja author i date arhive iz Yoast sitemap indexa
+add_filter('wpseo_sitemap_index', function($index) {
+    // Ovo filter je za dodavanje, ali za uklanjanje koristimo drugi pristup
+    return $index;
+});
+
+// Isključi user (author) sitemap
+add_filter('wpseo_sitemap_exclude_author', '__return_true');
+
+// Yoast-specific noindex za taxonomies
+add_filter('wpseo_robots', function($robots) {
+    if (is_category() || is_tag() || is_author() || is_date() || is_search()) {
+        return 'noindex,follow';
+    }
+    return $robots;
+}, 99);
+
+// Ukloni category/tag/author/date iz canonical calculation
+add_filter('wpseo_canonical', function($canonical) {
+    if (is_category() || is_tag() || is_author() || is_date()) {
+        return false; // Ne generise canonical, sto sprecava non-canonical u sitemap-u
+    }
+    return $canonical;
+});
+
 /* ---- SEO meta po slug-u stranice ----
    Format: 'page-slug' => ['title' => '...', 'desc' => '...']
    Home koristi key 'home'. */
