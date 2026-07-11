@@ -42,7 +42,7 @@ echo '<script type="application/ld+json">' . wp_json_encode($catalog, JSON_UNESC
   <div class="wrap">
     <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">Cenovnik</span>
     <h1 class="display caps" style="font-size:clamp(30px,4.2vw,52px);margin-top:4px;max-width:28ch;line-height:1.0;letter-spacing:0.01em;">
-      Cene feniranja na Novom Beogradu
+      Cene feniranja u Dry65
     </h1>
     <p class="lead" style="margin-top:26px;max-width:680px;">
       Cena pranja i feniranja, stilizovanja (talasi, lokne, ravno, volumen) i tretmana nege kose.

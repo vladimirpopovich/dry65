@@ -18,7 +18,7 @@ $rows = [
   <div class="wrap">
     <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">Kontakt</span>
     <h1 class="display caps" style="font-size:clamp(28px,3.8vw,48px);margin-top:4px;max-width:34ch;line-height:1.05;letter-spacing:0.01em;">
-      Dry65 frizerski salon specijalizovan za feniranje na Novom Beogradu
+      Dry65 frizerski salon specijalizovan za feniranje
     </h1>
     <p class="lead" style="margin-top:20px;max-width:680px;">
       Frizerski salon specijalizovan za feniranje, u West 65 mall-u na Novom Beogradu. Nema zakazivanja, samo dođi.

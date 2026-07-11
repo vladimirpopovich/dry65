@@ -13,7 +13,7 @@ $tpl      = get_template_directory_uri();
   <div class="wrap">
     <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">Usluge</span>
     <h1 class="display caps" style="font-size:clamp(30px,4.2vw,52px);margin-top:4px;max-width:28ch;line-height:1.0;letter-spacing:0.01em;">
-      Feniranje, lokne i stilizovanje na Novom Beogradu
+      Feniranje, lokne i stilizovanje kose
     </h1>
     <p class="lead" style="margin-top:26px;max-width:680px;">
       Pranje i feniranje, stilizovanje (talasi, lokne, ravno, volumen, na unutra, na spolja) i dubinska nega kose. Sve bez zakazivanja, u srcu Novog Beograda.

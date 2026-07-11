@@ -20,7 +20,7 @@ $stats = [
   <div class="wrap">
     <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">O nama</span>
     <h1 class="display caps" style="font-size:clamp(30px,4.2vw,52px);margin-top:4px;max-width:28ch;line-height:1.0;letter-spacing:0.01em;">
-      Walk-in blowout salon na Novom Beogradu
+      Walk-in blowout salon Dry65
     </h1>
     <p class="lead" style="margin-top:26px;max-width:640px;">
       Dry65 je <strong>frizerski salon specijalizovan za feniranje na Novom Beogradu</strong>, u West 65. Walk-in koncept, bez zakazivanja. Radimo jednu stvar, feniramo, i u tome smo najbolji.
