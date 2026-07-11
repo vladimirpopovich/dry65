@@ -224,17 +224,17 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         </svg>
       </div>
       <div class="g-rating-row">
-        <span class="g-rating-stars" aria-hidden="true">
-          <?php
-          $r = $gmeta['rating'] ?: 5.0;
-          for ($i = 1; $i <= 5; $i++) {
-            $fill = $r >= $i ? 'full' : ($r > $i - 1 ? 'half' : 'empty');
-            echo '<span class="g-star g-' . $fill . '">★</span>';
-          }
-          ?>
+        <?php
+        $r = $gmeta['rating'] ?: 5.0;
+        // Format u sr-RS stil sa zarezom (4,9 umesto 4.9)
+        $r_display = number_format($r, 1, ',', '');
+        ?>
+        <span class="g-rating-single" aria-label="Ocena <?php echo esc_attr($r_display); ?> od 5">
+          <span class="g-star-single" aria-hidden="true">★</span>
+          <span class="g-rating-value"><?php echo esc_html($r_display); ?></span>
         </span>
         <?php if ($gmeta['total'] > 0): ?>
-        <span class="g-rating-count"><?php echo number_format($gmeta['total']); ?> recenzija</span>
+        <span class="g-rating-count">(<?php echo number_format($gmeta['total']); ?> recenzija)</span>
         <?php endif; ?>
       </div>
     </div>

@@ -545,7 +545,30 @@ html.lp-locked, body.lp-locked {
 .g-star { color: #e5e5e5; }
 .g-star.g-full { color: #fbbc04; }
 .g-star.g-half { background: linear-gradient(90deg, #fbbc04 50%, #e5e5e5 50%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-.g-rating-count { font-family: var(--font-sans); font-size: 16px; color: var(--muted); }
+.g-rating-count { font-family: var(--font-sans); font-size: 15px; color: var(--muted); }
+
+/* Novi kompaktan prikaz — 1 zvezda + broj (Google style) */
+.g-rating-single {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+.g-star-single {
+  color: #fbbc04;
+  font-size: 30px;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+.g-rating-value {
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-feature-settings: "tnum" 1;
+}
 
 /* ---------- Google Reviews Slider ---------- */
 .reviews-slider-wrap { position: relative; }
