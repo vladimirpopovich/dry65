@@ -129,6 +129,24 @@ add_action('acf/init', function() {
     ]);
 
     /* =========================================================
+       PONUDE (CPT)
+       ========================================================= */
+    acf_add_local_field_group([
+        'key' => 'group_dry65_offer',
+        'title' => 'Detalji ponude',
+        'fields' => [
+            ['key' => 'field_off_badge',     'label' => 'Badge (opciono)', 'name' => 'badge',     'type' => 'text', 'instructions' => 'npr. 10% OFF, HAPPY HOUR, NOVO'],
+            ['key' => 'field_off_start',     'label' => 'Datum početka',   'name' => 'start_date','type' => 'date_picker', 'display_format' => 'j. M Y', 'return_format' => 'Y-m-d'],
+            ['key' => 'field_off_end',       'label' => 'Datum kraja',     'name' => 'end_date',  'type' => 'date_picker', 'display_format' => 'j. M Y', 'return_format' => 'Y-m-d'],
+            ['key' => 'field_off_desc',      'label' => 'Opis ponude',     'name' => 'description','type' => 'wysiwyg', 'tabs' => 'visual', 'media_upload' => 0, 'toolbar' => 'basic', 'instructions' => 'Tekst kao što je postavljen na Google Business. Možeš koristiti bold, italic, i redove.'],
+            ['key' => 'field_off_image',     'label' => 'Glavna slika',    'name' => 'image',     'type' => 'image', 'return_format' => 'url', 'instructions' => 'Idealno kvadratni format (1000x1000px)'],
+            ['key' => 'field_off_btn_text',  'label' => 'Tekst dugmeta',   'name' => 'btn_text',  'type' => 'text', 'default_value' => 'Saznaj više', 'instructions' => 'npr. Saznaj više, Iskoristi ponudu'],
+            ['key' => 'field_off_btn_url',   'label' => 'Link dugmeta',    'name' => 'btn_url',   'type' => 'url', 'instructions' => 'Interni ili eksterni link. Ostavi prazno ako nema dugmeta.'],
+        ],
+        'location' => [[['param' => 'post_type', 'operator' => '==', 'value' => 'dry65_offer']]],
+    ]);
+
+    /* =========================================================
        RECENZIJE (CPT)
        ========================================================= */
     acf_add_local_field_group([

@@ -276,6 +276,38 @@ function dry65_team() {
     return $out;
 }
 
+/* ---- OFFERS (CPT dry65_offer) ---- */
+function dry65_offers() {
+    $posts = get_posts([
+        'post_type'      => 'dry65_offer',
+        'posts_per_page' => -1,
+        'orderby'        => 'menu_order date',
+        'order'          => 'DESC',
+    ]);
+
+    if (empty($posts)) return [];
+
+    $today = date('Y-m-d');
+    $out = [];
+    foreach ($posts as $p) {
+        $end_date = dry65_get_field('end_date', $p->ID);
+        // Sakri istekle ponude
+        if ($end_date && $end_date < $today) continue;
+
+        $out[] = [
+            'title'       => $p->post_title,
+            'badge'       => dry65_get_field('badge', $p->ID) ?: '',
+            'start_date'  => dry65_get_field('start_date', $p->ID) ?: '',
+            'end_date'    => $end_date ?: '',
+            'description' => dry65_get_field('description', $p->ID) ?: '',
+            'image'       => dry65_get_field('image', $p->ID) ?: '',
+            'btn_text'    => dry65_get_field('btn_text', $p->ID) ?: 'Saznaj više',
+            'btn_url'     => dry65_get_field('btn_url', $p->ID) ?: '',
+        ];
+    }
+    return $out;
+}
+
 /* ---- REVIEWS (CPT dry65_review) ---- */
 function dry65_reviews() {
     $posts = get_posts([

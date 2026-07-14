@@ -152,6 +152,52 @@
     });
   }
 
+  /* ---- Offer modals (bottom sheet na mobile) ---- */
+  let lastFocusedTrigger = null;
+
+  function openOfferModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    lastFocusedTrigger = document.activeElement;
+    modal.hidden = false;
+    document.body.classList.add('offer-modal-open');
+    const closeBtn = modal.querySelector('.offer-modal-close');
+    if (closeBtn) setTimeout(() => closeBtn.focus(), 100);
+  }
+
+  function closeOfferModal(modal) {
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.classList.remove('offer-modal-open');
+    if (lastFocusedTrigger && lastFocusedTrigger.focus) lastFocusedTrigger.focus();
+  }
+
+  document.querySelectorAll('[data-offer-open]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      openOfferModal(btn.getAttribute('data-offer-open'));
+    });
+    // Keyboard support za elemente sa role="button"
+    btn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openOfferModal(btn.getAttribute('data-offer-open'));
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-offer-close]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      closeOfferModal(el.closest('.offer-modal'));
+    });
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    const openModal = document.querySelector('.offer-modal:not([hidden])');
+    if (openModal) closeOfferModal(openModal);
+  });
+
   /* ---- Reviews slider arrows ---- */
   const rsTrack = document.getElementById('reviews-slider');
   if (rsTrack) {

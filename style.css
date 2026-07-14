@@ -547,6 +547,283 @@ html.lp-locked, body.lp-locked {
 .g-star.g-half { background: linear-gradient(90deg, #fbbc04 50%, #e5e5e5 50%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .g-rating-count { font-family: var(--font-sans); font-size: 15px; color: var(--muted); }
 
+/* ---------- Aktuelne ponude (GBP-style kartice) ---------- */
+.offers-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(20px, 2.5vw, 32px);
+}
+@media (max-width: 900px) {
+  .offers-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .offers-grid { grid-template-columns: 1fr; }
+}
+.offer-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--sage-line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.offer-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.08);
+  border-color: rgba(0,0,0,.12);
+}
+.offer-card:focus-visible {
+  outline: 2px solid var(--oxblood);
+  outline-offset: 3px;
+}
+.offer-card:hover .offer-link .arrow {
+  transform: translateX(3px);
+}
+.offer-card:active {
+  transform: translateY(-1px);
+}
+.offer-image {
+  position: relative;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: var(--cream);
+}
+.offer-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.offer-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: var(--oxblood);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+}
+.offer-body {
+  padding: 22px 24px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.offer-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--ink);
+  margin: 0;
+}
+.offer-dates {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--clay);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+.offer-desc {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+.offer-desc p { margin: 0 0 8px; }
+.offer-desc p:last-child { margin-bottom: 0; }
+.offer-desc strong { color: var(--ink); font-weight: 600; }
+.offer-desc em { color: var(--ink); }
+.offer-desc a { color: var(--oxblood); text-decoration: underline; text-underline-offset: 2px; }
+.offer-desc ul, .offer-desc ol { margin: 0 0 8px; padding-left: 20px; }
+.offer-desc li { margin-bottom: 4px; }
+
+/* Truncate na 3 reda na kartici (Saznaj više otvara modal) */
+.offer-desc-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.offer-desc-clamp p { display: inline; margin: 0; }
+.offer-desc-clamp p:not(:last-child)::after { content: " "; }
+
+/* Offer link — sada je span (cela kartica je klikabilna) */
+span.offer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 12px;
+  cursor: pointer;
+}
+
+/* ---------- Offer Modal / Bottom Sheet ---------- */
+.offer-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.offer-modal[hidden] { display: none; }
+.offer-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 26, 22, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: offerFadeIn 0.2s var(--ease);
+}
+.offer-modal-content {
+  position: relative;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.24);
+  animation: offerSlideUp 0.28s var(--ease);
+}
+.offer-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+.offer-modal-close:hover { background: #fff; transform: scale(1.05); }
+.offer-modal-handle {
+  display: none;
+}
+.offer-modal-image {
+  position: relative;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: var(--cream);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+.offer-modal-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.offer-modal-body {
+  padding: 26px 28px 32px;
+}
+.offer-modal-title {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+/* Mobile: bottom sheet umesto centered modal */
+@media (max-width: 640px) {
+  .offer-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .offer-modal-content {
+    max-width: 100%;
+    width: 100%;
+    max-height: 90vh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    animation: offerSheetUp 0.32s var(--ease);
+  }
+  .offer-modal-image {
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+  }
+  .offer-modal-handle {
+    display: block;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 42px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.15);
+    z-index: 3;
+  }
+  .offer-modal-close {
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.9);
+  }
+  .offer-modal-body {
+    padding: 22px 22px 32px;
+  }
+}
+
+@keyframes offerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes offerSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes offerSheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Body scroll lock kada je modal otvoren */
+body.offer-modal-open { overflow: hidden; }
+.offer-link {
+  margin-top: auto;
+  padding-top: 12px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--oxblood);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  transition: gap .2s var(--ease);
+}
+.offer-link:hover { gap: 10px; }
+.offer-link .arrow { transition: transform .2s var(--ease); }
+.offer-link:hover .arrow { transform: translateX(3px); }
+
 /* Novi kompaktan prikaz — 1 zvezda + broj (Google style) */
 .g-rating-single {
   display: inline-flex;

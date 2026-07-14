@@ -57,21 +57,128 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 </section>
 
 <!-- ======================================================
-     MARQUEE
+     AKTUELNE PONUDE (samo ako ima aktivnih)
      ====================================================== -->
-<div style="overflow:hidden;white-space:nowrap;border-top:1px solid var(--sage-line);border-bottom:1px solid var(--sage-line);padding-block:22px;">
-  <div class="marquee-track">
-    <?php
-    $items = ['Feniranje na talase', 'Bez zakazivanja', 'Feniranje na lokne', 'Walk-in salon', 'Nega kose', 'West65 · Novi Beograd',
-              'Feniranje na volumen', 'Pranje i feniranje', 'Feniranje na cetke', 'Frizerski salon Novi Beograd'];
-    foreach ($items as $it):
-    ?>
-      <span class="display" style="font-size:clamp(26px,3.4vw,44px);padding-inline:34px;display:inline-flex;align-items:center;gap:34px;">
-        <?php echo esc_html($it); ?><span style="color:var(--clay);font-size:0.6em;">✦</span>
-      </span>
-    <?php endforeach; ?>
+<?php $offers = dry65_offers(); if (!empty($offers)): ?>
+<section class="section-sm" style="background:var(--paper);">
+  <div class="wrap">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:clamp(20px,2.5vw,32px);flex-wrap:wrap;">
+      <div>
+        <span class="script" style="font-size:clamp(24px,3vw,36px);display:block;line-height:1;">Aktuelne ponude</span>
+        <h2 class="display" style="font-size:clamp(24px,3vw,36px);margin-top:4px;font-weight:400;">u Dry65 salonu</h2>
+      </div>
+      <span class="mono" style="color:var(--clay);font-size:12px;letter-spacing:0.14em;">TRENUTNO AKTIVNE</span>
+    </div>
+
+    <div class="offers-grid">
+      <?php foreach ($offers as $idx => $offer):
+        $modal_id = 'offer-modal-' . $idx;
+        $has_dates = (!empty($offer['start_date']) || !empty($offer['end_date']));
+        $dates_str = '';
+        if (!empty($offer['start_date']) && !empty($offer['end_date'])) {
+          $dates_str = date_i18n('j. M', strtotime($offer['start_date'])) . ' – ' . date_i18n('j. M Y', strtotime($offer['end_date']));
+        } elseif (!empty($offer['end_date'])) {
+          $dates_str = 'Do ' . date_i18n('j. M Y', strtotime($offer['end_date']));
+        }
+      ?>
+        <article class="offer-card" role="button" tabindex="0" data-offer-open="<?php echo esc_attr($modal_id); ?>" aria-label="Otvori detalje: <?php echo esc_attr($offer['title']); ?>">
+          <?php if (!empty($offer['image'])): ?>
+            <div class="offer-image">
+              <img src="<?php echo esc_url($offer['image']); ?>" alt="<?php echo esc_attr($offer['title']); ?>" loading="lazy" width="600" height="338">
+              <?php if (!empty($offer['badge'])): ?>
+                <span class="offer-badge"><?php echo esc_html($offer['badge']); ?></span>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
+
+          <div class="offer-body">
+            <h3 class="offer-title"><?php echo esc_html($offer['title']); ?></h3>
+
+            <?php if ($has_dates): ?>
+              <p class="offer-dates"><?php echo esc_html($dates_str); ?></p>
+            <?php endif; ?>
+
+            <?php if (!empty($offer['description'])): ?>
+              <div class="offer-desc offer-desc-clamp"><?php echo wp_kses_post($offer['description']); ?></div>
+            <?php endif; ?>
+
+            <span class="offer-link" aria-hidden="true">
+              Saznaj više <span class="arrow">→</span>
+            </span>
+          </div>
+        </article>
+
+        <!-- MODAL / BOTTOM SHEET -->
+        <div class="offer-modal" id="<?php echo esc_attr($modal_id); ?>" role="dialog" aria-modal="true" aria-labelledby="<?php echo esc_attr($modal_id); ?>-title" hidden>
+          <div class="offer-modal-backdrop" data-offer-close></div>
+          <div class="offer-modal-content" role="document">
+            <button type="button" class="offer-modal-close" aria-label="Zatvori" data-offer-close>×</button>
+            <div class="offer-modal-handle" aria-hidden="true"></div>
+
+            <?php if (!empty($offer['image'])): ?>
+              <div class="offer-modal-image">
+                <img src="<?php echo esc_url($offer['image']); ?>" alt="<?php echo esc_attr($offer['title']); ?>" loading="lazy">
+                <?php if (!empty($offer['badge'])): ?>
+                  <span class="offer-badge"><?php echo esc_html($offer['badge']); ?></span>
+                <?php endif; ?>
+              </div>
+            <?php endif; ?>
+
+            <div class="offer-modal-body">
+              <h3 id="<?php echo esc_attr($modal_id); ?>-title" class="offer-modal-title"><?php echo esc_html($offer['title']); ?></h3>
+
+              <?php if ($has_dates): ?>
+                <p class="offer-dates"><?php echo esc_html($dates_str); ?></p>
+              <?php endif; ?>
+
+              <?php if (!empty($offer['description'])): ?>
+                <div class="offer-desc"><?php echo wp_kses_post($offer['description']); ?></div>
+              <?php endif; ?>
+
+              <?php if (!empty($offer['btn_url'])): ?>
+                <a href="<?php echo esc_url($offer['btn_url']); ?>" class="btn btn-dark" style="margin-top:20px;">
+                  <?php echo esc_html($offer['btn_text']); ?> <span class="arrow">→</span>
+                </a>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    </div>
   </div>
-</div>
+</section>
+<?php endif; ?>
+
+<!-- ======================================================
+     PRICING TEASER (odmah posle Ponuda — razbija 3-kartice ritam)
+     ====================================================== -->
+<section class="section bg-cream">
+  <div class="wrap">
+    <div style="display:grid;grid-template-columns:0.9fr 1.1fr;gap:clamp(32px,5vw,72px);align-items:center;" class="hero-grid">
+      <div class="reveal">
+        <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;">Cenovnik</span>
+        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;">Cena feniranja prati dužinu kose.</h2>
+        <p class="lead" style="margin-top:20px;">Cena prati dužinu Vaše kose. Sve ostalo je iskustvo koje pripada samo Vama.</p>
+        <div style="margin-top:28px;">
+          <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark">
+            Ceo cenovnik <span class="arrow">→</span>
+          </a>
+        </div>
+      </div>
+      <div class="reveal stack" style="gap:0;background:var(--paper);border-radius:var(--radius-lg);border:1px solid var(--cream-deep);overflow:hidden;">
+        <?php foreach ($lengths as $i => $l): ?>
+        <div class="row" style="justify-content:space-between;padding:20px 26px;<?php echo $i < count($lengths) - 1 ? 'border-bottom:1px solid var(--sage-line);' : ''; ?>">
+          <span class="row" style="gap:14px;">
+            <span class="mono" style="color:var(--clay);"><?php echo str_pad($i + 1, 2, '0', STR_PAD_LEFT); ?></span>
+            <span style="font-weight:500;font-size:19px;"><?php echo esc_html($l['label']); ?></span>
+          </span>
+          <span class="display num" style="font-size:30px;"><?php echo dry65_rsd($l['price']); ?><span class="u">din</span></span>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- ======================================================
      SERVICES PREVIEW
@@ -109,6 +216,23 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 </section>
 
 <!-- ======================================================
+     MARQUEE (razdvaja Usluge od Ambijent-a)
+     ====================================================== -->
+<div style="overflow:hidden;white-space:nowrap;border-top:1px solid var(--sage-line);border-bottom:1px solid var(--sage-line);padding-block:22px;">
+  <div class="marquee-track">
+    <?php
+    $items = ['Feniranje na talase', 'Bez zakazivanja', 'Feniranje na lokne', 'Walk-in salon', 'Nega kose', 'West65 · Novi Beograd',
+              'Feniranje na volumen', 'Pranje i feniranje', 'Feniranje na cetke', 'Frizerski salon Novi Beograd'];
+    foreach ($items as $it):
+    ?>
+      <span class="display" style="font-size:clamp(26px,3.4vw,44px);padding-inline:34px;display:inline-flex;align-items:center;gap:34px;">
+        <?php echo esc_html($it); ?><span style="color:var(--clay);font-size:0.6em;">✦</span>
+      </span>
+    <?php endforeach; ?>
+  </div>
+</div>
+
+<!-- ======================================================
      GALLERY STRIP
      ====================================================== -->
 <section class="section-sm bg-paper2">
@@ -131,37 +255,6 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         </div>
       </div>
       <?php endforeach; ?>
-    </div>
-  </div>
-</section>
-
-<!-- ======================================================
-     PRICING TEASER
-     ====================================================== -->
-<section class="section bg-cream">
-  <div class="wrap">
-    <div style="display:grid;grid-template-columns:0.9fr 1.1fr;gap:clamp(32px,5vw,72px);align-items:center;" class="hero-grid">
-      <div class="reveal">
-        <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;">Cenovnik</span>
-        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;">Cena feniranja prati dužinu kose.</h2>
-        <p class="lead" style="margin-top:20px;">Cena prati dužinu Vaše kose. Sve ostalo je iskustvo koje pripada samo Vama.</p>
-        <div style="margin-top:28px;">
-          <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark">
-            Ceo cenovnik <span class="arrow">→</span>
-          </a>
-        </div>
-      </div>
-      <div class="reveal stack" style="gap:0;background:var(--paper);border-radius:var(--radius-lg);border:1px solid var(--cream-deep);overflow:hidden;">
-        <?php foreach ($lengths as $i => $l): ?>
-        <div class="row" style="justify-content:space-between;padding:20px 26px;<?php echo $i < count($lengths) - 1 ? 'border-bottom:1px solid var(--sage-line);' : ''; ?>">
-          <span class="row" style="gap:14px;">
-            <span class="mono" style="color:var(--clay);"><?php echo str_pad($i + 1, 2, '0', STR_PAD_LEFT); ?></span>
-            <span style="font-weight:500;font-size:19px;"><?php echo esc_html($l['label']); ?></span>
-          </span>
-          <span class="display num" style="font-size:30px;"><?php echo dry65_rsd($l['price']); ?><span class="u">din</span></span>
-        </div>
-        <?php endforeach; ?>
-      </div>
     </div>
   </div>
 </section>

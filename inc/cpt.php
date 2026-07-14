@@ -82,6 +82,25 @@ function dry65_register_cpts() {
         'supports'      => ['title', 'page-attributes', 'thumbnail'],
     ]);
 
+    // AKTUELNE PONUDE
+    register_post_type('dry65_offer', [
+        'labels' => [
+            'name'               => 'Ponude',
+            'singular_name'      => 'Ponuda',
+            'add_new'            => 'Dodaj ponudu',
+            'add_new_item'       => 'Dodaj novu ponudu',
+            'edit_item'          => 'Izmeni ponudu',
+            'all_items'          => 'Sve ponude',
+            'menu_name'          => 'Ponude',
+        ],
+        'public'        => false,
+        'show_ui'       => true,
+        'show_in_menu'  => true,
+        'menu_icon'     => 'dashicons-megaphone',
+        'menu_position' => 26,
+        'supports'      => ['title', 'page-attributes', 'thumbnail'],
+    ]);
+
     // RECENZIJE
     register_post_type('dry65_review', [
         'labels' => [
