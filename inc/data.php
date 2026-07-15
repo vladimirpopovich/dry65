@@ -308,6 +308,186 @@ function dry65_offers() {
     return $out;
 }
 
+/* ---- FAQ podaci (centralni izvor za sve FAQ sekcije + FAQ stranicu) ---- */
+function dry65_faqs_data() {
+    $biz = dry65_biz();
+    return [
+        // GENERALNA — za home + FAQ stranicu
+        'zakazivanje' => [
+            'q' => 'Da li treba da zakažem termin za feniranje u Dry65?',
+            'a' => 'Ne, Dry65 je walk-in salon. Samo dođete kad Vam odgovara, bez zakazivanja i bez pritiska. Nalazimo se u West 65 mall-u na Novom Beogradu.',
+            'cats' => ['home', 'kontakt', 'faq'],
+        ],
+        'radno_vreme' => [
+            'q' => 'Koje je radno vreme Dry65 salona?',
+            'a' => 'Radimo od ponedeljka do petka 8:00 do 20:00, subotom 10:00 do 18:00. Nedeljom ne radimo.',
+            'cats' => ['home', 'kontakt', 'faq'],
+        ],
+        'trajanje' => [
+            'q' => 'Koliko traje jedno feniranje?',
+            'a' => 'Standardno feniranje traje 30 do 45 minuta, u zavisnosti od dužine i gustine kose. Extra duga i gusta kosa može trajati do sat vremena.',
+            'cats' => ['home', 'usluge', 'faq'],
+        ],
+        'tehnike' => [
+            'q' => 'Koje tehnike feniranja radite?',
+            'a' => 'Radimo feniranje na talase, lokne, ravno, volumen, na četke i afro curls. Pored toga, imamo Hair Mask i Hair Infusion tretmane za dubinsku negu kose.',
+            'cats' => ['home', 'usluge', 'faq'],
+        ],
+        'sisanje_farbanje' => [
+            'q' => 'Da li radite šišanje ili farbanje?',
+            'a' => 'Ne. Dry65 je specijalizovan isključivo za feniranje, stilizovanje i negu kose. Radimo jednu stvar, feniramo, i u tome smo najbolji.',
+            'cats' => ['home', 'usluge', 'faq'],
+        ],
+        'proizvodi' => [
+            'q' => 'Koje proizvode za kosu koristite?',
+            'a' => 'Isključivo Schwarzkopf Professional preparate, vodeći svetski brend za profesionalnu salonsku negu kose.',
+            'cats' => ['home', 'usluge', 'faq'],
+        ],
+        'hair_mask' => [
+            'q' => 'Šta je Hair Mask tretman?',
+            'a' => 'Hair Mask je dubinski tretman nege kose koji se radi uz feniranje. Dostupan u tri nivoa (Basic, Medium, Premium), sa opcijom parne stanice za dodatan efekat.',
+            'cats' => ['usluge', 'faq'],
+        ],
+
+        // CENOVNIK
+        'cena' => [
+            'q' => 'Koliko košta feniranje u Dry65?',
+            'a' => 'Cene feniranja: kratka kosa 1.400 din, srednja 1.800 din, duga 2.000 din, extra duga 2.200 din. Detaljan cenovnik svih usluga dostupan je na stranici Cenovnik.',
+            'cats' => ['home', 'cenovnik', 'faq'],
+        ],
+        'paketi_dostupni' => [
+            'q' => 'Da li imate mesečne pakete?',
+            'a' => 'Da. Imamo mesečne pakete od 4, 8 ili 12 feniranja mesečno, sa značajnom uštedom po feniranju. Uz svaki paket dobijate na poklon masažu glave i profesionalni tretman nege kose.',
+            'cats' => ['cenovnik', 'paketi', 'faq'],
+        ],
+        'placanje' => [
+            'q' => 'Kako se plaća, gotovina ili kartica?',
+            'a' => 'Prihvatamo obе opcije: gotovinu i sve kartice (Visa, Mastercard, Maestro, Dinacard).',
+            'cats' => ['cenovnik', 'kontakt', 'faq'],
+        ],
+        'poklon_vaucer' => [
+            'q' => 'Da li dajete poklon vaučere?',
+            'a' => 'Da. Poklon vaučer za feniranje ili mesečni paket je odličan poklon za prijateljicu, majku ili sestru. Za detalje pozovite ' . $biz['phone_display'] . ' ili pišite na Instagram ' . $biz['instagram'] . '.',
+            'cats' => ['cenovnik', 'paketi', 'faq'],
+        ],
+
+        // PAKETI
+        'paket_deljenje' => [
+            'q' => 'Da li paket može da se deli sa drugom osobom?',
+            'a' => 'Ne, mesečni paket je personalizovan. Ali odličan je za istu klijentkinju kojoj se sviđa da fenira više puta mesečno.',
+            'cats' => ['paketi', 'faq'],
+        ],
+        'paket_prenos' => [
+            'q' => 'Šta se dešava ako ne iskoristim sve termine u paketu?',
+            'a' => 'Neiskorišćeni termini se ne prenose u sledeći mesec. Preporučujemo paket koji odgovara Vašoj realnoj frekvenciji, na primer 4 termina mesečno je odličan za nedeljno feniranje.',
+            'cats' => ['paketi', 'faq'],
+        ],
+        'paket_nega' => [
+            'q' => 'Da li paket uključuje tretmane nege kose?',
+            'a' => 'Da, uz svaki mesečni paket dobijate na poklon masažu glave i profesionalni tretman nege kose (Hair Mask ili Hair Infusion).',
+            'cats' => ['paketi', 'faq'],
+        ],
+
+        // LOKACIJA
+        'lokacija' => [
+            'q' => 'Gde se nalazi Dry65 salon?',
+            'a' => 'Omladinskih Brigada 86Ž, West 65 mall, Novi Beograd, blizu Airport City poslovne zone.',
+            'cats' => ['home', 'kontakt', 'faq'],
+        ],
+        'parking' => [
+            'q' => 'Da li ima parking?',
+            'a' => 'Da. U West 65 mall-u prvi sat parkiranja je besplatan. Salon je samo nekoliko koraka od glavnog ulaza.',
+            'cats' => ['kontakt', 'faq'],
+        ],
+
+        // OSTALO
+        'trajanje_efekta' => [
+            'q' => 'Koliko dugo drži feniranje?',
+            'a' => 'Kvalitetno feniranje sa Schwarzkopf Professional preparatima drži 3 do 5 dana, u zavisnosti od tipa kose. Za produženo trajanje preporučujemo svilenu jastučnicu.',
+            'cats' => ['home', 'usluge', 'faq'],
+        ],
+        'guzva' => [
+            'q' => 'Ako je gužva, koliko čekam?',
+            'a' => 'Prosek čekanja je 5 do 15 minuta. Za trenutan status pozovite ' . $biz['phone_display'] . ' pre dolaska.',
+            'cats' => ['kontakt', 'faq'],
+        ],
+    ];
+}
+
+/* ---- Vrati FAQ pitanja po kategoriji (home, cenovnik, paketi, itd.) ---- */
+function dry65_faqs_by_category($cat, $limit = null) {
+    $all = dry65_faqs_data();
+    $out = [];
+    foreach ($all as $key => $item) {
+        if (in_array($cat, $item['cats'], true)) {
+            $out[$key] = ['q' => $item['q'], 'a' => $item['a']];
+            if ($limit && count($out) >= $limit) break;
+        }
+    }
+    return $out;
+}
+
+/* ---- Render FAQ sekcije (reusable — za home, cenovnik, paketi) ----
+   Prikazuje FAQ u 2-kolonskom collapsible layout-u iznad footera.
+   Automatski ispisuje FAQPage Schema markup za Google + AI. */
+function dry65_render_faq_section($category, $title = null, $subtitle = null) {
+    $faqs = dry65_faqs_by_category($category);
+    if (empty($faqs)) return;
+
+    $title    = $title    ?: 'Česta pitanja';
+    $subtitle = $subtitle ?: 'Odgovori na najčešća pitanja o Dry65 salonu.';
+    ?>
+    <section class="section-sm bg-paper2" style="border-top:1px solid var(--sage-line);">
+      <div class="wrap">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:clamp(22px,3vw,36px);">
+          <div>
+            <span class="script" style="font-size:clamp(24px,3vw,36px);display:block;line-height:1;">FAQ</span>
+            <h2 class="display" style="font-size:clamp(26px,3.6vw,42px);margin-top:4px;font-weight:400;"><?php echo esc_html($title); ?></h2>
+            <?php if ($subtitle): ?>
+              <p class="muted" style="margin-top:8px;font-size:15px;max-width:520px;"><?php echo esc_html($subtitle); ?></p>
+            <?php endif; ?>
+          </div>
+          <?php $faq_page = get_page_by_path('faq'); if ($faq_page): ?>
+            <a href="<?php echo esc_url(get_permalink($faq_page)); ?>" class="textlink">Vidi sva pitanja <span>→</span></a>
+          <?php endif; ?>
+        </div>
+
+        <div class="faq-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,1.5vw,20px);">
+          <?php foreach ($faqs as $item): ?>
+            <details class="faq-item">
+              <summary class="faq-q">
+                <span><?php echo esc_html($item['q']); ?></span>
+                <span class="faq-icon" aria-hidden="true">+</span>
+              </summary>
+              <div class="faq-a"><?php echo wp_kses_post($item['a']); ?></div>
+            </details>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </section>
+
+    <?php
+    // FAQPage Schema markup (JSON-LD) - direct AI SEO signal
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@type'    => 'FAQPage',
+        'mainEntity' => [],
+    ];
+    foreach ($faqs as $item) {
+        $schema['mainEntity'][] = [
+            '@type' => 'Question',
+            'name'  => $item['q'],
+            'acceptedAnswer' => [
+                '@type' => 'Answer',
+                'text'  => wp_strip_all_tags($item['a']),
+            ],
+        ];
+    }
+    ?>
+    <script type="application/ld+json"><?php echo wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
+    <?php
+}
+
 /* ---- REVIEWS (CPT dry65_review) ---- */
 function dry65_reviews() {
     $posts = get_posts([

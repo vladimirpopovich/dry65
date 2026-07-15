@@ -629,7 +629,8 @@ html.lp-locked, body.lp-locked {
 .offer-dates {
   font-family: var(--font-sans);
   font-size: 13px;
-  color: var(--clay);
+  color: var(--oxblood);
+  font-weight: 500;
   margin: 0;
   letter-spacing: 0.02em;
 }
@@ -980,3 +981,56 @@ body.offer-modal-open { overflow: hidden; }
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ---------- FAQ sekcija (reusable, Booking.com-style 2 kolone) ---------- */
+.faq-grid {
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .faq-grid { grid-template-columns: 1fr !important; }
+}
+.faq-item {
+  background: #fff;
+  border: 1px solid var(--sage-line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+.faq-item:hover { border-color: rgba(0,0,0,.14); }
+.faq-item[open] {
+  box-shadow: 0 4px 16px rgba(0,0,0,.04);
+  border-color: rgba(0,0,0,.14);
+}
+.faq-q {
+  padding: 18px 22px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  line-height: 1.4;
+}
+.faq-q::-webkit-details-marker { display: none; }
+.faq-icon {
+  flex-shrink: 0;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--clay);
+  line-height: 1;
+  transition: transform .25s var(--ease);
+}
+.faq-item[open] .faq-icon { transform: rotate(45deg); }
+.faq-a {
+  padding: 0 22px 20px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.faq-a a { color: var(--oxblood); text-decoration: underline; text-underline-offset: 2px; }
+.faq-a a:hover { color: var(--ink); }

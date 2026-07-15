@@ -67,7 +67,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         <span class="script" style="font-size:clamp(24px,3vw,36px);display:block;line-height:1;">Aktuelne ponude</span>
         <h2 class="display" style="font-size:clamp(24px,3vw,36px);margin-top:4px;font-weight:400;">u Dry65 salonu</h2>
       </div>
-      <span class="mono" style="color:var(--clay);font-size:12px;letter-spacing:0.14em;">TRENUTNO AKTIVNE</span>
+      <span class="mono" style="color:var(--oxblood);font-size:12px;letter-spacing:0.14em;font-weight:600;">TRENUTNO AKTIVNE</span>
     </div>
 
     <div class="offers-grid">
@@ -446,6 +446,11 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
   }
 }
 </style>
+
+<!-- ======================================================
+     FAQ SEKCIJA (pred footer) — home varijanta
+     ====================================================== -->
+<?php dry65_render_faq_section('home', 'Sve što treba da znate', 'Odgovori na najčešća pitanja o feniranju u Dry65 salonu.'); ?>
 
 </main>
 

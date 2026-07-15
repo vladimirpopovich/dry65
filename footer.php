@@ -50,6 +50,9 @@ $tpl  = get_template_directory_uri();
             $url = get_permalink(get_page_by_path($item['slug'])) ?: home_url('/' . $item['slug'] . '/'); ?>
             <li><a href="<?php echo esc_url($url); ?>"><?php echo esc_html($item['label']); ?></a></li>
           <?php endforeach; ?>
+          <?php $faq_page = get_page_by_path('faq'); if ($faq_page): ?>
+            <li><a href="<?php echo esc_url(get_permalink($faq_page)); ?>">Česta pitanja</a></li>
+          <?php endif; ?>
         </ul>
       </div>
 

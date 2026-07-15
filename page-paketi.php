@@ -145,6 +145,9 @@ $lengths_json = json_encode(array_map(fn($l) => [
   </div>
 </section>
 
+<?php // FAQ sekcija (reusable, sa FAQPage Schema markup automatski) ?>
+<?php dry65_render_faq_section('paketi', 'Sve o mesečnim paketima', 'Odgovori na pitanja o mesečnim paketima, uštedi i uslovima korišćenja.'); ?>
+
 </main>
 
 <?php get_footer(); ?>

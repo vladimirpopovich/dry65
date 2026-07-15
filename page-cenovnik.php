@@ -289,6 +289,9 @@ foreach ($lengths as $i => $l) {
   </div>
 </div>
 
+<?php // FAQ sekcija (reusable, sa FAQPage Schema markup automatski) ?>
+<?php dry65_render_faq_section('cenovnik', 'Cena i način plaćanja', 'Najčešća pitanja o cenama, paketima i plaćanju u Dry65 salonu.'); ?>
+
 </main>
 
 <?php get_footer(); ?>

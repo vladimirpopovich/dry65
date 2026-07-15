@@ -139,6 +139,11 @@ function dry65_seo_map() {
             'title' => 'Karijera - Posao u frizerskom salonu Novi Beograd | Dry65',
             'desc'  => 'Otvorene pozicije u Dry65 frizerskom salonu na Novom Beogradu: asistent u radu, blowout specijalista, recepcionar. Prijavi se ili pošalji CV.',
         ],
+        'faq' => [
+            // Fokus: "cesta pitanja + featured snippets + AI SEO"
+            'title' => 'Česta pitanja - Feniranje Dry65 Novi Beograd | Radno vreme, cene',
+            'desc'  => 'Odgovori na česta pitanja o feniranju u Dry65: zakazivanje, radno vreme, cene, mesečni paketi, lokacija West 65 Novi Beograd. Sve na jednom mestu.',
+        ],
         'blog' => [
             // Fokus: "saveti za kosu" + edukativno
             'title' => 'Saveti za feniranje i negu kose | Blog Dry65 Novi Beograd',
