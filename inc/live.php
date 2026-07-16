@@ -252,6 +252,9 @@ function dry65_live_admin_page() {
         <?php if (isset($_GET['saved'])): ?>
             <div class="notice notice-success is-dismissible"><p><strong>Sačuvano.</strong> Status je ažuriran.</p></div>
         <?php endif; ?>
+        <?php if (isset($_GET['keyregen'])): ?>
+            <div class="notice notice-warning is-dismissible"><p><strong>Novi ključ je generisan.</strong> Ažuriraj Prečice na telefonima novim ključem.</p></div>
+        <?php endif; ?>
 
         <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;max-width:560px;margin-top:14px;">
             <div style="font-size:13px;color:#666;">Trenutni status:</div>
@@ -312,6 +315,33 @@ function dry65_live_admin_page() {
                 Napomena: van radnog vremena (Pon–Pet 8–20, Sub 10–18) stranica automatski pokazuje „Zatvoreno“, bez obzira na dugme.
             </p>
         </form>
+
+        <?php
+        $api_key = dry65_live_api_key();
+        $api_base = home_url('/wp-json/dry65/v1/live');
+        ?>
+        <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;max-width:640px;margin-top:26px;">
+            <h2 style="margin-top:0;">📱 iPhone / Prečice (Shortcuts)</h2>
+            <p style="color:#555;margin-top:4px;">Status se može menjati sa home screen-a telefona preko iOS Prečica — bez ulaska u wp-admin. Prečica šalje <strong>POST</strong> na URL ispod.</p>
+
+            <p style="margin-bottom:4px;"><strong>Tajni ključ</strong> (kopiraj u Prečicu):</p>
+            <code style="display:inline-block;background:#f0f0f1;padding:8px 12px;border-radius:6px;user-select:all;font-size:13px;word-break:break-all;"><?php echo esc_html($api_key); ?></code>
+
+            <p style="margin:16px 0 4px;"><strong>URL primeri</strong> (metod POST):</p>
+            <ul style="font-family:monospace;font-size:12.5px;color:#333;line-height:1.7;list-style:none;padding-left:0;">
+                <li>15 min &nbsp;→&nbsp; <?php echo esc_html($api_base); ?>?key=<?php echo esc_html($api_key); ?>&amp;set=15</li>
+                <li>Slobodno &nbsp;→&nbsp; …/live?key=…&amp;set=0</li>
+                <li>Zatvoreno &nbsp;→&nbsp; …/live?key=…&amp;set=closed</li>
+            </ul>
+            <p style="color:#888;font-size:12px;">Dozvoljene <code>set</code> vrednosti: 0, 5, 10, 15, 20, 25, 30, 45, 60, ili <code>closed</code>. Odgovor vraća novi status (za potvrdu u Prečici).</p>
+
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Novi ključ poništava sve postojeće Prečice. Nastaviti?');" style="margin-top:12px;">
+                <input type="hidden" name="action" value="dry65_live_regen_key">
+                <?php wp_nonce_field('dry65_live_regen_key'); ?>
+                <button class="button">Generiši novi ključ</button>
+                <span style="color:#888;font-size:12px;margin-left:8px;">(ako ključ procuri)</span>
+            </form>
+        </div>
     </div>
 
     <style>
@@ -374,6 +404,105 @@ function dry65_live_ajax() {
         'viewers_min'   => (int) DRY65_LIVE_VIEWERS_MIN,
     ]);
 }
+
+/* ============================================================
+   REST API — menjanje statusa sa iPhone-a (iOS Prečice/Shortcuts)
+   POST /wp-json/dry65/v1/live?key=SECRET&set=15   (ili set=0 / set=closed)
+   Auth: ulogovan korisnik sa cap-om ILI tajni ključ (?key= ili X-Dry65-Key header)
+   ============================================================ */
+
+/* Tajni ključ za REST — generiše se jednom, prikazuje u adminu. */
+function dry65_live_api_key() {
+    $k = get_option('dry65_live_api_key', '');
+    if (!$k) {
+        $k = wp_generate_password(32, false, false);
+        update_option('dry65_live_api_key', $k);
+    }
+    return $k;
+}
+
+function dry65_live_rest_can() {
+    if (current_user_can(DRY65_LIVE_CAP)) return true;
+    $key = '';
+    if (!empty($_SERVER['HTTP_X_DRY65_KEY'])) $key = (string) $_SERVER['HTTP_X_DRY65_KEY'];
+    if ($key === '' && isset($_GET['key'])) $key = (string) $_GET['key'];
+    $stored = (string) get_option('dry65_live_api_key', '');
+    return ($stored !== '' && $key !== '' && hash_equals($stored, $key));
+}
+
+add_action('rest_api_init', function () {
+    register_rest_route('dry65/v1', '/live', [
+        [
+            'methods'             => 'POST',
+            'callback'            => 'dry65_live_rest_set',
+            'permission_callback' => 'dry65_live_rest_can',
+        ],
+        [
+            'methods'             => 'GET',
+            'callback'            => 'dry65_live_rest_status',
+            'permission_callback' => '__return_true',
+        ],
+    ]);
+});
+
+function dry65_live_rest_set($req) {
+    $set     = $req->get_param('set');
+    $message = $req->get_param('message');
+    $did     = false;
+
+    if ($set !== null && $set !== '') {
+        if (strtolower((string) $set) === 'closed') {
+            update_option('dry65_live_closed', '1');
+            $did = true;
+        } else {
+            $wait = (int) $set;
+            if (!in_array($wait, dry65_live_allowed_waits(), true)) {
+                return new WP_Error('dry65_bad_set', 'Nedozvoljena vrednost. Dozvoljeno: 0,5,10,15,20,25,30,45,60 ili "closed".', ['status' => 400]);
+            }
+            update_option('dry65_live_wait', $wait);
+            update_option('dry65_live_closed', '0');
+            $did = true;
+        }
+    }
+    if ($message !== null) {
+        update_option('dry65_live_message', sanitize_textarea_field((string) $message));
+        $did = true;
+    }
+    if (!$did) {
+        return new WP_Error('dry65_nothing', 'Pošalji "set" (broj ili closed) i/ili "message".', ['status' => 400]);
+    }
+
+    update_option('dry65_live_updated_at', current_time('timestamp'));
+    update_option('dry65_live_updated_by', get_current_user_id());
+
+    $st = dry65_live_resolve();
+    return [
+        'ok'     => true,
+        'status' => $st['headline'],
+        'wait'   => (int) $st['wait'],
+        'closed' => (bool) $st['closed'],
+        'tier'   => $st['tier'],
+    ];
+}
+
+function dry65_live_rest_status() {
+    $st = dry65_live_resolve();
+    return [
+        'status'        => $st['headline'],
+        'tier'          => $st['tier'],
+        'remaining_min' => (int) $st['remaining_min'],
+        'closed'        => (bool) $st['closed'],
+    ];
+}
+
+/* Regeneriši tajni ključ (dugme u adminu). */
+add_action('admin_post_dry65_live_regen_key', function () {
+    if (!current_user_can(DRY65_LIVE_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_live_regen_key');
+    update_option('dry65_live_api_key', wp_generate_password(32, false, false));
+    wp_redirect(add_query_arg(['page' => 'dry65-live', 'keyregen' => '1'], admin_url('admin.php')));
+    exit;
+});
 
 /* ============================================================
    Osiguraj da /live (i /faq) stranice postoje posle deploy-a
