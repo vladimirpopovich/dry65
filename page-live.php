@@ -35,6 +35,13 @@ get_header();
 
       <p class="lead live-sub" id="live-sub"><?php echo esc_html($st['sub']); ?></p>
 
+      <?php
+      $live_staff_text  = dry65_live_staff_text(get_option('dry65_live_staff', []));
+      $live_chairs_show = get_option('dry65_live_chairs_show', '0') === '1';
+      $live_chairs_vis  = $live_chairs_show && $live_staff_text !== '' && !$st['closed'];
+      ?>
+      <p class="live-chairs" id="live-chairs"<?php echo $live_chairs_vis ? '' : ' style="display:none;"'; ?>><?php echo esc_html($live_staff_text); ?></p>
+
       <?php if ($st['stale']): ?>
       <p class="live-stale" id="live-stale">Podaci možda nisu ažurni. Pozovite <?php echo esc_html($biz['phone_display']); ?> pre dolaska.</p>
       <?php else: ?>
@@ -102,6 +109,11 @@ get_header();
     line-height: 1.02;
   }
   .live-sub { max-width: 46ch; margin: 16px auto 0; color: var(--ink-soft); }
+  .live-chairs {
+    margin: 12px auto 0;
+    font-family: var(--font-sans); font-size: 13.5px; font-weight: 500;
+    color: var(--muted);
+  }
   .live-stale {
     margin: 18px auto 0; max-width: 44ch;
     font-family: var(--font-sans); font-size: 14px; font-weight: 500;
@@ -140,6 +152,7 @@ get_header();
   var elNote     = document.getElementById('live-note');
   var elViewers  = document.getElementById('live-viewers');
   var elViewersT = document.getElementById('live-viewers-text');
+  var elChairs   = document.getElementById('live-chairs');
 
   // Token po tabu (sessionStorage) — služi da server broji jedinstvene gledaoce.
   var token;
@@ -173,6 +186,8 @@ get_header();
     remainingSec: <?php echo (int) $st['remaining_sec']; ?>,
     closed:       <?php echo $st['closed'] ? 'true' : 'false'; ?>,
     agoSec:       <?php echo (int) $st['updated_ago_sec']; ?>,
+    staffText:    <?php echo wp_json_encode(dry65_live_staff_text(get_option('dry65_live_staff', []))); ?>,
+    chairsShow:   <?php echo get_option('dry65_live_chairs_show', '0') === '1' ? 'true' : 'false'; ?>,
     message:      <?php echo wp_json_encode(get_option('dry65_live_message', '')); ?>,
     phone:        <?php echo wp_json_encode($biz['phone_display']); ?>
   };
@@ -207,6 +222,15 @@ get_header();
       if (c.note) { elNote.textContent = c.note; elNote.style.display = ''; }
       else { elNote.style.display = 'none'; }
     }
+    // ko radi — prikaži samo ako je vlasnik uključio, ima imena i nije zatvoreno
+    if (elChairs) {
+      if (state.chairsShow && state.staffText && c.tier !== 'closed') {
+        elChairs.textContent = state.staffText;
+        elChairs.style.display = '';
+      } else {
+        elChairs.style.display = 'none';
+      }
+    }
   }
 
   // Lokalno tikanje — svakih 5s skini proteklo vreme (i za čekanje i za "ažurirano pre").
@@ -233,6 +257,8 @@ get_header();
         state.agoSec       = (typeof d.updated_ago_sec === 'number') ? d.updated_ago_sec : state.agoSec;
         state.message      = d.message || '';
         state.phone        = d.phone || state.phone;
+        state.staffText    = d.staff_text || '';
+        state.chairsShow   = !!d.chairs_show;
         lastTick = Date.now();
         render();
         renderAgo();
