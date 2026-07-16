@@ -149,6 +149,11 @@ function dry65_seo_map() {
             'title' => 'Saveti za feniranje i negu kose | Blog Dry65 Novi Beograd',
             'desc'  => 'Saveti o feniranju, nezi kose i stilizovanju iz Dry65 walk-in salona u West65 mall-u, Novi Beograd. Mali vodiči za zdraviju kosu.',
         ],
+        'live' => [
+            // Fokus: "koliko cekam / guzva" — statican opis (bez live broja) da SERP snippet ostane stabilan
+            'title' => 'Uživo - Koliko se čeka u Dry65? | Feniranje Novi Beograd',
+            'desc'  => 'Proveri trenutnu gužvu u Dry65 pre nego što kreneš. Uživo status čekanja za walk-in feniranje u West 65 mall-u, Novi Beograd.',
+        ],
     ];
 }
 

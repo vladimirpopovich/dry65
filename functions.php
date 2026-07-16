@@ -8,6 +8,7 @@ require_once get_template_directory() . '/inc/cpt.php';
 require_once get_template_directory() . '/inc/acf-fields.php';
 require_once get_template_directory() . '/inc/google-reviews.php';
 require_once get_template_directory() . '/inc/seo.php';
+require_once get_template_directory() . '/inc/live.php';
 
 /* ---- WebP kao podrazumevani output za thumbnaile ----
    Bez ovog WP generise .jpg thumbnaile cak i ako je original .webp.
@@ -405,6 +406,7 @@ function dry65_activate() {
         ['title' => 'Karijera', 'slug' => 'karijera', 'template' => 'page-karijera.php', 'order' => 7],
         ['title' => 'Kontakt',  'slug' => 'kontakt',  'template' => 'page-kontakt.php',  'order' => 8],
         ['title' => 'Česta pitanja', 'slug' => 'faq',  'template' => 'page-faq.php',      'order' => 9],
+        ['title' => 'Uživo',    'slug' => 'live',     'template' => 'page-live.php',     'order' => 10],
     ];
 
     foreach ($pages as $p) {
