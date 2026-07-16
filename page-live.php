@@ -244,9 +244,9 @@ get_header();
           elStale.style.display = 'none';
         }
 
-        // Brojač gledalaca — samo ikonica oka + broj, prikaži iznad praga
+        // Brojač gledalaca — ikonica oka + broj + osoba/osobe, prikaži iznad praga
         if (d.viewers >= d.viewers_min) {
-          elViewersT.textContent = d.viewers;
+          elViewersT.textContent = d.viewers + ' ' + srPlural(d.viewers, 'osoba', 'osobe', 'osoba');
           elViewers.style.display = '';
         } else {
           elViewers.style.display = 'none';
