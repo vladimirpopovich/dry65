@@ -194,17 +194,25 @@ get_header();
   };
   var lastTick = Date.now();
 
+  // Procena vremena — prati STVARNO preostalo vreme, ne tier, pa se smanjuje dok tajmer ide.
+  // Mora da prati dry65_live_wait_label() u inc/live.php.
+  function waitLabel(min) {
+    if (state.closed) return 'Radno vreme';
+    if (min <= 0)  return 'Prvi ste na redu';
+    if (min >= 45) return 'Na redu ste za preko 45 minuta';
+    return 'Na redu ste za manje od ' + (Math.ceil(min / 5) * 5) + ' minuta';
+  }
+
   // Mora da prati dry65_live_tier_copy() u inc/live.php — isti pragovi i isti tekst.
-  // headline = status (krupno u boksu), label = procena vremena (sitno u badge-u iznad).
   function copyFor(min) {
     // `note` je samo NASTAVAK — render() ispred zalepi „Status je ažuriran pre X. "
     var busyNote = 'Moguće je da se procena promeni kako se oslobađaju mesta.';
-    if (state.closed) return { tier:'closed', headline:'Trenutno ne radimo', label:'Radno vreme', sub:'Radujemo se vašoj poseti tokom radnog vremena.', note:'' };
-    if (min <= 0)  return { tier:'free',   headline:'Slobodni smo', label:'Prvi ste na redu', sub:'Samo dođite, čekamo vas.', note:'Ako planirate dolazak, preporučujemo da krenete uskoro.' };
-    if (min <= 10) return { tier:'lime',   headline:'Uskoro slobodni', label:'Na redu ste za manje od 10 minuta', sub:'Krenite, uskoro će se osloboditi mesto.', note:'Može se promeniti kako klijenti dolaze i odlaze.' };
-    if (min <= 25) return { tier:'yellow', headline:'Malo čekanja', label:'Na redu ste za manje od 25 minuta', sub:'Ako ste u blizini, pravo je vreme da svratite.', note:busyNote };
-    if (min < 45)  return { tier:'orange', headline:'Manja gužva', label:'Na redu ste za manje od 45 minuta', sub:'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.', note:busyNote };
-    return { tier:'red', headline:'Imamo gužvu', label:'Na redu ste za preko 45 minuta', sub:'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.', note:busyNote };
+    if (state.closed) return { tier:'closed', headline:'Trenutno ne radimo', sub:'Radujemo se vašoj poseti tokom radnog vremena.', note:'' };
+    if (min <= 0)  return { tier:'free',   headline:'Slobodni smo', sub:'Samo dođite, čekamo vas.', note:'Ako planirate dolazak, preporučujemo da krenete uskoro.' };
+    if (min <= 10) return { tier:'lime',   headline:'Uskoro slobodni', sub:'Krenite, uskoro će se osloboditi mesto.', note:'Može se promeniti kako klijenti dolaze i odlaze.' };
+    if (min <= 25) return { tier:'yellow', headline:'Malo čekanja', sub:'Ako ste u blizini, pravo je vreme da svratite.', note:busyNote };
+    if (min < 45)  return { tier:'orange', headline:'Manja gužva', sub:'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.', note:busyNote };
+    return { tier:'red', headline:'Imamo gužvu', sub:'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.', note:busyNote };
   }
 
   function render() {
@@ -212,7 +220,7 @@ get_header();
     var c = copyFor(min);
     card.setAttribute('data-tier', c.tier);
     elHeadline.textContent = c.headline;
-    if (elWaitLbl) elWaitLbl.textContent = c.label;
+    if (elWaitLbl) elWaitLbl.textContent = waitLabel(min);
     // custom poruka prepisuje sub (osim kad je zatvoreno)
     elSub.textContent = (state.message && c.tier !== 'closed') ? state.message : c.sub;
     // fusnota po stanju (prazna kad je zatvoreno) — ispred nje „Status je ažuriran pre X. "

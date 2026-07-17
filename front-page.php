@@ -37,6 +37,10 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
             Mesečni paketi
           </a>
         </div>
+
+        <div style="margin-top:22px;">
+          <?php if (function_exists('dry65_live_widget')) dry65_live_widget(); ?>
+        </div>
       </div>
 
       <div style="position:relative;">

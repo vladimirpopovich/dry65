@@ -155,31 +155,42 @@ function dry65_live_remaining_sec($raw = null) {
      <45  -> orange  "Manja gužva"     <- dugme „od 25 do 45min" (30)
      ≥45  -> red     "Imamo gužvu"     <- dugme „preko 45min" (45)
      VAŽNO: isti tekst je dupliran u JS (`copyFor` u page-live.php) — menjaj na OBA mesta. */
+/* ---- Procena vremena (sitno, u badge-u iznad boksa) ----
+   Prati STVARNO preostalo vreme, ne tier — zato se vidno smanjuje dok tajmer ide.
+   Zaokruženo naviše na 5 min, pa je „manje od X" uvek istinito i uvek se kaže
+   „minuta" (svi koraci se završavaju na 0 ili 5 — nema srpske pluralizacije).
+   Mirror JS funkcije `waitLabel` u page-live.php — menjaj na OBA mesta. */
+function dry65_live_wait_label($remaining_min) {
+    if ($remaining_min <= 0)  return 'Prvi ste na redu';
+    if ($remaining_min >= 45) return 'Na redu ste za preko 45 minuta';
+    return 'Na redu ste za manje od ' . (int) (ceil($remaining_min / 5) * 5) . ' minuta';
+}
+
 function dry65_live_tier_copy($remaining_min, $phone) {
     // `note` je samo NASTAVAK — resolve() ispred zalepi „Status je ažuriran pre X. "
     $busy_note = 'Moguće je da se procena promeni kako se oslobađaju mesta.';
     if ($remaining_min <= 0) {
         return ['tier' => 'free', 'emoji' => '🟢', 'headline' => 'Slobodni smo',
-                'wait_label' => 'Prvi ste na redu', 'sub' => 'Samo dođite, čekamo vas.',
+                'sub' => 'Samo dođite, čekamo vas.',
                 'note' => 'Ako planirate dolazak, preporučujemo da krenete uskoro.'];
     }
     if ($remaining_min <= 10) {
         return ['tier' => 'lime', 'emoji' => '🟢', 'headline' => 'Uskoro slobodni',
-                'wait_label' => 'Na redu ste za manje od 10 minuta', 'sub' => 'Krenite, uskoro će se osloboditi mesto.',
+                'sub' => 'Krenite, uskoro će se osloboditi mesto.',
                 'note' => 'Može se promeniti kako klijenti dolaze i odlaze.'];
     }
     if ($remaining_min <= 25) {
         return ['tier' => 'yellow', 'emoji' => '🟡', 'headline' => 'Malo čekanja',
-                'wait_label' => 'Na redu ste za manje od 25 minuta', 'sub' => 'Ako ste u blizini, pravo je vreme da svratite.',
+                'sub' => 'Ako ste u blizini, pravo je vreme da svratite.',
                 'note' => $busy_note];
     }
     if ($remaining_min < 45) {
         return ['tier' => 'orange', 'emoji' => '🟠', 'headline' => 'Manja gužva',
-                'wait_label' => 'Na redu ste za manje od 45 minuta', 'sub' => 'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.',
+                'sub' => 'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.',
                 'note' => $busy_note];
     }
     return ['tier' => 'red', 'emoji' => '🔴', 'headline' => 'Imamo gužvu',
-            'wait_label' => 'Na redu ste za preko 45 minuta', 'sub' => 'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.',
+            'sub' => 'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.',
             'note' => $busy_note];
 }
 
@@ -201,6 +212,8 @@ function dry65_live_resolve() {
                  'note' => ''];
     } else {
         $data = dry65_live_tier_copy($remaining_min, $phone);
+        // Labela prati preostalo vreme (ne tier), pa se smanjuje dok tajmer ide.
+        $data['wait_label'] = dry65_live_wait_label($remaining_min);
     }
 
     // Custom poruka (ako postoji) prepisuje default sub — ali ne za closed
@@ -482,6 +495,11 @@ function dry65_live_ajax() {
     wp_send_json([
         'closed'        => (bool) $st['closed'],
         'remaining_sec' => (int) $st['remaining_sec'],
+        // Gotov tekst sa servera — koristi ga homepage widget da ne duplira tier logiku.
+        // page-live.php i dalje računa svoj copy lokalno (mora, zbog odbrojavanja između poziva).
+        'tier'          => (string) $st['tier'],
+        'headline'      => (string) $st['headline'],
+        'wait_label'    => (string) $st['wait_label'],
         'message'       => (string) get_option('dry65_live_message', ''),
         'phone'         => $biz['phone_display'] ?? '060 6900655',
         'updated_ago_sec' => (int) $st['updated_ago_sec'],
@@ -491,6 +509,78 @@ function dry65_live_ajax() {
         'staff_text'    => dry65_live_staff_text(get_option('dry65_live_staff', [])),
         'chairs_show'   => get_option('dry65_live_chairs_show', '0') === '1',
     ]);
+}
+
+/* ============================================================
+   HOMEPAGE WIDGET — živi status + interni link ka /live
+   ------------------------------------------------------------
+   VAŽNO: homepage je keširan (Cache-Control: max-age=7200), pa se status
+   NE SME renderovati na serveru — bio bi zamrznut do 2h i lagao bi mušteriju.
+   Zato HTML nosi samo neutralan CTA („Proveri uživo…") koji je uvek tačan,
+   a pravi status upisuje JS iz AJAX-a. Ako JS zakaže, ostaje ispravan CTA + link.
+   Link je u HTML-u (ne u JS-u) da ga Google vidi — /live je bila siroče stranica.
+   ============================================================ */
+function dry65_live_widget() {
+    ?>
+    <a class="live-strip" id="dry65-live-strip" href="<?php echo esc_url(home_url('/live/')); ?>">
+        <span class="live-strip-dot" aria-hidden="true"></span>
+        <span class="live-strip-text" id="dry65-live-strip-text">Proveri uživo koliko se čeka</span>
+        <span class="live-strip-arrow" aria-hidden="true">→</span>
+    </a>
+
+    <style>
+        .live-strip {
+            display: inline-flex; align-items: center; gap: 10px;
+            font-family: var(--font-sans); font-size: 15px; font-weight: 500;
+            color: var(--ink); text-decoration: none;
+            background: var(--paper-2);
+            border: 1px solid var(--sage-line);
+            border-radius: var(--radius-pill);
+            padding: 10px 18px;
+            transition: border-color .16s ease, transform .16s ease;
+            --dot: var(--muted);
+        }
+        .live-strip:hover { border-color: var(--clay); transform: translateY(-1px); }
+        .live-strip[data-tier="free"]   { --dot: #84B052; }
+        .live-strip[data-tier="lime"]   { --dot: #C9DB5B; }
+        .live-strip[data-tier="yellow"] { --dot: #F6D63B; }
+        .live-strip[data-tier="orange"] { --dot: #F0A73C; }
+        .live-strip[data-tier="red"]    { --dot: #E8472B; }
+        .live-strip[data-tier="closed"] { --dot: #D0CFC7; }
+        .live-strip-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: var(--dot); flex: 0 0 auto;
+        }
+        /* Puls samo kad je status stvarno stigao i salon radi */
+        .live-strip.is-live:not([data-tier="closed"]) .live-strip-dot {
+            animation: liveStripPulse 2.2s ease-in-out infinite;
+        }
+        @keyframes liveStripPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.25);opacity:.75;} }
+        .live-strip-arrow { color: var(--clay); }
+        @media (max-width: 520px) {
+            .live-strip { font-size: 14px; padding: 9px 14px; }
+        }
+    </style>
+
+    <script>
+    (function () {
+        var el = document.getElementById('dry65-live-strip');
+        if (!el || !window.fetch) return;
+        var txt = document.getElementById('dry65-live-strip-text');
+        // Namerno BEZ `&v=` — taj parametar registruje gledaoca, pa bi svaki
+        // posetilac homepage-a naduvao brojač „ko gleda /live".
+        fetch(<?php echo wp_json_encode(admin_url('admin-ajax.php')); ?> + '?action=dry65_live_get', { cache: 'no-store', credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d || !d.tier) return;
+                el.setAttribute('data-tier', d.tier);
+                txt.textContent = d.closed ? d.headline : d.wait_label;
+                el.classList.add('is-live');
+            })
+            .catch(function () { /* tiho — ostaje neutralan CTA */ });
+    })();
+    </script>
+    <?php
 }
 
 /* ============================================================
