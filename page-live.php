@@ -15,17 +15,25 @@ get_header();
 ?>
 
 <main class="page-enter">
-<section class="section" style="min-height:62vh;display:flex;align-items:center;">
+<section class="section" style="min-height:40vh;display:flex;align-items:flex-start;padding-top:clamp(16px,3vw,32px);">
   <div class="wrap" style="width:100%;">
 
-    <div class="live-badge-row">
-      <div class="live-badge">
-        <span class="live-badge-label" id="live-wait-label"><?php echo esc_html($st['wait_label']); ?></span>
-      </div>
-    </div>
-
     <div class="live-card" data-tier="<?php echo esc_attr($st['tier']); ?>" id="live-card">
-      <div class="live-dot"></div>
+      <div class="live-badge-row">
+        <div class="live-badge">
+          <span class="live-badge-label" id="live-wait-label"><?php echo esc_html($st['wait_label']); ?></span>
+        </div>
+      </div>
+
+      <?php $live_fig = dry65_live_figure_url($st['tier']); ?>
+      <div class="live-figure-wrap">
+        <img class="live-figure-img" id="live-figure-img" alt="" decoding="async"
+             width="400" height="400"
+             src="<?php echo esc_url($live_fig); ?>"
+             data-tier="<?php echo esc_attr($st['tier']); ?>"
+             <?php echo $live_fig ? '' : 'style="display:none;"'; ?>>
+        <span class="live-dot" id="live-dot"<?php echo $live_fig ? ' style="display:none;"' : ''; ?>></span>
+      </div>
 
       <h1 class="display live-headline" id="live-headline"><?php echo esc_html($st['headline']); ?></h1>
 
@@ -58,6 +66,9 @@ get_header();
 
   </div>
 </section>
+
+<?php // FAQ specifičan za /live (čekanje + walk-in) — skroz na dnu, jedinstven tekst za SEO/AI
+dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in feniranje u Dry65 i koliko se čeka.'); ?>
 </main>
 
 <style>
@@ -65,7 +76,7 @@ get_header();
     max-width: 640px;
     margin: 0 auto;
     text-align: center;
-    padding: clamp(30px,5vw,56px) clamp(20px,4vw,44px);
+    padding: clamp(18px,3vw,30px) clamp(20px,4vw,44px) clamp(30px,5vw,52px);
     border-radius: 22px;
     background: #ffffff;
     border: 1px solid rgba(17,28,29,0.08);
@@ -81,8 +92,7 @@ get_header();
   .live-card[data-tier="closed"] { --accent: #D0CFC7; --accent-ink: #3a3a34; }
 
   .live-badge-row {
-    max-width: 640px;
-    margin: 0 auto 14px;
+    margin: 0 auto 18px;
     text-align: center;
   }
   .live-badge {
@@ -100,6 +110,17 @@ get_header();
   .live-card[data-tier="free"] .live-dot,
   .live-card[data-tier="lime"] .live-dot { animation: livePulse 2.2s ease-in-out infinite; }
   @keyframes livePulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.06);opacity:.9;} }
+
+  /* LED semafor figura — crni disk (upečen u sliku) lebdi na krem kartici */
+  .live-figure-wrap { margin: 0 auto 10px; }
+  .live-figure-img {
+    display: block; margin: 0 auto;
+    width: clamp(160px, 44vw, 212px); height: auto;
+    filter: drop-shadow(0 8px 22px rgba(0,0,0,0.22));
+    animation: liveLed 2.6s ease-in-out infinite; /* suptilno „disanje" svetla */
+  }
+  @keyframes liveLed { 0%,100%{opacity:1;} 50%{opacity:.85;} }
+  @media (prefers-reduced-motion: reduce) { .live-figure-img { animation: none; } }
 
   .live-headline {
     font-size: clamp(34px,5.4vw,58px);
@@ -144,6 +165,9 @@ get_header();
   var card = document.getElementById('live-card');
   if (!card) return;
 
+  var FIGS = <?php echo wp_json_encode(dry65_live_figures_map()); ?>;
+  var elFigImg   = document.getElementById('live-figure-img');
+  var elDot      = document.getElementById('live-dot');
   var elHeadline = document.getElementById('live-headline');
   var elWaitLbl  = document.getElementById('live-wait-label');
   var elSub      = document.getElementById('live-sub');
@@ -190,6 +214,7 @@ get_header();
     staffText:    <?php echo wp_json_encode(dry65_live_staff_text(get_option('dry65_live_staff', []))); ?>,
     chairsShow:   <?php echo get_option('dry65_live_chairs_show', '0') === '1' ? 'true' : 'false'; ?>,
     message:      <?php echo wp_json_encode(get_option('dry65_live_message', '')); ?>,
+    hoursText:    <?php echo wp_json_encode(dry65_live_hours_text()); ?>,
     phone:        <?php echo wp_json_encode($biz['phone_display']); ?>
   };
   var lastTick = Date.now();
@@ -197,7 +222,7 @@ get_header();
   // Procena vremena — prati STVARNO preostalo vreme, ne tier, pa se smanjuje dok tajmer ide.
   // Mora da prati dry65_live_wait_label() u inc/live.php.
   function waitLabel(min) {
-    if (state.closed) return 'Radno vreme';
+    if (state.closed) return 'Zatvoreno';
     if (min <= 0)  return 'Prvi ste na redu';
     if (min >= 45) return 'Na redu ste za preko 45 minuta';
     return 'Na redu ste za manje od ' + (Math.ceil(min / 5) * 5) + ' minuta';
@@ -207,7 +232,7 @@ get_header();
   function copyFor(min) {
     // `note` je samo NASTAVAK — render() ispred zalepi „Status je ažuriran pre X. "
     var busyNote = 'Moguće je da se procena promeni kako se oslobađaju mesta.';
-    if (state.closed) return { tier:'closed', headline:'Trenutno ne radimo', sub:'Radujemo se vašoj poseti tokom radnog vremena.', note:'' };
+    if (state.closed) return { tier:'closed', headline:'Trenutno ne radimo', sub:state.hoursText, note:'' };
     if (min <= 0)  return { tier:'free',   headline:'Slobodni smo', sub:'Samo dođite, čekamo vas.', note:'Ako planirate dolazak, preporučujemo da krenete uskoro.' };
     if (min <= 10) return { tier:'lime',   headline:'Uskoro slobodni', sub:'Krenite, uskoro će se osloboditi mesto.', note:'Može se promeniti kako klijenti dolaze i odlaze.' };
     if (min <= 25) return { tier:'yellow', headline:'Malo čekanja', sub:'Ako ste u blizini, pravo je vreme da svratite.', note:busyNote };
@@ -221,6 +246,22 @@ get_header();
     card.setAttribute('data-tier', c.tier);
     elHeadline.textContent = c.headline;
     if (elWaitLbl) elWaitLbl.textContent = waitLabel(min);
+
+    // Semafor figura: prikaži za stanja koja imaju sliku; za „closed" fallback na sivu tačkicu.
+    if (elFigImg && elDot) {
+      var fig = FIGS[c.tier] || '';
+      if (fig) {
+        if (elFigImg.getAttribute('data-tier') !== c.tier) { // menjaj src samo na promeni (bez treptaja)
+          elFigImg.src = fig;
+          elFigImg.setAttribute('data-tier', c.tier);
+        }
+        elFigImg.style.display = '';
+        elDot.style.display = 'none';
+      } else {
+        elFigImg.style.display = 'none';
+        elDot.style.display = '';
+      }
+    }
     // custom poruka prepisuje sub (osim kad je zatvoreno)
     elSub.textContent = (state.message && c.tier !== 'closed') ? state.message : c.sub;
     // fusnota po stanju (prazna kad je zatvoreno) — ispred nje „Status je ažuriran pre X. "

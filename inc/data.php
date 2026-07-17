@@ -312,6 +312,27 @@ function dry65_offers() {
 function dry65_faqs_data() {
     $biz = dry65_biz();
     return [
+        // /LIVE — pitanja o čekanju i walk-in (kategorija 'live', prikazuje se samo na /live strani)
+        'live_walkin' => [
+            'q' => 'Mogu li da dođem bez zakazivanja?',
+            'a' => 'Da. Dry65 je walk-in salon za feniranje, samo dođete, bez termina. Ova stranica pokazuje trenutnu gužvu da odaberete pravo vreme za dolazak.',
+            'cats' => ['live'],
+        ],
+        'live_koliko' => [
+            'q' => 'Koliko se obično čeka za feniranje?',
+            'a' => 'Zavisi od gužve, od bez čekanja kada smo slobodni do preko 45 minuta u špicu. Trenutnu procenu vidite na vrhu ove strane, uživo.',
+            'cats' => ['live'],
+        ],
+        'live_pre_polaska' => [
+            'q' => 'Kako da znam koliko se čeka pre nego što krenem?',
+            'a' => 'Otvorite ovu stranicu (dry65.com/live) pre polaska. Status se ažurira uživo, pa vidite gužvu i procenu čekanja u realnom vremenu.',
+            'cats' => ['live'],
+        ],
+        'live_najmanja_guzva' => [
+            'q' => 'Kada je najmanja gužva u Dry65?',
+            'a' => 'Najmirnije je obično radnim danima između 13h i 16h, pa ako Vam raspored dozvoljava, to je idealno vreme za opušteno feniranje uz najkraće čekanje. Pošto se gužva menja iz dana u dan, najsigurnije je da uživo proverite status na ovoj strani pre nego što krenete.',
+            'cats' => ['live'],
+        ],
         // GENERALNA — za home + FAQ stranicu
         'zakazivanje' => [
             'q' => 'Da li treba da zakažem termin za feniranje u Dry65?',

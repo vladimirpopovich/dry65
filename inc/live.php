@@ -2,7 +2,7 @@
 /* ============================================================
    Dry65 — LIVE status salona (/live)
    ------------------------------------------------------------
-   - Admin: "Dry65 Uživo" meni, lista dugmadi (0/5/25/30/45/Zatvoreni)
+   - Admin: "Dry65 Uživo" meni, lista dugmadi (0/10/25/30/45/Zatvoreni)
    - Frontend: /live stranica sa auto-refresh (AJAX svakih 45s)
    - Storage: WP options (bez baze/CPT-a, super lagano)
 
@@ -55,7 +55,7 @@ function dry65_live_presence_count() {
 /* Dozvoljene vrednosti dugmadi (u minutima). 0 = Slobodno.
    Prati dugmad u adminu — REST `set` prihvata isto ovo + "closed". */
 function dry65_live_allowed_waits() {
-    return [0, 5, 25, 30, 45];
+    return [0, 10, 25, 30, 45];
 }
 
 /* „0,5,25,30,45 ili "closed"" — za poruke/dokumentaciju, da lista ne ide stale. */
@@ -105,6 +105,81 @@ function dry65_live_is_open_now() {
     if ($dow >= 1 && $dow <= 5) return $min >= 8 * 60  && $min < 20 * 60; // 08-20
     if ($dow === 6)             return $min >= 10 * 60 && $min < 18 * 60; // 10-18
     return false; // Nedelja
+}
+
+/* Radno vreme kao TEKST (prikaz kad je zatvoreno). Logika je iznad, u
+   dry65_live_is_open_now() — ako menjaš sate, promeni i brojeve i ovaj tekst. */
+function dry65_live_hours_text() {
+    return 'Radnim danima od 8h do 20h, subotom od 10h do 18h, nedeljom ne radimo.';
+}
+
+/* ---- LED semafor figure (po stanju) ----
+   Slike su u Media biblioteci, imenovane po BOJI (green/lime/yellow/orange/red).
+   Tražimo ih po slug-u (ne po putanji) da radi i lokalno i na produkciji.
+   `closed` nema figuru — tad se prikazuje siva tačkica (fallback). */
+function dry65_live_figures_map() {
+    static $cache = null;
+    if ($cache !== null) return $cache;
+    $slugs = ['free' => 'green', 'lime' => 'lime', 'yellow' => 'yellow', 'orange' => 'orange', 'red' => 'red'];
+    $out = [];
+    foreach ($slugs as $tier => $slug) {
+        $att = get_posts([
+            'post_type'      => 'attachment',
+            'name'           => $slug,
+            'post_status'    => 'inherit',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+        ]);
+        $out[$tier] = $att ? (string) wp_get_attachment_url($att[0]) : '';
+    }
+    $cache = $out;
+    return $out;
+}
+
+function dry65_live_figure_url($tier) {
+    $m = dry65_live_figures_map();
+    return isset($m[$tier]) ? $m[$tier] : '';
+}
+
+/* ---- TIHO LOGOVANJE STATUSA (za buduću „popular times" analizu) ----
+   Svaka promena statusa (wait/closed) upisuje red {vreme, wait, closed} u zasebnu
+   tabelu. Ništa se ne prikazuje sad — samo se skuplja istorija da za par meseci
+   ima šta da se analizira. Vremenska zona = WP podešavanje (salon = Beograd). */
+if (!defined('DRY65_LIVE_LOG_DB')) define('DRY65_LIVE_LOG_DB', 1); // verzija šeme
+
+function dry65_live_log_table() {
+    global $wpdb;
+    return $wpdb->prefix . 'dry65_live_log';
+}
+
+/* Kreiraj tabelu jednom (i pri promeni šeme). Jeftina provera po verziji na svakom init-u. */
+function dry65_live_log_install() {
+    if ((int) get_option('dry65_live_log_db', 0) === DRY65_LIVE_LOG_DB) return;
+    global $wpdb;
+    $table   = dry65_live_log_table();
+    $charset = $wpdb->get_charset_collate();
+    $sql = "CREATE TABLE $table (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        logged_at DATETIME NOT NULL,
+        wait SMALLINT NOT NULL DEFAULT 0,
+        closed TINYINT NOT NULL DEFAULT 0,
+        PRIMARY KEY (id),
+        KEY logged_at (logged_at)
+    ) $charset;";
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
+    update_option('dry65_live_log_db', DRY65_LIVE_LOG_DB);
+}
+add_action('init', 'dry65_live_log_install');
+
+/* Upiši trenutni status kao novi red. Zove se iz admin save i REST set putanja. */
+function dry65_live_log_append() {
+    global $wpdb;
+    $wpdb->insert(dry65_live_log_table(), [
+        'logged_at' => current_time('mysql'),
+        'wait'      => (int) get_option('dry65_live_wait', 0),
+        'closed'    => get_option('dry65_live_closed', '0') === '1' ? 1 : 0,
+    ], ['%s', '%d', '%d']);
 }
 
 /* ---- Srpsko trajanje: "3 minuta" / "2 sata" / "1 dan" ----
@@ -207,8 +282,8 @@ function dry65_live_resolve() {
 
     if ($closed) {
         $data = ['tier' => 'closed', 'emoji' => '⚪', 'headline' => 'Trenutno ne radimo',
-                 'wait_label' => 'Radno vreme',
-                 'sub' => 'Radujemo se vašoj poseti tokom radnog vremena.',
+                 'wait_label' => 'Zatvoreno',
+                 'sub' => dry65_live_hours_text(),
                  'note' => ''];
     } else {
         $data = dry65_live_tier_copy($remaining_min, $phone);
@@ -282,6 +357,7 @@ add_action('admin_post_dry65_live_save', function() {
 
     update_option('dry65_live_updated_at', current_time('timestamp'));
     update_option('dry65_live_updated_by', get_current_user_id());
+    dry65_live_log_append(); // istorija za „popular times"
 
     wp_redirect(add_query_arg(['page' => 'dry65-live', 'saved' => '1'], admin_url('admin.php')));
     exit;
@@ -337,7 +413,7 @@ function dry65_live_admin_page() {
                 // [vrednost (preostali min), labela, bg, ink]
                 $buttons = [
                     [0,  'Slobodni smo',            '#84B052', '#22330f'],
-                    [5,  'Čekanje od 5 do 10min',   '#C9DB5B', '#3f4a12'],
+                    [10, 'Čekanje od 5 do 10min',   '#C9DB5B', '#3f4a12'],
                     [25, 'Čekanje od 11 do 25min',  '#F6D63B', '#5a4900'],
                     [30, 'Čekanje od 25 do 45min',  '#F0A73C', '#5a3400'],
                     [45, 'Čekanje preko 45min',     '#E8472B', '#ffffff'],
@@ -411,7 +487,7 @@ function dry65_live_admin_page() {
 
             <p style="margin:16px 0 4px;"><strong>URL primeri</strong> (metod POST):</p>
             <ul style="font-family:monospace;font-size:12.5px;color:#333;line-height:1.7;list-style:none;padding-left:0;">
-                <li>Čekanje 5–10 min &nbsp;→&nbsp; <?php echo esc_html($api_base); ?>?key=<?php echo esc_html($api_key); ?>&amp;set=5</li>
+                <li>Čekanje 5–10 min &nbsp;→&nbsp; <?php echo esc_html($api_base); ?>?key=<?php echo esc_html($api_key); ?>&amp;set=10</li>
                 <li>Slobodni smo &nbsp;→&nbsp; …/live?key=…&amp;set=0</li>
                 <li>Zatvoreni &nbsp;→&nbsp; …/live?key=…&amp;set=closed</li>
                 <li>Ko radi &nbsp;→&nbsp; …/live?key=…&amp;staff=Jelena,Ema</li>
@@ -585,7 +661,7 @@ function dry65_live_widget() {
 
 /* ============================================================
    REST API — menjanje statusa sa iPhone-a (iOS Prečice/Shortcuts)
-   POST /wp-json/dry65/v1/live?key=SECRET&set=5   (ili set=0 / set=closed)
+   POST /wp-json/dry65/v1/live?key=SECRET&set=10   (ili set=0 / set=closed)
    Auth: ulogovan korisnik sa cap-om ILI tajni ključ (?key= ili X-Dry65-Key header)
    ============================================================ */
 
@@ -627,11 +703,12 @@ function dry65_live_rest_set($req) {
     $set     = $req->get_param('set');
     $message = $req->get_param('message');
     $did     = false;
+    $status_changed = false; // logujemo samo kad se stварno menja status (ne na staff/message)
 
     if ($set !== null && $set !== '') {
         if (strtolower((string) $set) === 'closed') {
             update_option('dry65_live_closed', '1');
-            $did = true;
+            $did = true; $status_changed = true;
         } else {
             $wait = (int) $set;
             if (!in_array($wait, dry65_live_allowed_waits(), true)) {
@@ -639,7 +716,7 @@ function dry65_live_rest_set($req) {
             }
             update_option('dry65_live_wait', $wait);
             update_option('dry65_live_closed', '0');
-            $did = true;
+            $did = true; $status_changed = true;
         }
     }
     if ($message !== null) {
@@ -680,6 +757,7 @@ function dry65_live_rest_set($req) {
 
     update_option('dry65_live_updated_at', current_time('timestamp'));
     update_option('dry65_live_updated_by', get_current_user_id());
+    if ($status_changed) dry65_live_log_append(); // istorija za „popular times"
 
     $st = dry65_live_resolve();
     return [
