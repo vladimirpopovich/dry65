@@ -18,17 +18,13 @@ get_header();
 <section class="section" style="min-height:62vh;display:flex;align-items:center;">
   <div class="wrap" style="width:100%;">
 
-    <div class="live-card" data-tier="<?php echo esc_attr($st['tier']); ?>" id="live-card">
+    <div class="live-badge-row">
       <div class="live-badge">
-        <span class="live-badge-label">Uživo</span>
-        <?php if ($st['updated_ago_sec'] >= 0): ?>
-        <span class="live-badge-sep">•</span>
-        <span id="live-ago"><?php echo esc_html(dry65_live_ago_text($st['updated_ago_sec'])); ?></span>
-        <?php else: ?>
-        <span id="live-ago" style="display:none;"></span>
-        <?php endif; ?>
+        <span class="live-badge-label" id="live-wait-label"><?php echo esc_html($st['wait_label']); ?></span>
       </div>
+    </div>
 
+    <div class="live-card" data-tier="<?php echo esc_attr($st['tier']); ?>" id="live-card">
       <div class="live-dot"></div>
 
       <h1 class="display live-headline" id="live-headline"><?php echo esc_html($st['headline']); ?></h1>
@@ -84,15 +80,18 @@ get_header();
   .live-card[data-tier="red"]    { --accent: #E8472B; --accent-ink: #ffffff; }
   .live-card[data-tier="closed"] { --accent: #D0CFC7; --accent-ink: #3a3a34; }
 
+  .live-badge-row {
+    max-width: 640px;
+    margin: 0 auto 14px;
+    text-align: center;
+  }
   .live-badge {
     display: inline-flex; align-items: center; gap: 8px;
-    font-family: var(--font-sans); font-size: 13px; color: var(--muted);
+    font-family: var(--font-sans); font-size: 14px; color: var(--muted);
     background: rgba(17,28,29,0.04);
-    border-radius: 999px; padding: 6px 14px;
-    margin-bottom: 22px;
+    border-radius: 999px; padding: 8px 16px;
   }
-  .live-badge-label { font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); font-size: 11.5px; }
-  .live-badge-sep { color: rgba(17,28,29,0.25); }
+  .live-badge-label { font-weight: 600; color: var(--ink-soft); font-size: 16px; }
   .live-dot {
     width: clamp(54px,11vw,78px); height: clamp(54px,11vw,78px);
     border-radius: 50%; background: var(--accent);
@@ -146,8 +145,8 @@ get_header();
   if (!card) return;
 
   var elHeadline = document.getElementById('live-headline');
+  var elWaitLbl  = document.getElementById('live-wait-label');
   var elSub      = document.getElementById('live-sub');
-  var elAgo      = document.getElementById('live-ago');
   var elStale    = document.getElementById('live-stale');
   var elNote     = document.getElementById('live-note');
   var elViewers  = document.getElementById('live-viewers');
@@ -169,16 +168,18 @@ get_header();
     return many;
   }
 
-  // "ažurirano upravo sada" do 1 minuta, pa po minutima (bez brojanja sekundi)
-  function agoText(sec) {
+  // „Status je ažuriran pre 3 minuta" — mora da prati dry65_live_ago_sentence() u inc/live.php.
+  // Ispod 1 minuta kaže „upravo sada" (bez „pre"); granulacija je minutna, sekunde se ne broje.
+  function agoSentence(sec) {
+    if (sec < 0) return '';
     sec = Math.max(0, Math.floor(sec));
-    if (sec < 60) return 'ažurirano upravo sada';
+    if (sec < 60) return 'Status je ažuriran upravo sada';
     var m = Math.floor(sec / 60);
-    if (m < 60)   return 'ažurirano pre ' + m + ' ' + srPlural(m, 'minut', 'minuta', 'minuta');
+    if (m < 60)   return 'Status je ažuriran pre ' + m + ' ' + srPlural(m, 'minut', 'minuta', 'minuta');
     var h = Math.floor(m / 60);
-    if (h < 24)   return 'ažurirano pre ' + h + ' ' + srPlural(h, 'sat', 'sata', 'sati');
+    if (h < 24)   return 'Status je ažuriran pre ' + h + ' ' + srPlural(h, 'sat', 'sata', 'sati');
     var dd = Math.floor(h / 24);
-    return 'ažurirano pre ' + dd + ' ' + srPlural(dd, 'dan', 'dana', 'dana');
+    return 'Status je ažuriran pre ' + dd + ' ' + srPlural(dd, 'dan', 'dana', 'dana');
   }
 
   // Stanje sa servera — remaining i "ažurirano pre" se lokalno tikaju između AJAX poziva.
@@ -193,21 +194,17 @@ get_header();
   };
   var lastTick = Date.now();
 
-  function renderAgo() {
-    if (!elAgo) return;
-    if (state.agoSec < 0) { elAgo.style.display = 'none'; return; }
-    elAgo.style.display = '';
-    elAgo.textContent = agoText(state.agoSec);
-  }
-
+  // Mora da prati dry65_live_tier_copy() u inc/live.php — isti pragovi i isti tekst.
+  // headline = status (krupno u boksu), label = procena vremena (sitno u badge-u iznad).
   function copyFor(min) {
-    var busyNote = 'Status se ažurira uživo. Moguće je da se procena promeni kako se oslobađaju mesta.';
+    // `note` je samo NASTAVAK — render() ispred zalepi „Status je ažuriran pre X. "
+    var busyNote = 'Moguće je da se procena promeni kako se oslobađaju mesta.';
     if (state.closed) return { tier:'closed', headline:'Trenutno ne radimo', label:'Radno vreme', sub:'Radujemo se vašoj poseti tokom radnog vremena.', note:'' };
-    if (min <= 0)  return { tier:'free',   headline:'Slobodni smo', label:'Bez čekanja', sub:'Samo dođite, čekamo vas.', note:'Status se ažurira uživo. Ako planirate dolazak, preporučujemo da krenete uskoro.' };
-    if (min <= 10) return { tier:'lime',   headline:'Uskoro slobodni', label:'~'+min+' min', sub:'Krenite, za nekoliko minuta će se osloboditi mesto.', note:'Status se ažurira uživo i može se promeniti kako klijenti dolaze i odlaze.' };
-    if (min <= 20) return { tier:'yellow', headline:'Malo čekanja', label:'~'+min+' min', sub:'Ako ste u blizini, pravo je vreme da svratite.', note:busyNote };
-    if (min <= 34) return { tier:'orange', headline:'Manja gužva', label:'~'+min+' min', sub:'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.', note:busyNote };
-    return { tier:'red', headline:'Imamo gužvu', label:'~'+min+' min', sub:'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.', note:busyNote };
+    if (min <= 0)  return { tier:'free',   headline:'Slobodni smo', label:'Prvi ste na redu', sub:'Samo dođite, čekamo vas.', note:'Ako planirate dolazak, preporučujemo da krenete uskoro.' };
+    if (min <= 10) return { tier:'lime',   headline:'Uskoro slobodni', label:'Na redu ste za manje od 10 minuta', sub:'Krenite, uskoro će se osloboditi mesto.', note:'Može se promeniti kako klijenti dolaze i odlaze.' };
+    if (min <= 25) return { tier:'yellow', headline:'Malo čekanja', label:'Na redu ste za manje od 25 minuta', sub:'Ako ste u blizini, pravo je vreme da svratite.', note:busyNote };
+    if (min < 45)  return { tier:'orange', headline:'Manja gužva', label:'Na redu ste za manje od 45 minuta', sub:'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.', note:busyNote };
+    return { tier:'red', headline:'Imamo gužvu', label:'Na redu ste za preko 45 minuta', sub:'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.', note:busyNote };
   }
 
   function render() {
@@ -215,12 +212,16 @@ get_header();
     var c = copyFor(min);
     card.setAttribute('data-tier', c.tier);
     elHeadline.textContent = c.headline;
+    if (elWaitLbl) elWaitLbl.textContent = c.label;
     // custom poruka prepisuje sub (osim kad je zatvoreno)
     elSub.textContent = (state.message && c.tier !== 'closed') ? state.message : c.sub;
-    // fusnota po stanju (prazna kad je zatvoreno)
+    // fusnota po stanju (prazna kad je zatvoreno) — ispred nje „Status je ažuriran pre X. "
     if (elNote) {
-      if (c.note) { elNote.textContent = c.note; elNote.style.display = ''; }
-      else { elNote.style.display = 'none'; }
+      if (c.note) {
+        var ago = agoSentence(state.agoSec);
+        elNote.textContent = ago ? ago + '. ' + c.note : c.note;
+        elNote.style.display = '';
+      } else { elNote.style.display = 'none'; }
     }
     // ko radi — prikaži samo ako je vlasnik uključio, ima imena i nije zatvoreno
     if (elChairs) {
@@ -243,7 +244,6 @@ get_header();
     if (state.agoSec >= 0) state.agoSec += elapsed;
     lastTick = now;
     render();
-    renderAgo();
   }, 5000);
 
   // AJAX — autoritativni podatak sa servera (hvata izmene admina: nova mušterija → veći broj).
@@ -261,7 +261,6 @@ get_header();
         state.chairsShow   = !!d.chairs_show;
         lastTick = Date.now();
         render();
-        renderAgo();
 
         if (d.stale) {
           elStale.style.display = '';
@@ -282,7 +281,6 @@ get_header();
   }
 
   render();
-  renderAgo();
   refresh();                        // odmah registruj presence i povuci svež podatak
   setInterval(refresh, 45000);
   document.addEventListener('visibilitychange', function () {

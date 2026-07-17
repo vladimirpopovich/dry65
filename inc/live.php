@@ -2,12 +2,12 @@
 /* ============================================================
    Dry65 — LIVE status salona (/live)
    ------------------------------------------------------------
-   - Admin: "Dry65 Uživo" meni, 2x4 dugmad (0/5/10/15/20/25/30+/Zatvoreno)
+   - Admin: "Dry65 Uživo" meni, lista dugmadi (0/5/25/30/45/Zatvoreni)
    - Frontend: /live stranica sa auto-refresh (AJAX svakih 45s)
    - Storage: WP options (bez baze/CPT-a, super lagano)
 
    Data model (WP options):
-     dry65_live_wait        int   0,5,10,15,20,25,30  (30 = "30+")
+     dry65_live_wait        int   vidi dry65_live_allowed_waits()
      dry65_live_closed      '0'|'1'
      dry65_live_message     string (opciona custom poruka)
      dry65_live_updated_at  unix timestamp
@@ -52,9 +52,15 @@ function dry65_live_presence_count() {
     return count(dry65_live_presence_prune(get_transient('dry65_live_presence')));
 }
 
-/* Dozvoljene vrednosti dugmadi (u minutima). 0 = Slobodno. */
+/* Dozvoljene vrednosti dugmadi (u minutima). 0 = Slobodno.
+   Prati dugmad u adminu — REST `set` prihvata isto ovo + "closed". */
 function dry65_live_allowed_waits() {
-    return [0, 5, 10, 15, 20, 25, 30, 45, 60];
+    return [0, 5, 25, 30, 45];
+}
+
+/* „0,5,25,30,45 ili "closed"" — za poruke/dokumentaciju, da lista ne ide stale. */
+function dry65_live_allowed_waits_text() {
+    return implode(',', dry65_live_allowed_waits()) . ',closed';
 }
 
 /* Osoblje koje može da radi (redosled prikaza). */
@@ -101,12 +107,11 @@ function dry65_live_is_open_now() {
     return false; // Nedelja
 }
 
-/* ---- Srpski "pre X" (mirror JS funkcije na frontendu) ----
-   Koristi se za inicijalni render badge-a pre nego JS preuzme. */
-function dry65_live_ago_text($sec) {
+/* ---- Srpsko trajanje: "3 minuta" / "2 sata" / "1 dan" ----
+   Prazan string ispod 60s (tad se kaže „upravo sada", bez „pre"). */
+function dry65_live_ago_duration($sec) {
     $sec = (int) $sec;
-    if ($sec < 0)  return '';
-    if ($sec < 60) return 'ažurirano upravo sada';
+    if ($sec < 60) return '';
     $sr = function ($n, $one, $few, $many) {
         $d1 = $n % 10; $d100 = $n % 100;
         if ($d1 === 1 && $d100 !== 11) return $one;
@@ -114,11 +119,19 @@ function dry65_live_ago_text($sec) {
         return $many;
     };
     $m = intdiv($sec, 60);
-    if ($m < 60)      return 'ažurirano pre ' . $m . ' ' . $sr($m, 'minut', 'minuta', 'minuta');
+    if ($m < 60)      return $m . ' ' . $sr($m, 'minut', 'minuta', 'minuta');
     $h = intdiv($m, 60);
-    if ($h < 24)      return 'ažurirano pre ' . $h . ' ' . $sr($h, 'sat', 'sata', 'sati');
+    if ($h < 24)      return $h . ' ' . $sr($h, 'sat', 'sata', 'sati');
     $d = intdiv($h, 24);
-    return 'ažurirano pre ' . $d . ' ' . $sr($d, 'dan', 'dana', 'dana');
+    return $d . ' ' . $sr($d, 'dan', 'dana', 'dana');
+}
+
+/* „Status je ažuriran pre 3 minuta" — uvod u `note`.
+   Mirror JS funkcije `agoSentence` u page-live.php — menjaj na OBA mesta. */
+function dry65_live_ago_sentence($sec) {
+    if ((int) $sec < 0) return '';
+    $d = dry65_live_ago_duration($sec);
+    return $d === '' ? 'Status je ažuriran upravo sada' : 'Status je ažuriran pre ' . $d;
 }
 
 /* ---- ODBROJAVANJE: koliko je OSTALO od postavljenog vremena ----
@@ -134,35 +147,40 @@ function dry65_live_remaining_sec($raw = null) {
 }
 
 /* ---- Mapiranje: preostali minuti -> tier + copy za usera ----
-     0        -> free    "Slobodni smo"
-     1–10     -> lime    "Uskoro slobodni"
-     11–20    -> yellow  "Malo čekanja"
-     21–34    -> orange  "Pojačan promet"
-     35+      -> red     "Imamo gužvu"                                    */
+     `headline` = status (krupno u boksu), `wait_label` = procena vremena (sitno u badge-u iznad).
+     Pragovi prate dugmad u adminu — svaka vrednost mora da pogodi svoj tier:
+     0    -> free    "Slobodni smo"    <- dugme „Slobodni smo" (0)
+     ≤10  -> lime    "Uskoro slobodni" <- dugme „od 5 do 10min" (5)
+     ≤25  -> yellow  "Malo čekanja"    <- dugme „od 11 do 25min" (25)
+     <45  -> orange  "Manja gužva"     <- dugme „od 25 do 45min" (30)
+     ≥45  -> red     "Imamo gužvu"     <- dugme „preko 45min" (45)
+     VAŽNO: isti tekst je dupliran u JS (`copyFor` u page-live.php) — menjaj na OBA mesta. */
 function dry65_live_tier_copy($remaining_min, $phone) {
+    // `note` je samo NASTAVAK — resolve() ispred zalepi „Status je ažuriran pre X. "
+    $busy_note = 'Moguće je da se procena promeni kako se oslobađaju mesta.';
     if ($remaining_min <= 0) {
         return ['tier' => 'free', 'emoji' => '🟢', 'headline' => 'Slobodni smo',
-                'wait_label' => 'Bez čekanja', 'sub' => 'Samo dođite, čekamo vas.',
-                'note' => 'Status se ažurira uživo. Ako planirate dolazak, preporučujemo da krenete uskoro.'];
+                'wait_label' => 'Prvi ste na redu', 'sub' => 'Samo dođite, čekamo vas.',
+                'note' => 'Ako planirate dolazak, preporučujemo da krenete uskoro.'];
     }
     if ($remaining_min <= 10) {
         return ['tier' => 'lime', 'emoji' => '🟢', 'headline' => 'Uskoro slobodni',
-                'wait_label' => '~' . $remaining_min . ' min', 'sub' => 'Krenite, za nekoliko minuta će se osloboditi mesto.',
-                'note' => 'Status se ažurira uživo i može se promeniti kako klijenti dolaze i odlaze.'];
+                'wait_label' => 'Na redu ste za manje od 10 minuta', 'sub' => 'Krenite, uskoro će se osloboditi mesto.',
+                'note' => 'Može se promeniti kako klijenti dolaze i odlaze.'];
     }
-    if ($remaining_min <= 20) {
+    if ($remaining_min <= 25) {
         return ['tier' => 'yellow', 'emoji' => '🟡', 'headline' => 'Malo čekanja',
-                'wait_label' => '~' . $remaining_min . ' min', 'sub' => 'Ako ste u blizini, pravo je vreme da svratite.',
-                'note' => 'Status se ažurira uživo. Moguće je da se procena promeni kako se oslobađaju mesta.'];
+                'wait_label' => 'Na redu ste za manje od 25 minuta', 'sub' => 'Ako ste u blizini, pravo je vreme da svratite.',
+                'note' => $busy_note];
     }
-    if ($remaining_min <= 34) {
+    if ($remaining_min < 45) {
         return ['tier' => 'orange', 'emoji' => '🟠', 'headline' => 'Manja gužva',
-                'wait_label' => '~' . $remaining_min . ' min', 'sub' => 'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.',
-                'note' => 'Status se ažurira uživo. Moguće je da se procena promeni kako se oslobađaju mesta.'];
+                'wait_label' => 'Na redu ste za manje od 45 minuta', 'sub' => 'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.',
+                'note' => $busy_note];
     }
     return ['tier' => 'red', 'emoji' => '🔴', 'headline' => 'Imamo gužvu',
-            'wait_label' => '~' . $remaining_min . ' min', 'sub' => 'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.',
-            'note' => 'Status se ažurira uživo. Moguće je da se procena promeni kako se oslobađaju mesta.'];
+            'wait_label' => 'Na redu ste za preko 45 minuta', 'sub' => 'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.',
+            'note' => $busy_note];
 }
 
 function dry65_live_resolve() {
@@ -196,6 +214,13 @@ function dry65_live_resolve() {
     $data['updated_ago_sec'] = $raw['updated_at']
         ? max(0, current_time('timestamp') - (int) $raw['updated_at'])
         : -1;
+
+    // „Status je ažuriran pre 3 minuta. " + nastavak. Bez timestampa ide samo nastavak.
+    if ($data['note'] !== '') {
+        $ago_sentence = dry65_live_ago_sentence($data['updated_ago_sec']);
+        if ($ago_sentence !== '') $data['note'] = $ago_sentence . '. ' . $data['note'];
+    }
+
     // Podaci zastareli? (poslednja izmena > 2h, a salon otvoren)
     $data['stale'] = (!$closed && $raw['updated_at'] && (current_time('timestamp') - $raw['updated_at']) > 2 * HOUR_IN_SECONDS);
 
@@ -292,34 +317,32 @@ function dry65_live_admin_page() {
             <?php wp_nonce_field('dry65_live_save'); ?>
 
             <label style="display:block;font-weight:600;margin-bottom:6px;">Postavi vreme čekanja:</label>
-            <p style="margin:0 0 12px;color:#888;font-size:12.5px;">Broj = koliko još minuta do slobodnog mesta. Tajmer sam ide u minus. Kad uđe nova mušterija, klikni novi (veći) broj.</p>
+            <p style="margin:0 0 12px;color:#888;font-size:12.5px;">Klikni koliko se čeka do slobodnog mesta. Tajmer sam ide u minus. Kad uđe nova mušterija, klikni veće čekanje.</p>
 
-            <div class="dry65-live-grid">
-                <?php foreach ([5, 10, 15, 20, 25, 30, 45, 60] as $w):
-                    if ($w <= 10)      { $bg = '#C9DB5B'; $ink = '#3f4a12'; } // lime
-                    elseif ($w <= 20)  { $bg = '#F6D63B'; $ink = '#5a4900'; } // žuto
-                    elseif ($w <= 34)  { $bg = '#F0A73C'; $ink = '#5a3400'; } // narandžasto
-                    else               { $bg = '#E8472B'; $ink = '#ffffff'; } // crveno
+            <div class="dry65-live-list">
+                <?php
+                // [vrednost (preostali min), labela, bg, ink]
+                $buttons = [
+                    [0,  'Slobodni smo',            '#84B052', '#22330f'],
+                    [5,  'Čekanje od 5 do 10min',   '#C9DB5B', '#3f4a12'],
+                    [25, 'Čekanje od 11 do 25min',  '#F6D63B', '#5a4900'],
+                    [30, 'Čekanje od 25 do 45min',  '#F0A73C', '#5a3400'],
+                    [45, 'Čekanje preko 45min',     '#E8472B', '#ffffff'],
+                ];
+                foreach ($buttons as [$w, $label, $bg, $ink]):
                     $is_current = (!$raw['closed'] && (int) $raw['wait'] === $w);
                 ?>
                 <button type="submit" name="live_wait" value="<?php echo esc_attr($w); ?>"
                     class="dry65-live-btn<?php echo $is_current ? ' is-current' : ''; ?>"
                     style="--btn-bg:<?php echo esc_attr($bg); ?>;--btn-ink:<?php echo esc_attr($ink); ?>;">
-                    <?php echo esc_html($w . ' min'); ?>
+                    <?php echo esc_html($label); ?>
                 </button>
                 <?php endforeach; ?>
-            </div>
 
-            <div class="dry65-live-actions">
-                <button type="submit" name="live_wait" value="0"
-                    class="dry65-live-btn<?php echo (!$raw['closed'] && (int) $raw['wait'] === 0) ? ' is-current' : ''; ?>"
-                    style="--btn-bg:#84B052;--btn-ink:#22330f;">
-                    ✓ Slobodno
-                </button>
                 <button type="submit" name="live_action" value="closed"
                     class="dry65-live-btn<?php echo $raw['closed'] ? ' is-current' : ''; ?>"
                     style="--btn-bg:#D0CFC7;--btn-ink:#3a3a34;">
-                    Zatvoreno
+                    Zatvoreni
                 </button>
             </div>
 
@@ -375,14 +398,14 @@ function dry65_live_admin_page() {
 
             <p style="margin:16px 0 4px;"><strong>URL primeri</strong> (metod POST):</p>
             <ul style="font-family:monospace;font-size:12.5px;color:#333;line-height:1.7;list-style:none;padding-left:0;">
-                <li>15 min &nbsp;→&nbsp; <?php echo esc_html($api_base); ?>?key=<?php echo esc_html($api_key); ?>&amp;set=15</li>
-                <li>Slobodno &nbsp;→&nbsp; …/live?key=…&amp;set=0</li>
-                <li>Zatvoreno &nbsp;→&nbsp; …/live?key=…&amp;set=closed</li>
+                <li>Čekanje 5–10 min &nbsp;→&nbsp; <?php echo esc_html($api_base); ?>?key=<?php echo esc_html($api_key); ?>&amp;set=5</li>
+                <li>Slobodni smo &nbsp;→&nbsp; …/live?key=…&amp;set=0</li>
+                <li>Zatvoreni &nbsp;→&nbsp; …/live?key=…&amp;set=closed</li>
                 <li>Ko radi &nbsp;→&nbsp; …/live?key=…&amp;staff=Jelena,Ema</li>
                 <li>Toggle jedne &nbsp;→&nbsp; …/live?key=…&amp;staff_toggle=Nikola</li>
                 <li>Prikaži/sakrij ko radi &nbsp;→&nbsp; …/live?key=…&amp;staff_show=1 (ili 0)</li>
             </ul>
-            <p style="color:#888;font-size:12px;"><code>set</code>: 0,5,10,15,20,25,30,45,60,closed. &nbsp; <code>staff</code>: imena zarezom (Jelena,Ema,Jovana,Nikola). Odgovor vraća novi status (za potvrdu u Prečici).</p>
+            <p style="color:#888;font-size:12px;"><code>set</code>: <?php echo esc_html(dry65_live_allowed_waits_text()); ?>. &nbsp; <code>staff</code>: imena zarezom (<?php echo esc_html(implode(',', dry65_live_staff_all())); ?>). Odgovor vraća novi status (za potvrdu u Prečici).</p>
 
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Novi ključ poništava sve postojeće Prečice. Nastaviti?');" style="margin-top:12px;">
                 <input type="hidden" name="action" value="dry65_live_regen_key">
@@ -398,6 +421,11 @@ function dry65_live_admin_page() {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 12px;
+        }
+        .dry65-live-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         .dry65-live-actions {
             display: grid;
@@ -417,11 +445,11 @@ function dry65_live_admin_page() {
             color: var(--btn-ink, #fff) !important;
             border: 3px solid transparent !important;
             border-radius: 12px;
-            padding: 22px 8px;
+            padding: 18px 20px;
             font-size: 17px;
             font-weight: 700;
             cursor: pointer;
-            min-height: 64px;
+            min-height: 60px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.12);
             transition: transform .08s ease, box-shadow .12s ease;
         }
@@ -430,7 +458,9 @@ function dry65_live_admin_page() {
         .dry65-live-btn.is-current { border-color: #111 !important; box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--btn-bg); }
         @media (max-width: 640px) {
             .dry65-live-grid { grid-template-columns: repeat(2, 1fr); } /* 4x2 na telefonu */
-            .dry65-live-btn { min-height: 72px; font-size: 18px; }
+            /* Veći tap-target na telefonu (osoblje menja status sa iPhone-a) */
+            .dry65-live-btn { min-height: 66px; font-size: 18px; padding: 20px; }
+            .dry65-live-list { gap: 12px; }
         }
     </style>
     <?php
@@ -465,7 +495,7 @@ function dry65_live_ajax() {
 
 /* ============================================================
    REST API — menjanje statusa sa iPhone-a (iOS Prečice/Shortcuts)
-   POST /wp-json/dry65/v1/live?key=SECRET&set=15   (ili set=0 / set=closed)
+   POST /wp-json/dry65/v1/live?key=SECRET&set=5   (ili set=0 / set=closed)
    Auth: ulogovan korisnik sa cap-om ILI tajni ključ (?key= ili X-Dry65-Key header)
    ============================================================ */
 
@@ -515,7 +545,7 @@ function dry65_live_rest_set($req) {
         } else {
             $wait = (int) $set;
             if (!in_array($wait, dry65_live_allowed_waits(), true)) {
-                return new WP_Error('dry65_bad_set', 'Nedozvoljena vrednost. Dozvoljeno: 0,5,10,15,20,25,30,45,60 ili "closed".', ['status' => 400]);
+                return new WP_Error('dry65_bad_set', 'Nedozvoljena vrednost. Dozvoljeno: ' . dry65_live_allowed_waits_text() . '.', ['status' => 400]);
             }
             update_option('dry65_live_wait', $wait);
             update_option('dry65_live_closed', '0');
