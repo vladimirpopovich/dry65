@@ -38,9 +38,8 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
           </a>
         </div>
 
-        <div style="margin-top:22px;">
-          <?php if (function_exists('dry65_live_widget')) dry65_live_widget(); ?>
-        </div>
+        <?php // Live status widget privremeno sklonjen sa homepage-a (testiranje).
+              // Vrati jednom linijom: dry65_live_widget(); ?>
       </div>
 
       <div style="position:relative;">

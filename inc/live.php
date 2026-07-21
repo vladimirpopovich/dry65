@@ -2,7 +2,7 @@
 /* ============================================================
    Dry65 — LIVE status salona (/live)
    ------------------------------------------------------------
-   - Admin: "Dry65 Uživo" meni, lista dugmadi (0/10/25/30/45/Zatvoreni)
+   - Admin: "Dry65 Uživo" meni, lista dugmadi (0/10/25/30/60/Zatvoreni)
    - Frontend: /live stranica sa auto-refresh (AJAX svakih 45s)
    - Storage: WP options (bez baze/CPT-a, super lagano)
 
@@ -55,12 +55,24 @@ function dry65_live_presence_count() {
 /* Dozvoljene vrednosti dugmadi (u minutima). 0 = Slobodno.
    Prati dugmad u adminu — REST `set` prihvata isto ovo + "closed". */
 function dry65_live_allowed_waits() {
-    return [0, 10, 25, 30, 45];
+    return [0, 5, 10, 15, 20, 25, 30, 35, 45, 60];
 }
 
-/* „0,5,25,30,45 ili "closed"" — za poruke/dokumentaciju, da lista ne ide stale. */
+/* „0,10,25,30,60 ili "closed"" — za poruke/dokumentaciju, da lista ne ide stale. */
 function dry65_live_allowed_waits_text() {
     return implode(',', dry65_live_allowed_waits()) . ',closed';
+}
+
+/* Boja teksta za datu pozadinu: svetla boja -> crna slova, tamna -> bela.
+   (percepciona svetlina; prag ~140) */
+function dry65_live_text_on($hex) {
+    $hex = ltrim((string) $hex, '#');
+    if (strlen($hex) !== 6) return '#111111';
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+    $lum = 0.299 * $r + 0.587 * $g + 0.114 * $b;
+    return $lum > 140 ? '#111111' : '#ffffff';
 }
 
 /* Osoblje koje može da radi (redosled prikaza). */
@@ -224,11 +236,11 @@ function dry65_live_remaining_sec($raw = null) {
 /* ---- Mapiranje: preostali minuti -> tier + copy za usera ----
      `headline` = status (krupno u boksu), `wait_label` = procena vremena (sitno u badge-u iznad).
      Pragovi prate dugmad u adminu — svaka vrednost mora da pogodi svoj tier:
-     0    -> free    "Slobodni smo"    <- dugme „Slobodni smo" (0)
-     ≤10  -> lime    "Uskoro slobodni" <- dugme „od 5 do 10min" (5)
-     ≤25  -> yellow  "Malo čekanja"    <- dugme „od 11 do 25min" (25)
-     <45  -> orange  "Manja gužva"     <- dugme „od 25 do 45min" (30)
-     ≥45  -> red     "Imamo gužvu"     <- dugme „preko 45min" (45)
+     0    -> free    "Slobodni smo"    (dugme 0)
+     ≤10  -> lime    "Uskoro slobodni" (dugmad 5, 10)
+     ≤30  -> yellow  "Malo čekanja"    (dugmad 25, 30)
+     ≤45  -> orange  "Manja gužva"     (dugmad 35, 45)
+     >45  -> red     "Imamo gužvu"     (dugme 60)
      VAŽNO: isti tekst je dupliran u JS (`copyFor` u page-live.php) — menjaj na OBA mesta. */
 /* ---- Procena vremena (sitno, u badge-u iznad boksa) ----
    Prati STVARNO preostalo vreme, ne tier — zato se vidno smanjuje dok tajmer ide.
@@ -237,8 +249,26 @@ function dry65_live_remaining_sec($raw = null) {
    Mirror JS funkcije `waitLabel` u page-live.php — menjaj na OBA mesta. */
 function dry65_live_wait_label($remaining_min) {
     if ($remaining_min <= 0)  return 'Prvi ste na redu';
-    if ($remaining_min >= 45) return 'Na redu ste za preko 45 minuta';
     return 'Na redu ste za manje od ' . (int) (ceil($remaining_min / 5) * 5) . ' minuta';
+}
+
+/* ---- [naslov, podtekst] po TAČNOM preostalom vremenu (mockup kopija) ----
+   Mirror JS funkcije `copyText` u page-live.php — menjaj na OBA mesta. */
+function dry65_live_copy($remaining_min) {
+    if ($remaining_min <= 0)  return ['Samo dođite', 'Čekamo vas.'];
+    if ($remaining_min <= 5)  return ['Krenite ka nama', 'Taman dovoljno vremena da stignete bez žurbe.'];
+    if ($remaining_min <= 10) return ['Pravo vreme da krenete', 'Bićemo spremni baš kada stignete.'];
+    if ($remaining_min <= 15) return ['Ako ste u blizini…', 'Savršen trenutak da isplanirate polazak.'];
+    if ($remaining_min <= 30) return ['Vredi svratiti', 'Uz kafu ili prosecco vreme će brže proći.'];
+    if ($remaining_min <= 35) return ['Salon je danas tražen', 'Dajemo sve od sebe da smanjimo vreme čekanja.'];
+    if ($remaining_min <= 45) return ['Velika zainteresovanost', 'Dajemo sve od sebe da smanjimo vreme čekanja. Hvala na razumevanju.'];
+    return ['Najprometniji deo dana', 'Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.'];
+}
+
+/* ---- Broj u PRSTENU: preostalo vreme, zaokruženo naviše na 5 min ----
+   Mirror JS funkcije `ringNum` u page-live.php — menjaj na OBA mesta. */
+function dry65_live_ring_num($remaining_min) {
+    return (int) (ceil(max(0, $remaining_min) / 5) * 5);
 }
 
 function dry65_live_tier_copy($remaining_min, $phone) {
@@ -254,12 +284,12 @@ function dry65_live_tier_copy($remaining_min, $phone) {
                 'sub' => 'Krenite, uskoro će se osloboditi mesto.',
                 'note' => 'Može se promeniti kako klijenti dolaze i odlaze.'];
     }
-    if ($remaining_min <= 25) {
+    if ($remaining_min <= 30) {
         return ['tier' => 'yellow', 'emoji' => '🟡', 'headline' => 'Malo čekanja',
                 'sub' => 'Ako ste u blizini, pravo je vreme da svratite.',
                 'note' => $busy_note];
     }
-    if ($remaining_min < 45) {
+    if ($remaining_min <= 45) {
         return ['tier' => 'orange', 'emoji' => '🟠', 'headline' => 'Manja gužva',
                 'sub' => 'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.',
                 'note' => $busy_note];
@@ -281,14 +311,19 @@ function dry65_live_resolve() {
     $remaining_min = (int) ceil($remaining_sec / 60);
 
     if ($closed) {
-        $data = ['tier' => 'closed', 'emoji' => '⚪', 'headline' => 'Trenutno ne radimo',
-                 'wait_label' => 'Zatvoreno',
-                 'sub' => dry65_live_hours_text(),
-                 'note' => ''];
+        $data = ['tier' => 'closed', 'emoji' => '⚪', 'headline' => 'Zatvoreni smo',
+                 'wait_label' => 'Zatvoreno', 'sub' => dry65_live_hours_text(),
+                 'note' => '', 'eyebrow' => 'TRENUTNI STATUS', 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
     } else {
-        $data = dry65_live_tier_copy($remaining_min, $phone);
-        // Labela prati preostalo vreme (ne tier), pa se smanjuje dok tajmer ide.
-        $data['wait_label'] = dry65_live_wait_label($remaining_min);
+        $data = dry65_live_tier_copy($remaining_min, $phone); // za boju (tier) + emoji
+        list($hl, $sub_new) = dry65_live_copy($remaining_min);
+        $data['headline']   = $hl;
+        $data['sub']        = $sub_new;
+        $data['eyebrow']    = ($remaining_min <= 0) ? 'SLOBODAN TERMIN' : 'SLEDEĆI SLOBODAN TERMIN JE ZA MANJE OD';
+        $data['is_free']    = ($remaining_min <= 0);
+        $data['ring_num']   = ($remaining_min <= 0) ? '' : (string) dry65_live_ring_num($remaining_min);
+        $data['footnote']   = 'Prikazano vreme je procena zasnovana na trenutnoj popunjenosti salona i ažurira se uživo kako se mesta oslobađaju i popunjavaju.';
+        $data['wait_label'] = dry65_live_wait_label($remaining_min); // admin panel koristi
     }
 
     // Custom poruka (ako postoji) prepisuje default sub — ali ne za closed
@@ -406,31 +441,42 @@ function dry65_live_admin_page() {
             <?php wp_nonce_field('dry65_live_save'); ?>
 
             <label style="display:block;font-weight:600;margin-bottom:6px;">Postavi vreme čekanja:</label>
-            <p style="margin:0 0 12px;color:#888;font-size:12.5px;">Klikni koliko se čeka do slobodnog mesta. Tajmer sam ide u minus. Kad uđe nova mušterija, klikni veće čekanje.</p>
+            <p style="margin:0 0 14px;color:#888;font-size:12.5px;">Klikni koliko se čeka do slobodnog mesta. Tajmer sam ide u minus. Kad uđe nova mušterija, klikni veće čekanje.</p>
 
-            <div class="dry65-live-list">
-                <?php
-                // [vrednost (preostali min), labela, bg, ink]
-                $buttons = [
-                    [0,  'Slobodni smo',            '#84B052', '#22330f'],
-                    [10, 'Čekanje od 5 do 10min',   '#C9DB5B', '#3f4a12'],
-                    [25, 'Čekanje od 11 do 25min',  '#F6D63B', '#5a4900'],
-                    [30, 'Čekanje od 25 do 45min',  '#F0A73C', '#5a3400'],
-                    [45, 'Čekanje preko 45min',     '#E8472B', '#ffffff'],
-                ];
-                foreach ($buttons as [$w, $label, $bg, $ink]):
+            <?php
+            // kružići: [vrednost, boja]. Boja teksta (bela/crna) se računa iz pozadine.
+            $circles = [
+                [5,  '#C9DB5B'], [10, '#C9DB5B'],                                  // lime
+                [15, '#F6D63B'], [20, '#F6D63B'], [25, '#F6D63B'], [30, '#F6D63B'], // žuto
+                [35, '#F0A73C'], [45, '#F0A73C'],                                  // orange
+                [60, '#E8472B'],                                                   // crveno
+            ];
+            $free_cur = (!$raw['closed'] && (int) $raw['wait'] === 0);
+            ?>
+            <div class="dry65-live-list" style="max-width:300px;">
+                <button type="submit" name="live_wait" value="0"
+                    class="dry65-live-btn<?php echo $free_cur ? ' is-current' : ''; ?>"
+                    style="--btn-bg:#84B052;--btn-ink:<?php echo esc_attr(dry65_live_text_on('#84B052')); ?>;">
+                    Slobodni smo
+                </button>
+            </div>
+
+            <div class="dry65-live-circles">
+                <?php foreach ($circles as [$w, $bg]):
                     $is_current = (!$raw['closed'] && (int) $raw['wait'] === $w);
                 ?>
                 <button type="submit" name="live_wait" value="<?php echo esc_attr($w); ?>"
-                    class="dry65-live-btn<?php echo $is_current ? ' is-current' : ''; ?>"
-                    style="--btn-bg:<?php echo esc_attr($bg); ?>;--btn-ink:<?php echo esc_attr($ink); ?>;">
-                    <?php echo esc_html($label); ?>
+                    class="dry65-live-circle<?php echo $is_current ? ' is-current' : ''; ?>"
+                    style="--c-bg:<?php echo esc_attr($bg); ?>;--c-ink:<?php echo esc_attr(dry65_live_text_on($bg)); ?>;">
+                    <span class="num"><?php echo esc_html($w); ?></span><span class="unit">min</span>
                 </button>
                 <?php endforeach; ?>
+            </div>
 
+            <div class="dry65-live-list" style="max-width:300px;margin-top:14px;">
                 <button type="submit" name="live_action" value="closed"
                     class="dry65-live-btn<?php echo $raw['closed'] ? ' is-current' : ''; ?>"
-                    style="--btn-bg:#D0CFC7;--btn-ink:#3a3a34;">
+                    style="--btn-bg:#D0CFC7;--btn-ink:<?php echo esc_attr(dry65_live_text_on('#D0CFC7')); ?>;">
                     Zatvoreni
                 </button>
             </div>
@@ -516,6 +562,24 @@ function dry65_live_admin_page() {
             flex-direction: column;
             gap: 10px;
         }
+        .dry65-live-circles {
+            display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0;
+        }
+        .dry65-live-circle {
+            width: 72px; height: 72px; border-radius: 50% !important;
+            background: var(--c-bg) !important;
+            color: var(--c-ink) !important;
+            border: 3px solid transparent !important;
+            cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            line-height: 1; box-shadow: 0 2px 6px rgba(0,0,0,0.14);
+            transition: transform .08s ease, box-shadow .12s ease;
+        }
+        .dry65-live-circle .num { font-size: 23px; font-weight: 800; }
+        .dry65-live-circle .unit { font-size: 11px; font-weight: 600; opacity: .8; margin-top: 2px; }
+        .dry65-live-circle:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.22); }
+        .dry65-live-circle:active { transform: translateY(0); }
+        .dry65-live-circle.is-current { border-color: #111 !important; box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--c-bg); }
         .dry65-live-actions {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
