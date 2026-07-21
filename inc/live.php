@@ -252,17 +252,46 @@ function dry65_live_wait_label($remaining_min) {
     return 'Na redu ste za manje od ' . (int) (ceil($remaining_min / 5) * 5) . ' minuta';
 }
 
-/* ---- [naslov, podtekst] po TAČNOM preostalom vremenu (mockup kopija) ----
-   Mirror JS funkcije `copyText` u page-live.php — menjaj na OBA mesta. */
+/* ---- Podrazumevani tekstovi [vrednost => [h(naslov), s(opis)]] ----
+   Ovo je fallback; admin ih može prepisati u „Dry65 Uživo" panelu. */
+function dry65_live_default_texts() {
+    return [
+        0  => ['h' => 'Samo dođite',             's' => 'Čekamo vas.'],
+        5  => ['h' => 'Krenite ka nama',         's' => 'Taman dovoljno vremena da stignete bez žurbe.'],
+        10 => ['h' => 'Pravo vreme da krenete',  's' => 'Bićemo spremni baš kada stignete.'],
+        15 => ['h' => 'Ako ste u blizini…',      's' => 'Savršen trenutak da isplanirate polazak.'],
+        20 => ['h' => 'Vredi svratiti',          's' => 'Uz kafu ili prosecco vreme će brže proći.'],
+        25 => ['h' => 'Vredi svratiti',          's' => 'Uz kafu ili prosecco vreme će brže proći.'],
+        30 => ['h' => 'Vredi svratiti',          's' => 'Uz kafu ili prosecco vreme će brže proći.'],
+        35 => ['h' => 'Salon je danas tražen',   's' => 'Dajemo sve od sebe da smanjimo vreme čekanja.'],
+        45 => ['h' => 'Velika zainteresovanost', 's' => 'Dajemo sve od sebe da smanjimo vreme čekanja. Hvala na razumevanju.'],
+        60 => ['h' => 'Najprometniji deo dana',  's' => 'Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.'],
+    ];
+}
+
+/* Sačuvani tekstovi (opcija) spojeni sa podrazumevanim (prazno polje -> default). */
+function dry65_live_texts() {
+    $saved = get_option('dry65_live_texts', []);
+    if (!is_array($saved)) $saved = [];
+    $out = [];
+    foreach (dry65_live_default_texts() as $v => $def) {
+        $h = (isset($saved[$v]['h']) && $saved[$v]['h'] !== '') ? $saved[$v]['h'] : $def['h'];
+        $s = (isset($saved[$v]['s']) && $saved[$v]['s'] !== '') ? $saved[$v]['s'] : $def['s'];
+        $out[$v] = ['h' => $h, 's' => $s];
+    }
+    return $out;
+}
+
+/* ---- [naslov, podtekst] po TAČNOM preostalom vremenu ----
+   Prag = najmanja dozvoljena vrednost >= preostalo. Editabilno preko admina.
+   Mirror JS funkcije `copyText` u page-live.php. */
 function dry65_live_copy($remaining_min) {
-    if ($remaining_min <= 0)  return ['Samo dođite', 'Čekamo vas.'];
-    if ($remaining_min <= 5)  return ['Krenite ka nama', 'Taman dovoljno vremena da stignete bez žurbe.'];
-    if ($remaining_min <= 10) return ['Pravo vreme da krenete', 'Bićemo spremni baš kada stignete.'];
-    if ($remaining_min <= 15) return ['Ako ste u blizini…', 'Savršen trenutak da isplanirate polazak.'];
-    if ($remaining_min <= 30) return ['Vredi svratiti', 'Uz kafu ili prosecco vreme će brže proći.'];
-    if ($remaining_min <= 35) return ['Salon je danas tražen', 'Dajemo sve od sebe da smanjimo vreme čekanja.'];
-    if ($remaining_min <= 45) return ['Velika zainteresovanost', 'Dajemo sve od sebe da smanjimo vreme čekanja. Hvala na razumevanju.'];
-    return ['Najprometniji deo dana', 'Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.'];
+    $texts = dry65_live_texts();
+    foreach (dry65_live_allowed_waits() as $v) {
+        if ($remaining_min <= $v && isset($texts[$v])) return [$texts[$v]['h'], $texts[$v]['s']];
+    }
+    $last = end($texts);
+    return [$last['h'], $last['s']];
 }
 
 /* ---- Broj u PRSTENU: preostalo vreme, zaokruženo naviše na 5 min ----
@@ -488,6 +517,27 @@ function dry65_live_admin_page() {
                 Napomena: van radnog vremena (Pon–Pet 8–20, Sub 10–18) stranica automatski pokazuje „Zatvoreno“, bez obzira na dugme.
             </p>
         </form>
+
+        <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;max-width:620px;margin-top:26px;">
+            <h2 style="margin-top:0;">✏️ Tekstovi po vremenu</h2>
+            <p style="color:#555;margin-top:4px;">Naslov i opis koji se prikazuju na <code>/live</code> za svako vreme čekanja. Ostavi prazno = podrazumevani tekst. Menjaš ovde, bez koda.</p>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                <input type="hidden" name="action" value="dry65_live_save_texts">
+                <?php wp_nonce_field('dry65_live_save_texts'); ?>
+                <?php foreach (dry65_live_texts() as $v => $t):
+                    $label = $v === 0 ? 'Slobodno (0 min)' : ($v === 60 ? '60+ min' : $v . ' min');
+                ?>
+                <div style="border-top:1px solid #eef0f2;padding:14px 0;">
+                    <div style="font-weight:600;font-size:13px;color:#1d2327;margin-bottom:7px;"><?php echo esc_html($label); ?></div>
+                    <input type="text" name="texts[<?php echo esc_attr($v); ?>][h]" value="<?php echo esc_attr($t['h']); ?>"
+                        placeholder="Naslov" style="width:100%;max-width:560px;margin-bottom:7px;display:block;">
+                    <input type="text" name="texts[<?php echo esc_attr($v); ?>][s]" value="<?php echo esc_attr($t['s']); ?>"
+                        placeholder="Opisni tekst" style="width:100%;max-width:560px;display:block;">
+                </div>
+                <?php endforeach; ?>
+                <button class="button button-primary" style="margin-top:16px;">Sačuvaj tekstove</button>
+            </form>
+        </div>
 
         <?php
         $staff       = (array) get_option('dry65_live_staff', []);
@@ -867,6 +917,24 @@ add_action('admin_post_dry65_live_save_chairs', function () {
         $cur = get_option('dry65_live_chairs_show', '0') === '1';
         update_option('dry65_live_chairs_show', $cur ? '0' : '1');
     }
+    wp_redirect(add_query_arg(['page' => 'dry65-live', 'saved' => '1'], admin_url('admin.php')));
+    exit;
+});
+
+/* Sačuvaj editabilne tekstove (naslov + opis po vremenu). */
+add_action('admin_post_dry65_live_save_texts', function () {
+    if (!current_user_can(DRY65_LIVE_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_live_save_texts');
+
+    $in  = (isset($_POST['texts']) && is_array($_POST['texts'])) ? wp_unslash($_POST['texts']) : [];
+    $out = [];
+    foreach (dry65_live_allowed_waits() as $v) {
+        $h = isset($in[$v]['h']) ? sanitize_text_field($in[$v]['h']) : '';
+        $s = isset($in[$v]['s']) ? sanitize_text_field($in[$v]['s']) : '';
+        if ($h !== '' || $s !== '') $out[$v] = ['h' => $h, 's' => $s];
+    }
+    update_option('dry65_live_texts', $out);
+
     wp_redirect(add_query_arg(['page' => 'dry65-live', 'saved' => '1'], admin_url('admin.php')));
     exit;
 });

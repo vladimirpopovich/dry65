@@ -204,17 +204,17 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
     return 'red';
   }
 
-  // [naslov, podtekst] po TAČNOM vremenu — mora da prati dry65_live_copy() u inc/live.php.
+  // Editabilni tekstovi iz admina — prag = najmanja vrednost >= min. Prati dry65_live_copy() u PHP-u.
+  var DRY65_WAITS = <?php echo wp_json_encode(dry65_live_allowed_waits()); ?>;
+  var DRY65_TEXTS = <?php echo wp_json_encode(dry65_live_texts(), JSON_UNESCAPED_UNICODE); ?>;
   function copyText(min) {
     if (state.closed) return ['Zatvoreni smo', state.hoursText];
-    if (min <= 0)  return ['Samo dođite', 'Čekamo vas.'];
-    if (min <= 5)  return ['Krenite ka nama', 'Taman dovoljno vremena da stignete bez žurbe.'];
-    if (min <= 10) return ['Pravo vreme da krenete', 'Bićemo spremni baš kada stignete.'];
-    if (min <= 15) return ['Ako ste u blizini…', 'Savršen trenutak da isplanirate polazak.'];
-    if (min <= 30) return ['Vredi svratiti', 'Uz kafu ili prosecco vreme će brže proći.'];
-    if (min <= 35) return ['Salon je danas tražen', 'Dajemo sve od sebe da smanjimo vreme čekanja.'];
-    if (min <= 45) return ['Velika zainteresovanost', 'Dajemo sve od sebe da smanjimo vreme čekanja. Hvala na razumevanju.'];
-    return ['Najprometniji deo dana', 'Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.'];
+    for (var i = 0; i < DRY65_WAITS.length; i++) {
+      var v = DRY65_WAITS[i];
+      if (min <= v && DRY65_TEXTS[v]) return [DRY65_TEXTS[v].h, DRY65_TEXTS[v].s];
+    }
+    var last = DRY65_TEXTS[DRY65_WAITS[DRY65_WAITS.length - 1]];
+    return [last.h, last.s];
   }
 
   // Broj u prstenu — mora da prati dry65_live_ring_num() u inc/live.php.
