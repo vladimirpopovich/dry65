@@ -16,13 +16,18 @@ function dry65_register_cpts() {
             'all_items'          => 'Sve usluge',
             'menu_name'          => 'Usluge',
         ],
-        'public'        => false,
-        'show_ui'       => true,
-        'show_in_menu'  => true,
-        'menu_icon'     => 'dashicons-art',
-        'menu_position' => 21,
-        'supports'      => ['title', 'page-attributes', 'thumbnail'],
-        'has_archive'   => false,
+        'public'             => true,
+        'publicly_queryable' => true,
+        'exclude_from_search'=> false,
+        'hierarchical'       => true,
+        'show_ui'            => true,
+        'show_in_menu'       => true,
+        'show_in_rest'       => true,
+        'menu_icon'          => 'dashicons-art',
+        'menu_position'      => 21,
+        'supports'           => ['title', 'editor', 'excerpt', 'thumbnail', 'page-attributes'],
+        'has_archive'        => false,
+        'rewrite'            => ['slug' => 'usluge', 'with_front' => false, 'hierarchical' => true],
     ]);
 
     // PAKETI
@@ -145,6 +150,107 @@ function dry65_create_settings_page() {
 }
 add_action('after_switch_theme', 'dry65_create_settings_page');
 add_action('init', 'dry65_create_settings_page'); // Radi i bez theme reactivation
+
+/* ---- Usluge: hijerarhija (2 kategorije-huba + 10 podstranica) + flush rewrite ----
+   FENIRANJE = fen + četka (prirodno, drži par dana). STILIZOVANJE = vruć alat
+   (pegla/figaro, definisano, drži duže). Razdvojen tekst = bez SEO kanibalizacije.
+   Postojeće kategorije (feniranje/stilizovanje/nega) dobijaju intro; stari flat
+   stubovi (v1) se brišu i prave iznova kao deca. Admin sve popunjava kasnije. */
+function dry65_seed_services() {
+    if (get_option('dry65_services_seed_v') === '3') return;
+
+    // 1) Kategorije-roditelji + intro tekst (razdvajanje tehnike)
+    $parents = [
+        'feniranje' => [
+            'title' => 'Feniranje',
+            'intro' => 'Feniranje je oblikovanje kose fenom i četkom, posle pranja. Rezultat je prirodan, mek i sjajan, a frizura drži nekoliko dana. Cena prati dužinu kose. Idealno za svakodnevni sređen izgled, sve bez zakazivanja.',
+        ],
+        'stilizovanje' => [
+            'title' => 'Stilizovanje kose',
+            'intro' => 'Stilizovanje je oblikovanje vrućim alatom (pegla, figaro, curler), posle sušenja. Rezultat je definisaniji i drži znatno duže od feniranja, idealno za izlaske, proslave i posebne prilike. Baš na tanjoj kosi daje najbolji efekat.',
+        ],
+        'nega' => [
+            'title' => 'Nega kose',
+            'intro' => 'Dubinska nega i tretmani koji vraćaju kosi sjaj, snagu i hidrataciju: hair infusion, maske, parna stanica i ritualne nege. Uključeno uz mesečne pakete.',
+        ],
+    ];
+    // Oslobodi slug ako ga drži attachment (slike umeju da „ukradu" slug, npr. stilizovanje.webp)
+    foreach (array_keys($parents) as $slug) {
+        $att = get_page_by_path($slug, OBJECT, 'attachment');
+        if ($att) wp_update_post(['ID' => $att->ID, 'post_name' => $slug . '-slika']);
+    }
+
+    $pid = [];
+    foreach ($parents as $slug => $info) {
+        $p = get_page_by_path($slug, OBJECT, 'dry65_service');
+        // Ako postoji ali sa „-2" slug-om (raniji konflikt), nadji ga i po -2
+        if (!$p) {
+            $alt = get_posts(['post_type' => 'dry65_service', 'name' => $slug . '-2', 'posts_per_page' => 1, 'post_status' => 'any']);
+            if ($alt) $p = $alt[0];
+        }
+        if ($p) {
+            $pid[$slug] = $p->ID;
+            $upd = ['ID' => $p->ID];
+            if ($p->post_name !== $slug) $upd['post_name'] = $slug;             // vrati čist slug
+            if (trim((string) $p->post_excerpt) === '') $upd['post_excerpt'] = $info['intro'];
+            if (count($upd) > 1) wp_update_post($upd);
+        } else {
+            $pid[$slug] = wp_insert_post([
+                'post_type' => 'dry65_service', 'post_status' => 'publish',
+                'post_title' => $info['title'], 'post_name' => $slug,
+                'post_excerpt' => $info['intro'], 'menu_order' => 0,
+            ]);
+        }
+    }
+
+    // 2) Obriši stare flat stub stilove iz v1 (bez sadržaja, prave se iznova kao deca)
+    foreach (['feniranje-na-talase', 'feniranje-na-cetke', 'feniranje-na-volumen', 'feniranje-na-lokne', 'feniranje-na-ravno'] as $old) {
+        $op = get_page_by_path($old, OBJECT, 'dry65_service');
+        if ($op && (int) $op->post_parent === 0) wp_delete_post($op->ID, true);
+    }
+
+    // 3) Deca po grani [naslov, slug, kratak opis]
+    $children = [
+        'feniranje' => [
+            ['Feniranje na ravno',   'na-ravno',   'Glatka i uredna kosa, oblikovana fenom i četkom — bez pegle. Prirodan sjaj i mekoća za svaki dan.'],
+            ['Feniranje na talase',  'na-talase',  'Mekani, prirodni talasi fenom i okruglom četkom. Opušten a sređen look koji drži danima.'],
+            ['Feniranje na lokne',   'na-lokne',   'Nežne, mekane lokne postignute fenom i četkom. Prirodan volumen i pokret, savršeno za svaki dan.'],
+            ['Feniranje na volumen', 'na-volumen', 'Podignut koren i bujna, puna kosa. Feniranje koje daje maksimalan volumen i telo frizuri.'],
+            ['Feniranje četkama',    'cetkama',    'Klasično feniranje okruglom četkom — precizno oblikovanje, gladak i profesionalan finiš.'],
+        ],
+        'stilizovanje' => [
+            ['Ravna kosa peglom', 'ravna-kosa-peglom', 'Staklasto glatka, sjajna i potpuno ravna kosa peglom. Sleek look koji drži i po vlažnom vremenu.'],
+            ['Talasi peglom',     'talasi-peglom',     'Definisani talasi napravljeni peglom — izraženiji i dugotrajniji od feniranja. Za sređen, elegantan izgled.'],
+            ['Lokne figarom',     'lokne-figarom',     'Bujne, definisane lokne figarom ili curlerom. Glamurozan look koji drži celu noć.'],
+            ['Hollywood talasi',  'hollywood-talasi',  'Glatki, uniformni retro talasi u stilu crvenog tepiha. Za venčanja, proslave i velike izlaske.'],
+            ['Beach Waves',       'beach-waves',       'Opušteni, blago razbarušeni letnji talasi. Neobavezan, moderan look koji izgleda prirodno a sređeno.'],
+        ],
+    ];
+    foreach ($children as $pslug => $list) {
+        $order = 10;
+        foreach ($list as $c) {
+            $exists = get_posts([
+                'post_type' => 'dry65_service', 'name' => $c[1],
+                'post_parent' => $pid[$pslug], 'posts_per_page' => 1, 'fields' => 'ids',
+                'post_status' => 'any',
+            ]);
+            if (!$exists) {
+                wp_insert_post([
+                    'post_type' => 'dry65_service', 'post_status' => 'publish',
+                    'post_title' => $c[0], 'post_name' => $c[1],
+                    'post_parent' => $pid[$pslug], 'post_excerpt' => $c[2],
+                    'post_content' => 'Tekst u pripremi. Dodaj detaljan opis: kako izgleda stil, kojom tehnikom se radi, kome odgovara, koliko drži i zašto ga izabrati u Dry65.',
+                    'menu_order' => $order,
+                ]);
+            }
+            $order += 10;
+        }
+    }
+
+    flush_rewrite_rules(false);
+    update_option('dry65_services_seed_v', '3');
+}
+add_action('init', 'dry65_seed_services', 20);
 
 /* ---- Admin menu link to settings page ---- */
 function dry65_admin_settings_link() {

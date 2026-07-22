@@ -180,6 +180,9 @@ function dry65_services() {
             dry65_get_field('point_3', $p->ID),
         ]);
         $img = dry65_get_field('image', $p->ID);
+        if (!$img && has_post_thumbnail($p->ID)) {
+            $img = get_the_post_thumbnail_url($p->ID, 'large');
+        }
         if (!$img) {
             $img = $fallback_images[$p->post_name] ?? 'assets/services/feniranje.webp';
         }
@@ -187,10 +190,49 @@ function dry65_services() {
             'id'     => $p->post_name,
             'kicker' => dry65_get_field('kicker', $p->ID) ?: '',
             'title'  => $p->post_title,
-            'short'  => dry65_get_field('short', $p->ID) ?: '',
-            'body'   => dry65_get_field('body', $p->ID) ?: '',
+            'short'  => dry65_get_field('short', $p->ID) ?: $p->post_excerpt,
+            'body'   => dry65_get_field('body', $p->ID) ?: $p->post_content,
             'img'    => $img,
             'points' => array_values($points),
+            'url'    => get_permalink($p->ID),
+        ];
+    }
+    return $out;
+}
+
+/* Slika usluge: ACF 'image' -> istaknuta -> fallback po slug-u. */
+function dry65_service_image($post) {
+    $img = function_exists('dry65_get_field') ? dry65_get_field('image', $post->ID) : '';
+    if (!$img && has_post_thumbnail($post->ID)) $img = get_the_post_thumbnail_url($post->ID, 'large');
+    if (!$img) {
+        $map = ['feniranje' => 'assets/services/feniranje.webp', 'stilizovanje' => 'assets/services/stilizovanje.webp', 'nega' => 'assets/services/nega.webp'];
+        $img = $map[$post->post_name] ?? 'assets/services/feniranje.webp';
+    }
+    return $img;
+}
+
+/* Stablo usluga: kategorije (parent=0) svaka sa svojom decom. Za /usluge grid. */
+function dry65_service_tree() {
+    $parents = get_posts(['post_type' => 'dry65_service', 'post_parent' => 0, 'posts_per_page' => -1, 'orderby' => 'menu_order', 'order' => 'ASC']);
+    $out = [];
+    foreach ($parents as $p) {
+        $kids = get_posts(['post_type' => 'dry65_service', 'post_parent' => $p->ID, 'posts_per_page' => -1, 'orderby' => 'menu_order', 'order' => 'ASC']);
+        $children = [];
+        foreach ($kids as $c) {
+            $children[] = [
+                'title' => $c->post_title,
+                'short' => $c->post_excerpt,
+                'url'   => get_permalink($c->ID),
+                'img'   => dry65_service_image($c),
+            ];
+        }
+        $out[] = [
+            'id'       => $p->ID,
+            'title'    => $p->post_title,
+            'intro'    => $p->post_excerpt,
+            'url'      => get_permalink($p->ID),
+            'img'      => dry65_service_image($p),
+            'children' => $children,
         ];
     }
     return $out;

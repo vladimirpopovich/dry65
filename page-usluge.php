@@ -3,8 +3,8 @@
 Template Name: Usluge
 */
 get_header();
-$services = dry65_services();
-$tpl      = get_template_directory_uri();
+$tree = dry65_service_tree();
+$tpl  = get_template_directory_uri();
 ?>
 
 <main class="page-enter">
@@ -24,30 +24,35 @@ $tpl      = get_template_directory_uri();
   </div>
 </section>
 
-<section class="section">
-  <div class="wrap stack" style="gap:clamp(48px,7vw,96px);">
-    <?php foreach ($services as $i => $s): ?>
-    <div class="reveal svc-row" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,64px);align-items:center;direction:<?php echo $i % 2 ? 'rtl' : 'ltr'; ?>;">
-      <div style="direction:ltr;aspect-ratio:4/3;border-radius:var(--radius-lg);overflow:hidden;">
-        <?php echo dry65_picture($s['img'], $s['title'], [
-          'loading' => 'lazy',
-          'style'   => 'width:100%;height:100%;object-fit:cover;display:block;',
-        ]); ?>
-      </div>
-      <div style="direction:ltr;">
-        <span class="mono" style="color:var(--clay);"><?php echo esc_html($s['kicker']); ?></span>
-        <h2 class="display" style="font-size:clamp(30px,4.5vw,52px);margin-top:10px;"><?php echo esc_html($s['title']); ?></h2>
-        <p class="lead" style="margin-top:18px;"><?php echo esc_html($s['body']); ?></p>
-        <div class="btn-row" style="margin-top:24px;gap:10px;">
-          <?php foreach ($s['points'] as $pt): ?>
-          <span class="chip"><?php echo esc_html($pt); ?></span>
-          <?php endforeach; ?>
-        </div>
-      </div>
+<?php foreach ($tree as $ci => $cat): ?>
+<section class="section<?php echo $ci % 2 ? ' bg-paper2' : ''; ?>">
+  <div class="wrap">
+    <div style="max-width:760px;margin-bottom:clamp(28px,4vw,48px);">
+      <h2 class="display" style="font-size:clamp(28px,4vw,46px);line-height:1.02;">
+        <?php if (empty($cat['children'])): ?><a href="<?php echo esc_url($cat['url']); ?>" style="color:inherit;text-decoration:none;"><?php echo esc_html($cat['title']); ?></a><?php else: ?><?php echo esc_html($cat['title']); ?><?php endif; ?>
+      </h2>
+      <?php if ($cat['intro']): ?><p class="lead" style="margin-top:16px;"><?php echo esc_html($cat['intro']); ?></p><?php endif; ?>
     </div>
-    <?php endforeach; ?>
+
+    <?php if (!empty($cat['children'])): ?>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(22px,3vw,38px);">
+      <?php foreach ($cat['children'] as $c): ?>
+      <a href="<?php echo esc_url($c['url']); ?>" class="svc-card reveal" style="display:block;text-decoration:none;color:inherit;">
+        <div style="aspect-ratio:4/3;border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px;">
+          <?php echo dry65_picture($c['img'], $c['title'], ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
+        </div>
+        <h3 class="display" style="font-size:clamp(21px,2.5vw,28px);"><?php echo esc_html($c['title']); ?></h3>
+        <?php if ($c['short']): ?><p class="lead" style="margin-top:8px;font-size:16px;"><?php echo esc_html($c['short']); ?></p><?php endif; ?>
+        <span style="display:inline-flex;align-items:center;gap:6px;margin-top:12px;color:var(--clay);font-weight:600;">Saznaj više <span class="arrow">→</span></span>
+      </a>
+      <?php endforeach; ?>
+    </div>
+    <?php else: ?>
+    <a href="<?php echo esc_url($cat['url']); ?>" class="btn btn-outline">Saznaj više <span class="arrow">→</span></a>
+    <?php endif; ?>
   </div>
 </section>
+<?php endforeach; ?>
 
 <section class="section-sm bg-cream">
   <div class="wrap center">
