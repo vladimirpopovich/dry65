@@ -24,7 +24,7 @@ get_header();
       <div class="live-ring" id="live-ring">
         <svg class="live-check" id="live-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"<?php echo $st['is_free'] ? '' : ' style="display:none;"'; ?>><path d="M4 12.5l5 5 11-11"></path></svg>
         <svg class="live-closed-icon" id="live-closed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"<?php echo $st['tier'] === 'closed' ? '' : ' style="display:none;"'; ?>><path d="M6 12h12"></path></svg>
-        <svg class="live-heart" id="live-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"<?php echo $st['tier'] === 'full' ? '' : ' style="display:none;"'; ?>><path d="M20.8 8.6a4.6 4.6 0 0 0-7.8-2.4L12 7.1l-1-1a4.6 4.6 0 1 0-6.5 6.5l1 1L12 21l6.5-7.4 1-1c.9-.9 1.3-2 1.3-3z"></path></svg>
+        <svg class="live-heart" id="live-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"<?php echo $st['tier'] === 'full' ? '' : ' style="display:none;"'; ?>><path d="M20.8 8.6a4.6 4.6 0 0 0-7.8-2.4L12 7.1l-1-1a4.6 4.6 0 1 0-6.5 6.5l1 1L12 21l6.5-7.4 1-1c.9-.9 1.3-2 1.3-3z"></path></svg>
         <span class="live-ring-num" id="live-ring-num"<?php echo ($st['is_free'] || $st['ring_num'] === '') ? ' style="display:none;"' : ''; ?>><?php echo esc_html($st['ring_num']); ?></span>
         <span class="live-ring-unit" id="live-ring-unit"<?php echo ($st['is_free'] || $st['ring_num'] === '') ? ' style="display:none;"' : ''; ?>>minuta</span>
       </div>
