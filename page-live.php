@@ -39,11 +39,6 @@ get_header();
       ?>
       <p class="live-chairs" id="live-chairs"<?php echo $live_chairs_vis ? '' : ' style="display:none;"'; ?>><?php echo esc_html($live_staff_text); ?></p>
 
-      <?php if ($st['stale']): ?>
-      <p class="live-stale" id="live-stale">Podaci možda nisu ažurni. Pozovite <?php echo esc_html($biz['phone_display']); ?> pre dolaska.</p>
-      <?php else: ?>
-      <p class="live-stale" id="live-stale" style="display:none;"></p>
-      <?php endif; ?>
 
       <div class="live-viewers" id="live-viewers" style="display:none;" title="Broj ljudi koji trenutno gledaju ovu stranicu">
         <svg class="live-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span id="live-viewers-text"></span>
@@ -123,13 +118,6 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
     font-family: var(--font-sans); font-size: 13.5px; font-weight: 500;
     color: var(--muted);
   }
-  .live-stale {
-    margin: 18px auto 0; max-width: 44ch;
-    font-family: var(--font-sans); font-size: 14px; font-weight: 500;
-    color: var(--oxblood);
-    background: rgba(120,51,50,0.07);
-    border-radius: 10px; padding: 10px 16px;
-  }
   .live-foot {
     margin: 24px auto 0; max-width: 46ch;
     font-family: var(--font-sans); font-size: 12px; font-weight: 400; line-height: 1.55;
@@ -162,7 +150,6 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   var elRingUnit = document.getElementById('live-ring-unit');
   var elSub      = document.getElementById('live-sub');
   var elFoot     = document.getElementById('live-foot');
-  var elStale    = document.getElementById('live-stale');
   var elViewers  = document.getElementById('live-viewers');
   var elViewersT = document.getElementById('live-viewers-text');
   var elChairs   = document.getElementById('live-chairs');
@@ -282,13 +269,6 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
         state.chairsShow   = !!d.chairs_show;
         lastTick = Date.now();
         render();
-
-        if (d.stale) {
-          elStale.style.display = '';
-          elStale.textContent = 'Podaci možda nisu ažurni. Pozovite ' + state.phone + ' pre dolaska.';
-        } else {
-          elStale.style.display = 'none';
-        }
 
         // Brojač gledalaca — ikonica oka + broj + osoba/osobe, prikaži iznad praga
         if (d.viewers >= d.viewers_min) {
