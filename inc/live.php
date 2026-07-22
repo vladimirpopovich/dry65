@@ -675,6 +675,8 @@ function dry65_live_admin_page() {
 add_action('wp_ajax_dry65_live_get', 'dry65_live_ajax');
 add_action('wp_ajax_nopriv_dry65_live_get', 'dry65_live_ajax');
 function dry65_live_ajax() {
+    nocache_headers(); // status je uživo — nikad ne keširaj (ni CDN ni browser)
+    if (function_exists('do_action')) do_action('litespeed_control_set_nocache', 'dry65 live ajax');
     $st  = dry65_live_resolve();
     $biz = function_exists('dry65_biz') ? dry65_biz() : ['phone_display' => '060 6900655'];
 

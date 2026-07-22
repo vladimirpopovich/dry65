@@ -270,7 +270,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
   // AJAX — autoritativni podatak sa servera (hvata izmene admina: nova mušterija → veći broj).
   function refresh() {
-    fetch(ajaxUrl + '?action=dry65_live_get&v=' + encodeURIComponent(token), { cache: 'no-store', credentials: 'same-origin' })
+    fetch(ajaxUrl + '?action=dry65_live_get&v=' + encodeURIComponent(token) + '&_=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d) return;
@@ -303,7 +303,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
   render();
   refresh();                        // odmah registruj presence i povuci svež podatak
-  setInterval(refresh, 45000);
+  setInterval(refresh, 20000);
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) refresh();
   });
