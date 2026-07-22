@@ -24,6 +24,7 @@ get_header();
       <div class="live-ring" id="live-ring">
         <svg class="live-check" id="live-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"<?php echo $st['is_free'] ? '' : ' style="display:none;"'; ?>><path d="M4 12.5l5 5 11-11"></path></svg>
         <svg class="live-closed-icon" id="live-closed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"<?php echo $st['tier'] === 'closed' ? '' : ' style="display:none;"'; ?>><path d="M6 12h12"></path></svg>
+        <svg class="live-heart" id="live-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"<?php echo $st['tier'] === 'full' ? '' : ' style="display:none;"'; ?>><path d="M20.8 8.6a4.6 4.6 0 0 0-7.8-2.4L12 7.1l-1-1a4.6 4.6 0 1 0-6.5 6.5l1 1L12 21l6.5-7.4 1-1c.9-.9 1.3-2 1.3-3z"></path></svg>
         <span class="live-ring-num" id="live-ring-num"<?php echo ($st['is_free'] || $st['ring_num'] === '') ? ' style="display:none;"' : ''; ?>><?php echo esc_html($st['ring_num']); ?></span>
         <span class="live-ring-unit" id="live-ring-unit"<?php echo ($st['is_free'] || $st['ring_num'] === '') ? ' style="display:none;"' : ''; ?>>minuta</span>
       </div>
@@ -39,11 +40,6 @@ get_header();
       ?>
       <p class="live-chairs" id="live-chairs"<?php echo $live_chairs_vis ? '' : ' style="display:none;"'; ?>><?php echo esc_html($live_staff_text); ?></p>
 
-      <?php if ($st['stale']): ?>
-      <p class="live-stale" id="live-stale">Podaci možda nisu ažurni. Pozovite <?php echo esc_html($biz['phone_display']); ?> pre dolaska.</p>
-      <?php else: ?>
-      <p class="live-stale" id="live-stale" style="display:none;"></p>
-      <?php endif; ?>
 
       <div class="live-viewers" id="live-viewers" style="display:none;" title="Broj ljudi koji trenutno gledaju ovu stranicu">
         <svg class="live-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span id="live-viewers-text"></span>
@@ -85,6 +81,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   .live-card[data-tier="orange"] { --accent: #F0A73C; --accent-ink: #000000; }
   .live-card[data-tier="red"]    { --accent: #E8472B; --accent-ink: #ffffff; }
   .live-card[data-tier="closed"] { --accent: #D0CFC7; --accent-ink: #000000; }
+  .live-card[data-tier="full"]   { --accent: #D0CFC7; --accent-ink: #000000; }
 
   .live-eyebrow {
     font-family: var(--font-sans); font-size: 14px; font-weight: 400;
@@ -107,6 +104,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   }
   .live-check { width: 44%; height: 44%; }
   .live-closed-icon { width: 44%; height: 44%; color: var(--muted); }
+  .live-heart { width: 46%; height: 46%; color: var(--ink); }
 
   .live-headline {
     font-size: 40px; font-weight: 300;
@@ -122,13 +120,6 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
     margin: 12px auto 0;
     font-family: var(--font-sans); font-size: 13.5px; font-weight: 500;
     color: var(--muted);
-  }
-  .live-stale {
-    margin: 18px auto 0; max-width: 44ch;
-    font-family: var(--font-sans); font-size: 14px; font-weight: 500;
-    color: var(--oxblood);
-    background: rgba(120,51,50,0.07);
-    border-radius: 10px; padding: 10px 16px;
   }
   .live-foot {
     margin: 24px auto 0; max-width: 46ch;
@@ -158,11 +149,11 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   var elEyebrow  = document.getElementById('live-eyebrow');
   var elCheck    = document.getElementById('live-check');
   var elClosedIc = document.getElementById('live-closed-icon');
+  var elHeart    = document.getElementById('live-heart');
   var elRingNum  = document.getElementById('live-ring-num');
   var elRingUnit = document.getElementById('live-ring-unit');
   var elSub      = document.getElementById('live-sub');
   var elFoot     = document.getElementById('live-foot');
-  var elStale    = document.getElementById('live-stale');
   var elViewers  = document.getElementById('live-viewers');
   var elViewersT = document.getElementById('live-viewers-text');
   var elChairs   = document.getElementById('live-chairs');
@@ -186,6 +177,9 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   var state = {
     remainingSec: <?php echo (int) $st['remaining_sec']; ?>,
     closed:       <?php echo $st['closed'] ? 'true' : 'false'; ?>,
+    full:         <?php echo !empty($st['full']) ? 'true' : 'false'; ?>,
+    fullH:        <?php echo wp_json_encode($st['tier'] === 'full' ? $st['headline'] : dry65_live_full_copy()[0], JSON_UNESCAPED_UNICODE); ?>,
+    fullS:        <?php echo wp_json_encode($st['tier'] === 'full' ? $st['sub'] : dry65_live_full_copy()[1], JSON_UNESCAPED_UNICODE); ?>,
     staffText:    <?php echo wp_json_encode(dry65_live_staff_text(get_option('dry65_live_staff', []))); ?>,
     chairsShow:   <?php echo get_option('dry65_live_chairs_show', '0') === '1' ? 'true' : 'false'; ?>,
     message:      <?php echo wp_json_encode(get_option('dry65_live_message', '')); ?>,
@@ -197,6 +191,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   // Boja (tier) po preostalom vremenu — mora da prati dry65_live_tier_copy() u inc/live.php.
   function tierFor(min) {
     if (state.closed) return 'closed';
+    if (state.full)   return 'full';
     if (min <= 0)  return 'free';
     if (min <= 10) return 'lime';
     if (min <= 30) return 'yellow';
@@ -209,6 +204,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   var DRY65_TEXTS = <?php echo wp_json_encode(dry65_live_texts(), JSON_UNESCAPED_UNICODE); ?>;
   function copyText(min) {
     if (state.closed) return ['Zatvoreni smo', state.hoursText];
+    if (state.full)   return [state.fullH, state.fullS];
     for (var i = 0; i < DRY65_WAITS.length; i++) {
       var v = DRY65_WAITS[i];
       if (min <= v && DRY65_TEXTS[v]) return [DRY65_TEXTS[v].h, DRY65_TEXTS[v].s];
@@ -223,32 +219,33 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   function render() {
     var min  = Math.max(0, Math.ceil(state.remainingSec / 60));
     var tier = tierFor(min);
-    var free = (!state.closed && min <= 0);
+    var free = (!state.closed && !state.full && min <= 0);
     var cp   = copyText(min);
 
     card.setAttribute('data-tier', tier);
     elHeadline.textContent = cp[0];
-    // custom poruka prepisuje podtekst (osim kad je zatvoreno)
-    elSub.textContent = (state.message && !state.closed) ? state.message : cp[1];
+    // custom poruka prepisuje podtekst (osim kad je zatvoreno / popunjeni)
+    elSub.textContent = (state.message && !state.closed && !state.full) ? state.message : cp[1];
 
     // Eyebrow
     if (elEyebrow) {
-      elEyebrow.textContent = state.closed ? 'TRENUTNI STATUS' : (free ? 'SLOBODAN TERMIN' : 'SLEDEĆI SLOBODAN TERMIN JE ZA MANJE OD');
+      elEyebrow.textContent = (state.closed || state.full) ? 'TRENUTNI STATUS' : (free ? 'SLOBODAN TERMIN' : 'SLEDEĆI SLOBODAN TERMIN JE ZA MANJE OD');
       elEyebrow.style.display = '';
     }
-    // Prsten: kvačica (slobodno) / broj+minuta (čekanje) / ⊖ (zatvoreno)
+    // Prsten: kvačica (slobodno) / broj+minuta (čekanje) / ⊖ (zatvoreno) / ♥ (popunjeni)
     if (elCheck)    elCheck.style.display    = free ? '' : 'none';
     if (elClosedIc) elClosedIc.style.display = state.closed ? '' : 'none';
-    var showNum = (!state.closed && !free);
+    if (elHeart)    elHeart.style.display    = state.full ? '' : 'none';
+    var showNum = (!state.closed && !state.full && !free);
     if (elRingNum)  { elRingNum.textContent = showNum ? String(ringNum(min)) : ''; elRingNum.style.display = showNum ? '' : 'none'; }
     if (elRingUnit) elRingUnit.style.display = showNum ? '' : 'none';
 
-    // Fusnota — samo kad nije zatvoreno
-    if (elFoot) elFoot.style.display = state.closed ? 'none' : '';
+    // Fusnota — samo kad nije zatvoreno/popunjeni
+    if (elFoot) elFoot.style.display = (state.closed || state.full) ? 'none' : '';
 
-    // ko radi — prikaži samo ako je vlasnik uključio, ima imena i nije zatvoreno
+    // ko radi — prikaži samo ako je vlasnik uključio, ima imena i nije zatvoreno/popunjeni
     if (elChairs) {
-      if (state.chairsShow && state.staffText && !state.closed) {
+      if (state.chairsShow && state.staffText && !state.closed && !state.full) {
         elChairs.textContent = state.staffText;
         elChairs.style.display = '';
       } else {
@@ -261,7 +258,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   setInterval(function () {
     var now = Date.now();
     var elapsed = (now - lastTick) / 1000;
-    if (!state.closed) {
+    if (!state.closed && !state.full) {
       state.remainingSec = Math.max(0, state.remainingSec - elapsed);
     }
     lastTick = now;
@@ -270,25 +267,21 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
   // AJAX — autoritativni podatak sa servera (hvata izmene admina: nova mušterija → veći broj).
   function refresh() {
-    fetch(ajaxUrl + '?action=dry65_live_get&v=' + encodeURIComponent(token), { cache: 'no-store', credentials: 'same-origin' })
+    fetch(ajaxUrl + '?action=dry65_live_get&v=' + encodeURIComponent(token) + '&_=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d) return;
         state.remainingSec = d.remaining_sec;
         state.closed       = !!d.closed;
+        state.full         = !!d.full;
+        if (d.full_h) state.fullH = d.full_h;
+        if (typeof d.full_s === 'string') state.fullS = d.full_s;
         state.message      = d.message || '';
         state.phone        = d.phone || state.phone;
         state.staffText    = d.staff_text || '';
         state.chairsShow   = !!d.chairs_show;
         lastTick = Date.now();
         render();
-
-        if (d.stale) {
-          elStale.style.display = '';
-          elStale.textContent = 'Podaci možda nisu ažurni. Pozovite ' + state.phone + ' pre dolaska.';
-        } else {
-          elStale.style.display = 'none';
-        }
 
         // Brojač gledalaca — ikonica oka + broj + osoba/osobe, prikaži iznad praga
         if (d.viewers >= d.viewers_min) {
@@ -303,9 +296,10 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
   render();
   refresh();                        // odmah registruj presence i povuci svež podatak
-  setInterval(refresh, 45000);
+  // Poll samo kad je tab vidljiv (u pozadini ne trošimo zahteve)
+  setInterval(function () { if (!document.hidden) refresh(); }, 20000);
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) refresh();
+    if (!document.hidden) refresh();  // odmah osveži kad se korisnik vrati
   });
 })();
 </script>
