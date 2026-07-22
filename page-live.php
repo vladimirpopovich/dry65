@@ -303,9 +303,10 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
   render();
   refresh();                        // odmah registruj presence i povuci svež podatak
-  setInterval(refresh, 20000);
+  // Poll samo kad je tab vidljiv (u pozadini ne trošimo zahteve)
+  setInterval(function () { if (!document.hidden) refresh(); }, 20000);
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) refresh();
+    if (!document.hidden) refresh();  // odmah osveži kad se korisnik vrati
   });
 })();
 </script>
