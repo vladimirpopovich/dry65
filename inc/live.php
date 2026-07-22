@@ -634,12 +634,13 @@ function dry65_live_admin_page() {
             <ul style="font-family:monospace;font-size:12.5px;color:#333;line-height:1.7;list-style:none;padding-left:0;">
                 <li>Čekanje 5–10 min &nbsp;→&nbsp; <?php echo esc_html($api_base); ?>?key=<?php echo esc_html($api_key); ?>&amp;set=10</li>
                 <li>Slobodni smo &nbsp;→&nbsp; …/live?key=…&amp;set=0</li>
+                <li>Za danas popunjeni &nbsp;→&nbsp; …/live?key=…&amp;set=full</li>
                 <li>Zatvoreni &nbsp;→&nbsp; …/live?key=…&amp;set=closed</li>
                 <li>Ko radi &nbsp;→&nbsp; …/live?key=…&amp;staff=Jelena,Ema</li>
                 <li>Toggle jedne &nbsp;→&nbsp; …/live?key=…&amp;staff_toggle=Nikola</li>
                 <li>Prikaži/sakrij ko radi &nbsp;→&nbsp; …/live?key=…&amp;staff_show=1 (ili 0)</li>
             </ul>
-            <p style="color:#888;font-size:12px;"><code>set</code>: <?php echo esc_html(dry65_live_allowed_waits_text()); ?>. &nbsp; <code>staff</code>: imena zarezom (<?php echo esc_html(implode(',', dry65_live_staff_all())); ?>). Odgovor vraća novi status (za potvrdu u Prečici).</p>
+            <p style="color:#888;font-size:12px;"><code>set</code>: <?php echo esc_html(dry65_live_allowed_waits_text()); ?>, full. &nbsp; <code>staff</code>: imena zarezom (<?php echo esc_html(implode(',', dry65_live_staff_all())); ?>). Odgovor vraća novi status (za potvrdu u Prečici).</p>
 
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Novi ključ poništava sve postojeće Prečice. Nastaviti?');" style="margin-top:12px;">
                 <input type="hidden" name="action" value="dry65_live_regen_key">
@@ -875,16 +876,23 @@ function dry65_live_rest_set($req) {
     $status_changed = false; // logujemo samo kad se stварno menja status (ne na staff/message)
 
     if ($set !== null && $set !== '') {
-        if (strtolower((string) $set) === 'closed') {
+        $sv = strtolower((string) $set);
+        if ($sv === 'closed') {
             update_option('dry65_live_closed', '1');
+            update_option('dry65_live_full', '0');
+            $did = true; $status_changed = true;
+        } elseif ($sv === 'full') {
+            update_option('dry65_live_full', '1');
+            update_option('dry65_live_closed', '0');
             $did = true; $status_changed = true;
         } else {
             $wait = (int) $set;
             if (!in_array($wait, dry65_live_allowed_waits(), true)) {
-                return new WP_Error('dry65_bad_set', 'Nedozvoljena vrednost. Dozvoljeno: ' . dry65_live_allowed_waits_text() . '.', ['status' => 400]);
+                return new WP_Error('dry65_bad_set', 'Nedozvoljena vrednost. Dozvoljeno: ' . dry65_live_allowed_waits_text() . ', full.', ['status' => 400]);
             }
             update_option('dry65_live_wait', $wait);
             update_option('dry65_live_closed', '0');
+            update_option('dry65_live_full', '0');
             $did = true; $status_changed = true;
         }
     }
