@@ -95,6 +95,7 @@ function dry65_live_get_raw() {
     return [
         'wait'       => (int) get_option('dry65_live_wait', 0),
         'closed'     => get_option('dry65_live_closed', '0') === '1',
+        'full'       => get_option('dry65_live_full', '0') === '1',
         'message'    => (string) get_option('dry65_live_message', ''),
         'updated_at' => (int) get_option('dry65_live_updated_at', 0),
         'updated_by' => (int) get_option('dry65_live_updated_by', 0),
@@ -123,6 +124,32 @@ function dry65_live_is_open_now() {
    dry65_live_is_open_now() — ako menjaš sate, promeni i brojeve i ovaj tekst. */
 function dry65_live_hours_text() {
     return 'Radnim danima od 8h do 20h, subotom od 10h do 18h, nedeljom ne radimo.';
+}
+
+/* Dinamičan tekst za „Za danas popunjeni": kad se sledeći put otvaramo.
+   Pon-Pet 8h, Sub 10h, Ned zatvoreno. „sutra" ili „u ponedeljak…". */
+function dry65_live_next_open_text() {
+    $tz    = new DateTimeZone('Europe/Belgrade');
+    $now   = new DateTime('now', $tz);
+    $days  = [1 => 'ponedeljak', 2 => 'utorak', 3 => 'sredu', 4 => 'četvrtak', 5 => 'petak', 6 => 'subotu'];
+    for ($i = 1; $i <= 7; $i++) {
+        $d   = (clone $now)->modify("+$i day");
+        $dow = (int) $d->format('N');
+        if ($dow >= 1 && $dow <= 5) $open = '8h';
+        elseif ($dow === 6)         $open = '10h';
+        else                        continue; // nedelja — preskoči
+        $when = ($i === 1) ? 'sutra' : 'u ' . $days[$dow];
+        return 'Hvala vam što nas birate, vidimo se ' . $when . ' od ' . $open . '.';
+    }
+    return 'Hvala vam što nas birate, vidimo se uskoro.';
+}
+
+/* Naslov + opis za „Za danas popunjeni" (editabilno preko admina; opis default = dinamičan). */
+function dry65_live_full_copy() {
+    $texts = dry65_live_texts();
+    $h = (isset($texts['full']['h']) && $texts['full']['h'] !== '') ? $texts['full']['h'] : 'Za danas smo popunjeni';
+    $s = (isset($texts['full']['s']) && $texts['full']['s'] !== '') ? $texts['full']['s'] : dry65_live_next_open_text();
+    return [$h, $s];
 }
 
 /* ---- LED semafor figure (po stanju) ----
@@ -266,6 +293,8 @@ function dry65_live_default_texts() {
         35 => ['h' => 'Salon je danas tražen',   's' => 'Dajemo sve od sebe da smanjimo vreme čekanja.'],
         45 => ['h' => 'Velika zainteresovanost', 's' => 'Dajemo sve od sebe da smanjimo vreme čekanja. Hvala na razumevanju.'],
         60 => ['h' => 'Najprometniji deo dana',  's' => 'Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.'],
+        // Za danas popunjeni (manuelni status). Opis prazan = dinamičan default („vidimo se sutra od Xh").
+        'full' => ['h' => 'Za danas smo popunjeni', 's' => ''],
     ];
 }
 
@@ -333,15 +362,21 @@ function dry65_live_resolve() {
     $biz   = function_exists('dry65_biz') ? dry65_biz() : ['phone_display' => '060 6900655'];
     $phone = $biz['phone_display'] ?? '060 6900655';
 
-    // Van radnog vremena ILI ručno zatvoreno -> closed
+    // Van radnog vremena ILI ručno zatvoreno -> closed. „Popunjeni" samo dok je otvoreno.
     $closed = $raw['closed'] || !dry65_live_is_open_now();
+    $full   = !$closed && $raw['full'];
 
-    $remaining_sec = $closed ? 0 : dry65_live_remaining_sec($raw);
+    $remaining_sec = ($closed || $full) ? 0 : dry65_live_remaining_sec($raw);
     $remaining_min = (int) ceil($remaining_sec / 60);
 
     if ($closed) {
         $data = ['tier' => 'closed', 'emoji' => '⚪', 'headline' => 'Zatvoreni smo',
                  'wait_label' => 'Zatvoreno', 'sub' => dry65_live_hours_text(),
+                 'note' => '', 'eyebrow' => 'TRENUTNI STATUS', 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
+    } elseif ($full) {
+        list($fh, $fs) = dry65_live_full_copy();
+        $data = ['tier' => 'full', 'emoji' => '🩶', 'headline' => $fh,
+                 'wait_label' => 'Popunjeni', 'sub' => $fs,
                  'note' => '', 'eyebrow' => 'TRENUTNI STATUS', 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
     } else {
         $data = dry65_live_tier_copy($remaining_min, $phone); // za boju (tier) + emoji
@@ -355,8 +390,8 @@ function dry65_live_resolve() {
         $data['wait_label'] = dry65_live_wait_label($remaining_min); // admin panel koristi
     }
 
-    // Custom poruka (ako postoji) prepisuje default sub — ali ne za closed
-    if ($raw['message'] !== '' && $data['tier'] !== 'closed') {
+    // Custom poruka (ako postoji) prepisuje default sub — ali ne za closed/full
+    if ($raw['message'] !== '' && $data['tier'] !== 'closed' && $data['tier'] !== 'full') {
         $data['sub'] = $raw['message'];
     }
 
@@ -377,6 +412,7 @@ function dry65_live_resolve() {
     $data['stale'] = (!$closed && $raw['updated_at'] && (current_time('timestamp') - $raw['updated_at']) > 2 * HOUR_IN_SECONDS);
 
     $data['closed']        = $closed;
+    $data['full']          = $full;
     $data['remaining_sec'] = $remaining_sec;
     $data['remaining_min'] = $remaining_min;
     $data['wait']          = $raw['wait'];
@@ -408,11 +444,16 @@ add_action('admin_post_dry65_live_save', function() {
 
     if ($action === 'closed') {
         update_option('dry65_live_closed', '1');
+        update_option('dry65_live_full', '0');
+    } elseif ($action === 'full') {
+        update_option('dry65_live_full', '1');
+        update_option('dry65_live_closed', '0');
     } else {
         $wait = isset($_POST['live_wait']) ? (int) $_POST['live_wait'] : 0;
         if (!in_array($wait, dry65_live_allowed_waits(), true)) $wait = 0;
         update_option('dry65_live_wait', $wait);
         update_option('dry65_live_closed', '0');
+        update_option('dry65_live_full', '0'); // klik na vreme = ponovo primamo
     }
 
     // Custom poruka (opciono) — uvek se snima iz forme
@@ -503,6 +544,11 @@ function dry65_live_admin_page() {
             </div>
 
             <div class="dry65-live-list" style="max-width:300px;margin-top:14px;">
+                <button type="submit" name="live_action" value="full"
+                    class="dry65-live-btn<?php echo $raw['full'] ? ' is-current' : ''; ?>"
+                    style="--btn-bg:#E8C3C2;--btn-ink:<?php echo esc_attr(dry65_live_text_on('#E8C3C2')); ?>;">
+                    ♥ Za danas popunjeni
+                </button>
                 <button type="submit" name="live_action" value="closed"
                     class="dry65-live-btn<?php echo $raw['closed'] ? ' is-current' : ''; ?>"
                     style="--btn-bg:#D0CFC7;--btn-ink:<?php echo esc_attr(dry65_live_text_on('#D0CFC7')); ?>;">
@@ -525,14 +571,17 @@ function dry65_live_admin_page() {
                 <input type="hidden" name="action" value="dry65_live_save_texts">
                 <?php wp_nonce_field('dry65_live_save_texts'); ?>
                 <?php foreach (dry65_live_texts() as $v => $t):
-                    $label = $v === 0 ? 'Slobodno (0 min)' : ($v === 60 ? '60+ min' : $v . ' min');
+                    if ($v === 'full') { $label = '♥ Za danas popunjeni'; $sph = 'Opis (prazno = „vidimo se sutra od 8h/10h" automatski)'; }
+                    elseif ($v === 0)  { $label = 'Slobodno (0 min)'; $sph = 'Opisni tekst'; }
+                    elseif ($v === 60) { $label = '60+ min'; $sph = 'Opisni tekst'; }
+                    else               { $label = $v . ' min'; $sph = 'Opisni tekst'; }
                 ?>
                 <div style="border-top:1px solid #eef0f2;padding:14px 0;">
                     <div style="font-weight:600;font-size:13px;color:#1d2327;margin-bottom:7px;"><?php echo esc_html($label); ?></div>
                     <input type="text" name="texts[<?php echo esc_attr($v); ?>][h]" value="<?php echo esc_attr($t['h']); ?>"
                         placeholder="Naslov" style="width:100%;max-width:560px;margin-bottom:7px;display:block;">
                     <input type="text" name="texts[<?php echo esc_attr($v); ?>][s]" value="<?php echo esc_attr($t['s']); ?>"
-                        placeholder="Opisni tekst" style="width:100%;max-width:560px;display:block;">
+                        placeholder="<?php echo esc_attr($sph); ?>" style="width:100%;max-width:560px;display:block;">
                 </div>
                 <?php endforeach; ?>
                 <button class="button button-primary" style="margin-top:16px;">Sačuvaj tekstove</button>
@@ -684,8 +733,12 @@ function dry65_live_ajax() {
     $token = isset($_GET['v']) ? preg_replace('/[^a-z0-9]/i', '', substr((string) $_GET['v'], 0, 32)) : '';
     $viewers = dry65_live_presence_touch($token);
 
+    list($full_h, $full_s) = dry65_live_full_copy();
     wp_send_json([
         'closed'        => (bool) $st['closed'],
+        'full'          => (bool) $st['full'],
+        'full_h'        => (string) $full_h,
+        'full_s'        => (string) $full_s,
         'remaining_sec' => (int) $st['remaining_sec'],
         // Gotov tekst sa servera — koristi ga homepage widget da ne duplira tier logiku.
         // page-live.php i dalje računa svoj copy lokalno (mora, zbog odbrojavanja između poziva).
@@ -930,7 +983,7 @@ add_action('admin_post_dry65_live_save_texts', function () {
 
     $in  = (isset($_POST['texts']) && is_array($_POST['texts'])) ? wp_unslash($_POST['texts']) : [];
     $out = [];
-    foreach (dry65_live_allowed_waits() as $v) {
+    foreach (array_keys(dry65_live_default_texts()) as $v) { // uključuje i 'full'
         $h = isset($in[$v]['h']) ? sanitize_text_field($in[$v]['h']) : '';
         $s = isset($in[$v]['s']) ? sanitize_text_field($in[$v]['s']) : '';
         if ($h !== '' || $s !== '') $out[$v] = ['h' => $h, 's' => $s];
