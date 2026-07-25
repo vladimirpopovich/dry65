@@ -184,7 +184,7 @@ function dry65_live_figure_url($tier) {
    Svaka promena statusa (wait/closed) upisuje red {vreme, wait, closed} u zasebnu
    tabelu. Ništa se ne prikazuje sad — samo se skuplja istorija da za par meseci
    ima šta da se analizira. Vremenska zona = WP podešavanje (salon = Beograd). */
-if (!defined('DRY65_LIVE_LOG_DB')) define('DRY65_LIVE_LOG_DB', 1); // verzija šeme
+if (!defined('DRY65_LIVE_LOG_DB')) define('DRY65_LIVE_LOG_DB', 2); // verzija šeme
 
 function dry65_live_log_table() {
     global $wpdb;
@@ -202,6 +202,8 @@ function dry65_live_log_install() {
         logged_at DATETIME NOT NULL,
         wait SMALLINT NOT NULL DEFAULT 0,
         closed TINYINT NOT NULL DEFAULT 0,
+        is_full TINYINT NOT NULL DEFAULT 0,
+        staff SMALLINT NOT NULL DEFAULT 0,
         PRIMARY KEY (id),
         KEY logged_at (logged_at)
     ) $charset;";
@@ -211,14 +213,19 @@ function dry65_live_log_install() {
 }
 add_action('init', 'dry65_live_log_install');
 
-/* Upiši trenutni status kao novi red. Zove se iz admin save i REST set putanja. */
+/* Upiši trenutni status kao novi red. Zove se iz admin save i REST set putanja.
+   Vreme je uvek Beograd (isto kao prikaz na /live), nezavisno od WP timezone
+   podešavanja — inače na serveru sa UTC-om log ispadne pomeren za 2h. */
 function dry65_live_log_append() {
     global $wpdb;
+    $now_bg = (new DateTime('now', new DateTimeZone('Europe/Belgrade')))->format('Y-m-d H:i:s');
     $wpdb->insert(dry65_live_log_table(), [
-        'logged_at' => current_time('mysql'),
+        'logged_at' => $now_bg,
         'wait'      => (int) get_option('dry65_live_wait', 0),
         'closed'    => get_option('dry65_live_closed', '0') === '1' ? 1 : 0,
-    ], ['%s', '%d', '%d']);
+        'is_full'   => get_option('dry65_live_full', '0') === '1' ? 1 : 0,
+        'staff'     => count((array) get_option('dry65_live_staff', [])),
+    ], ['%s', '%d', '%d', '%d', '%d']);
 }
 
 /* ---- Srpsko trajanje: "3 minuta" / "2 sata" / "1 dan" ----
@@ -433,7 +440,138 @@ add_action('admin_menu', function() {
         'dashicons-clock',        // ikonica (sat)
         3                         // pozicija (visoko, odmah ispod Dashboard-a)
     );
+    add_submenu_page(
+        'dry65-live',             // roditelj
+        'Live istorija',          // page title
+        'Live istorija',          // menu label
+        DRY65_LIVE_CAP,           // capability
+        'dry65-live-istorija',    // slug
+        'dry65_live_history_page' // callback
+    );
 });
+
+/* ---- „Live istorija": izveštaj iz log tabele ----
+   Popular times = vremenski ponderisano (status važi dok se ne promeni),
+   radno vreme 08-20, beogradsko vreme. */
+function dry65_live_history_page() {
+    if (!current_user_can(DRY65_LIVE_CAP)) wp_die('Nemate dozvolu.');
+    global $wpdb;
+    $table = dry65_live_log_table();
+
+    $days  = isset($_GET['days']) ? max(1, min(90, (int) $_GET['days'])) : 14;
+    $tz    = new DateTimeZone('Europe/Belgrade');
+    $since = (new DateTime('now', $tz))->modify('-' . ($days - 1) . ' days')->format('Y-m-d 00:00:00');
+
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT logged_at, wait, closed, is_full, staff FROM {$table} WHERE logged_at >= %s ORDER BY logged_at ASC",
+        $since
+    ), ARRAY_A);
+
+    // Grupisanje po danu
+    $by_day = [];
+    foreach ($rows as $r) $by_day[substr($r['logged_at'], 0, 10)][] = $r;
+
+    // Satno vremenski ponderisano
+    $hour_min = $hour_wsum = $hour_staffsum = array_fill(8, 12, 0.0);
+    $free_min = $heavy_min = $tot_min = 0.0;
+    $dist = ['Slobodno (0)' => 0.0, 'Kratko (5-10)' => 0.0, 'Srednje (15-30)' => 0.0, 'Dugo (35+)' => 0.0, 'Popunjeno' => 0.0, 'Zatvoreno' => 0.0];
+    foreach ($by_day as $ev) {
+        $n = count($ev);
+        for ($i = 0; $i < $n - 1; $i++) {
+            $t0  = new DateTime($ev[$i]['logged_at'], $tz);
+            $t1  = new DateTime($ev[$i + 1]['logged_at'], $tz);
+            $w   = (int) $ev[$i]['wait'];
+            $stf = (int) $ev[$i]['staff'];
+            $cl  = (int) $ev[$i]['closed'];
+            $fl  = (int) $ev[$i]['is_full'];
+            $cur = clone $t0;
+            while ($cur < $t1) {
+                $h    = (int) $cur->format('G');
+                $next = (clone $cur)->setTime($h, 0, 0)->modify('+1 hour');
+                if ($next > $t1) $next = clone $t1;
+                $mins = ($next->getTimestamp() - $cur->getTimestamp()) / 60;
+                if ($h >= 8 && $h < 20) {
+                    $hour_min[$h]      += $mins;
+                    $hour_wsum[$h]     += $w * $mins;
+                    $hour_staffsum[$h] += $stf * $mins;
+                    $tot_min += $mins;
+                    if ($cl) { $dist['Zatvoreno'] += $mins; }
+                    elseif ($fl) { $dist['Popunjeno'] += $mins; }
+                    elseif ($w == 0) { $dist['Slobodno (0)'] += $mins; $free_min += $mins; }
+                    elseif ($w <= 10) { $dist['Kratko (5-10)'] += $mins; }
+                    elseif ($w <= 30) { $dist['Srednje (15-30)'] += $mins; }
+                    else { $dist['Dugo (35+)'] += $mins; $heavy_min += $mins; }
+                }
+                $cur = $next;
+            }
+        }
+    }
+
+    // Najveći prosek za skaliranje trake
+    $max_avg = 0.01;
+    for ($h = 8; $h < 20; $h++) if ($hour_min[$h] > 0) $max_avg = max($max_avg, $hour_wsum[$h] / $hour_min[$h]);
+
+    $DN = ['Sunday' => 'ned', 'Monday' => 'pon', 'Tuesday' => 'uto', 'Wednesday' => 'sre', 'Thursday' => 'čet', 'Friday' => 'pet', 'Saturday' => 'sub'];
+    echo '<div class="wrap"><h1>Live istorija</h1>';
+    echo '<p style="color:#666;">Popular times = vremenski ponderisano (status važi dok se ne promeni), radno vreme 08–20h, beogradsko vreme.</p>';
+
+    // Izbor perioda
+    echo '<p>';
+    foreach ([7, 14, 30, 90] as $d) {
+        $url = admin_url('admin.php?page=dry65-live-istorija&days=' . $d);
+        $st  = $d === $days ? 'font-weight:700;text-decoration:none;' : '';
+        echo '<a href="' . esc_url($url) . '" class="button ' . ($d === $days ? 'button-primary' : '') . '" style="margin-right:6px;' . $st . '">' . $d . ' dana</a>';
+    }
+    echo '</p>';
+
+    if (!$rows) { echo '<p><em>Nema podataka za izabrani period.</em></p></div>'; return; }
+
+    // ---- Popular times ----
+    echo '<h2>Popular times — kad je gužva</h2>';
+    echo '<table class="widefat striped" style="max-width:720px;"><thead><tr><th>Sat</th><th>Prosek čekanja</th><th style="width:45%;">Gužva</th><th>Prosek ekipe</th></tr></thead><tbody>';
+    for ($h = 8; $h < 20; $h++) {
+        if ($hour_min[$h] <= 0) continue;
+        $avg   = $hour_wsum[$h] / $hour_min[$h];
+        $staff = $hour_staffsum[$h] / $hour_min[$h];
+        $pct   = (int) round(100 * $avg / $max_avg);
+        echo '<tr><td><strong>' . sprintf('%02d', $h) . 'h</strong></td>';
+        echo '<td>' . number_format($avg, 1) . ' min</td>';
+        echo '<td><div style="background:#F6D63B;height:16px;border-radius:3px;width:' . max(2, $pct) . '%;"></div></td>';
+        echo '<td>' . ($staff > 0 ? number_format($staff, 1) : '—') . '</td></tr>';
+    }
+    echo '</tbody></table>';
+
+    // ---- Raspodela ----
+    echo '<h2 style="margin-top:28px;">Raspodela statusa (udeo radnog vremena)</h2>';
+    echo '<table class="widefat striped" style="max-width:420px;"><tbody>';
+    foreach ($dist as $k => $v) {
+        if ($v <= 0) continue;
+        echo '<tr><td>' . esc_html($k) . '</td><td>' . round(100 * $v / max($tot_min, 1)) . '%</td></tr>';
+    }
+    echo '</tbody></table>';
+
+    // ---- Po danu ----
+    echo '<h2 style="margin-top:28px;">Po danu</h2>';
+    echo '<table class="widefat striped" style="max-width:820px;"><thead><tr><th>Datum</th><th>Dan</th><th>Updejta</th><th>Radno</th><th>Prosek (kad &gt;0)</th><th>Max</th><th>Ø ekipa</th></tr></thead><tbody>';
+    foreach (array_reverse(array_keys($by_day)) as $d) {
+        $ev = $by_day[$d];
+        $waits = array_map(fn($r) => (int) $r['wait'], $ev);
+        $busy  = array_filter($waits, fn($w) => $w > 0);
+        $stf   = array_map(fn($r) => (int) $r['staff'], $ev);
+        $stf_nonzero = array_filter($stf, fn($s) => $s > 0);
+        $avg   = $busy ? round(array_sum($busy) / count($busy), 1) : 0;
+        $mx    = $waits ? max($waits) : 0;
+        $stfavg = $stf_nonzero ? number_format(array_sum($stf_nonzero) / count($stf_nonzero), 1) : '—';
+        $first = substr($ev[0]['logged_at'], 11, 5);
+        $last  = substr($ev[count($ev) - 1]['logged_at'], 11, 5);
+        $dn    = $DN[(new DateTime($d, $tz))->format('l')];
+        echo '<tr><td>' . esc_html($d) . '</td><td>' . esc_html($dn) . '</td><td>' . count($ev) . '</td><td>' . esc_html("$first–$last") . '</td><td>' . $avg . ' min</td><td>' . $mx . ' min</td><td>' . $stfavg . '</td></tr>';
+    }
+    echo '</tbody></table>';
+
+    echo '<p style="color:#999;font-size:12px;margin-top:18px;">Napomena: „Prosek ekipe" počinje da se puni od kada se broj frizera loguje. Stariji zapisi od pre te izmene mogu imati 0.</p>';
+    echo '</div>';
+}
 
 /* Snimanje: jedan admin_post handler za sva dugmad. */
 add_action('admin_post_dry65_live_save', function() {
