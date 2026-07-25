@@ -46,9 +46,22 @@ $parent = (int) get_post_field('post_parent', $id);
 </section>
 
 <?php if ($is_hub): ?>
+<!-- HUB: opisni tekst kategorije -->
+<?php $hub_body = $body ?: get_post_field('post_content', $id); ?>
+<?php if (trim((string) $hub_body)): ?>
+<section class="section" style="padding-bottom:clamp(20px,2.5vw,32px);">
+  <div class="wrap" style="max-width:720px;">
+    <?php foreach (preg_split('/\n\s*\n/', trim($hub_body)) as $para): if (trim($para) === '') continue; ?>
+    <p class="lead" style="margin:0 0 18px;"><?php echo esc_html(trim($para)); ?></p>
+    <?php endforeach; ?>
+  </div>
+</section>
+<?php endif; ?>
+
 <!-- HUB: podstranice (stilovi u ovoj kategoriji) -->
-<section class="section">
+<section class="section" style="padding-top:clamp(20px,2.5vw,32px);">
   <div class="wrap">
+    <h2 class="display caps" style="font-size:clamp(22px,3vw,34px);margin:0 0 clamp(24px,3vw,36px);letter-spacing:0.01em;">Izaberi svoj stil</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(22px,3vw,38px);">
       <?php foreach ($kids as $c):
         $c_img = function_exists('dry65_service_image') ? dry65_service_image($c) : '';

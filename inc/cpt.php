@@ -157,13 +157,15 @@ add_action('init', 'dry65_create_settings_page'); // Radi i bez theme reactivati
    Postojeće kategorije (feniranje/stilizovanje/nega) dobijaju intro; stari flat
    stubovi (v1) se brišu i prave iznova kao deca. Admin sve popunjava kasnije. */
 function dry65_seed_services() {
-    if (get_option('dry65_services_seed_v') === '3') return;
+    if (get_option('dry65_services_seed_v') === '4') return;
 
-    // 1) Kategorije-roditelji + intro tekst (razdvajanje tehnike)
+    // 1) Kategorije-roditelji + intro tekst (razdvajanje tehnike).
+    // „Feniranje na četke" je glavni hub (tehnika); deca su konkretni look-ovi.
     $parents = [
-        'feniranje' => [
-            'title' => 'Feniranje',
-            'intro' => 'Feniranje je oblikovanje kose fenom i četkom, posle pranja. Rezultat je prirodan, mek i sjajan, a frizura drži nekoliko dana. Cena prati dužinu kose. Idealno za svakodnevni sređen izgled, sve bez zakazivanja.',
+        'feniranje-na-cetke' => [
+            'title' => 'Feniranje na četke',
+            'old'   => 'feniranje', // stari parent „Pranje i feniranje" -> preimenuj na produkciji
+            'intro' => 'Feniranje na četke je osnova svakog stila u Dry65 — oblikovanje kose fenom i okruglom četkom, posle pranja. Prirodan, mek i sjajan rezultat koji drži danima. Odavde se granaju svi look-ovi: na ravno, na talase, na lokne i na volumen. Sve bez zakazivanja.',
         ],
         'stilizovanje' => [
             'title' => 'Stilizovanje kose',
@@ -183,6 +185,10 @@ function dry65_seed_services() {
     $pid = [];
     foreach ($parents as $slug => $info) {
         $p = get_page_by_path($slug, OBJECT, 'dry65_service');
+        // Stari slug (npr. 'feniranje' -> 'feniranje-na-cetke')
+        if (!$p && !empty($info['old'])) {
+            $p = get_page_by_path($info['old'], OBJECT, 'dry65_service');
+        }
         // Ako postoji ali sa „-2" slug-om (raniji konflikt), nadji ga i po -2
         if (!$p) {
             $alt = get_posts(['post_type' => 'dry65_service', 'name' => $slug . '-2', 'posts_per_page' => 1, 'post_status' => 'any']);
@@ -192,6 +198,7 @@ function dry65_seed_services() {
             $pid[$slug] = $p->ID;
             $upd = ['ID' => $p->ID];
             if ($p->post_name !== $slug) $upd['post_name'] = $slug;             // vrati čist slug
+            if (!empty($info['old']) && $p->post_title !== $info['title']) $upd['post_title'] = $info['title']; // preimenuj stari parent
             if (trim((string) $p->post_excerpt) === '') $upd['post_excerpt'] = $info['intro'];
             if (count($upd) > 1) wp_update_post($upd);
         } else {
@@ -203,20 +210,20 @@ function dry65_seed_services() {
         }
     }
 
-    // 2) Obriši stare flat stub stilove iz v1 (bez sadržaja, prave se iznova kao deca)
-    foreach (['feniranje-na-talase', 'feniranje-na-cetke', 'feniranje-na-volumen', 'feniranje-na-lokne', 'feniranje-na-ravno'] as $old) {
+    // 2) Obriši stare flat stub stilove iz v1 (bez sadržaja). NAPOMENA: 'feniranje-na-cetke'
+    // NIJE u listi — to je sad glavni PARENT hub, ne sme da se obriše.
+    foreach (['feniranje-na-talase', 'feniranje-na-volumen', 'feniranje-na-lokne', 'feniranje-na-ravno'] as $old) {
         $op = get_page_by_path($old, OBJECT, 'dry65_service');
         if ($op && (int) $op->post_parent === 0) wp_delete_post($op->ID, true);
     }
 
-    // 3) Deca po grani [naslov, slug, kratak opis]
+    // 3) Deca po grani [naslov, slug, kratak opis] — „na četke" je parent, ne dete
     $children = [
-        'feniranje' => [
-            ['Feniranje na ravno',   'na-ravno',   'Glatka i uredna kosa, oblikovana fenom i četkom — bez pegle. Prirodan sjaj i mekoća za svaki dan.'],
-            ['Feniranje na talase',  'na-talase',  'Mekani, prirodni talasi fenom i okruglom četkom. Opušten a sređen look koji drži danima.'],
-            ['Feniranje na lokne',   'na-lokne',   'Nežne, mekane lokne postignute fenom i četkom. Prirodan volumen i pokret, savršeno za svaki dan.'],
-            ['Feniranje na volumen', 'na-volumen', 'Podignut koren i bujna, puna kosa. Feniranje koje daje maksimalan volumen i telo frizuri.'],
-            ['Feniranje četkama',    'cetkama',    'Klasično feniranje okruglom četkom — precizno oblikovanje, gladak i profesionalan finiš.'],
+        'feniranje-na-cetke' => [
+            ['Feniranje na ravno',   'feniranje-na-ravno',   'Glatka i uredna kosa, oblikovana fenom i četkom — bez pegle. Prirodan sjaj i mekoća za svaki dan.'],
+            ['Feniranje na talase',  'feniranje-na-talase',  'Mekani, prirodni talasi fenom i okruglom četkom. Opušten a sređen look koji drži danima.'],
+            ['Feniranje na lokne',   'feniranje-na-lokne',   'Nežne, mekane lokne postignute fenom i četkom. Prirodan volumen i pokret, savršeno za svaki dan.'],
+            ['Feniranje na volumen', 'feniranje-na-volumen', 'Podignut koren i bujna, puna kosa. Feniranje koje daje maksimalan volumen i telo frizuri.'],
         ],
         'stilizovanje' => [
             ['Ravna kosa peglom', 'ravna-kosa-peglom', 'Staklasto glatka, sjajna i potpuno ravna kosa peglom. Sleek look koji drži i po vlažnom vremenu.'],
@@ -248,7 +255,7 @@ function dry65_seed_services() {
     }
 
     flush_rewrite_rules(false);
-    update_option('dry65_services_seed_v', '3');
+    update_option('dry65_services_seed_v', '4');
 }
 add_action('init', 'dry65_seed_services', 20);
 
