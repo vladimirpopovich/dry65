@@ -80,16 +80,6 @@ function dry65_live_staff_all() {
     return ['Jelena', 'Ema', 'Jovana', 'Nikola'];
 }
 
-/* Tekst „Trenutno u salonu: …" od liste aktivnih imena (sa „i" pred poslednjim). */
-function dry65_live_staff_text($names) {
-    $names = array_values(array_intersect(dry65_live_staff_all(), (array) $names));
-    $n = count($names);
-    if ($n === 0) return '';
-    if ($n === 1) return 'Trenutno u salonu: ' . $names[0];
-    $last = array_pop($names);
-    return 'Trenutno u salonu: ' . implode(', ', $names) . ' i ' . $last;
-}
-
 /* ---- Trenutni raw status iz opcija ---- */
 function dry65_live_get_raw() {
     return [
@@ -224,7 +214,7 @@ function dry65_live_log_append() {
         'wait'      => (int) get_option('dry65_live_wait', 0),
         'closed'    => get_option('dry65_live_closed', '0') === '1' ? 1 : 0,
         'is_full'   => get_option('dry65_live_full', '0') === '1' ? 1 : 0,
-        'staff'     => count((array) get_option('dry65_live_staff', [])),
+        'staff'     => dry65_live_schedule_staff_at(),
     ], ['%s', '%d', '%d', '%d', '%d']);
 }
 
@@ -448,6 +438,14 @@ add_action('admin_menu', function() {
         'dry65-live-istorija',    // slug
         'dry65_live_history_page' // callback
     );
+    add_submenu_page(
+        'dry65-live',              // roditelj
+        'Raspored smene',          // page title
+        'Raspored smene',          // menu label
+        DRY65_LIVE_CAP,            // capability
+        'dry65-live-raspored',     // slug
+        'dry65_live_schedule_page' // callback
+    );
 });
 
 /* ---- „Live istorija": izveštaj iz log tabele ----
@@ -572,6 +570,157 @@ function dry65_live_history_page() {
     echo '<p style="color:#999;font-size:12px;margin-top:18px;">Napomena: „Prosek ekipe" počinje da se puni od kada se broj frizera loguje. Stariji zapisi od pre te izmene mogu imati 0.</p>';
     echo '</div>';
 }
+
+/* ---- Raspored smene (nedeljni): po imenu, radni dani (Pon-Pet) + subota ---- */
+
+/* HH:MM ili '' ako nije validno. */
+function dry65_live_sanitize_time($v) {
+    $v = trim((string) $v);
+    return preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v) ? $v : '';
+}
+
+/* Ceo raspored: [ 'Ime' => ['wd_from','wd_to','sat_from','sat_to'], ... ] */
+function dry65_live_schedule_get() {
+    $saved = get_option('dry65_live_schedule', []);
+    if (!is_array($saved)) $saved = [];
+    $out = [];
+    foreach (dry65_live_staff_all() as $name) {
+        $r = isset($saved[$name]) && is_array($saved[$name]) ? $saved[$name] : [];
+        $out[$name] = [
+            'wd_from'  => dry65_live_sanitize_time($r['wd_from']  ?? ''),
+            'wd_to'    => dry65_live_sanitize_time($r['wd_to']    ?? ''),
+            'sat_from' => dry65_live_sanitize_time($r['sat_from'] ?? ''),
+            'sat_to'   => dry65_live_sanitize_time($r['sat_to']   ?? ''),
+        ];
+    }
+    return $out;
+}
+
+/* Broj ljudi koji rade u dati DateTime (na osnovu rasporeda). Ned = 0. */
+function dry65_live_schedule_staff_at($dt = null) {
+    $tz = new DateTimeZone('Europe/Belgrade');
+    $dt = $dt instanceof DateTime ? $dt : new DateTime('now', $tz);
+    $dow = (int) $dt->format('N'); // 1=Pon..7=Ned
+    if ($dow === 7) return 0;
+    $pref = ($dow === 6) ? 'sat' : 'wd';
+    $min  = (int) $dt->format('H') * 60 + (int) $dt->format('i');
+    $n = 0;
+    foreach (dry65_live_schedule_get() as $r) {
+        $f = $r[$pref . '_from']; $t = $r[$pref . '_to'];
+        if ($f === '' || $t === '') continue;
+        $fm = (int) substr($f, 0, 2) * 60 + (int) substr($f, 3, 2);
+        $tm = (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
+        if ($min >= $fm && $min < $tm) $n++;
+    }
+    return $n;
+}
+
+/* Imena koja rade U OVOM TRENUTKU po rasporedu (smena aktivna sada). Ned = []. */
+function dry65_live_schedule_now_names() {
+    $tz  = new DateTimeZone('Europe/Belgrade');
+    $now = new DateTime('now', $tz);
+    $dow = (int) $now->format('N');
+    if ($dow === 7) return [];
+    $pref = ($dow === 6) ? 'sat' : 'wd';
+    $min  = (int) $now->format('H') * 60 + (int) $now->format('i');
+    $out = [];
+    foreach (dry65_live_schedule_get() as $name => $r) {
+        $f = $r[$pref . '_from']; $t = $r[$pref . '_to'];
+        if ($f === '' || $t === '') continue;
+        $fm = (int) substr($f, 0, 2) * 60 + (int) substr($f, 3, 2);
+        $tm = (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
+        if ($min >= $fm && $min < $tm) $out[] = $name;
+    }
+    return $out;
+}
+
+/* „Trenutno rade: X, Y i Z" iz rasporeda (za /live). '' ako trenutno niko / nedelja. */
+function dry65_live_today_text() {
+    $names = dry65_live_schedule_now_names();
+    $n = count($names);
+    if ($n === 0) return '';
+    if ($n === 1) return 'Trenutno radi: ' . $names[0];
+    $last = array_pop($names);
+    return 'Trenutno rade: ' . implode(', ', $names) . ' i ' . $last;
+}
+
+function dry65_live_schedule_page() {
+    if (!current_user_can(DRY65_LIVE_CAP)) wp_die('Nemate dozvolu.');
+    $sched = dry65_live_schedule_get();
+    $now_n = dry65_live_schedule_staff_at();
+    $show  = get_option('dry65_live_chairs_show', '0') === '1';
+    $today = dry65_live_today_text();
+    ?>
+    <div class="wrap">
+      <h1>Raspored smene</h1>
+      <p style="color:#666;max-width:640px;">Nedeljni raspored. Za svako ime unesi kada počinje i završava — radnim danima (Pon–Pet) i subotom. Vremena se preklapaju (npr. jedna 8–17, druga 10–20). Nedelja = ne radi se.</p>
+      <?php if (isset($_GET['saved'])): ?><div class="notice notice-success is-dismissible"><p>Raspored sačuvan.</p></div><?php endif; ?>
+      <p style="font-size:13px;color:#555;">Trenutno po rasporedu radi: <strong><?php echo (int) $now_n; ?></strong> <?php echo $now_n === 1 ? 'osoba' : 'osoba/e'; ?>.</p>
+
+      <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <input type="hidden" name="action" value="dry65_live_schedule_save">
+        <?php wp_nonce_field('dry65_live_schedule_save'); ?>
+        <table class="widefat striped" style="max-width:680px;margin-top:12px;">
+          <thead>
+            <tr>
+              <th rowspan="2" style="vertical-align:bottom;">Ime</th>
+              <th colspan="2" style="text-align:center;border-left:1px solid #dcdcde;">Radni dani (Pon–Pet)</th>
+              <th colspan="2" style="text-align:center;border-left:1px solid #dcdcde;">Subota</th>
+            </tr>
+            <tr>
+              <th style="border-left:1px solid #dcdcde;">Od</th><th>Do</th>
+              <th style="border-left:1px solid #dcdcde;">Od</th><th>Do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach (dry65_live_staff_all() as $name): $r = $sched[$name]; ?>
+            <tr>
+              <td><strong><?php echo esc_html($name); ?></strong></td>
+              <td style="border-left:1px solid #dcdcde;"><input type="time" name="schedule[<?php echo esc_attr($name); ?>][wd_from]" value="<?php echo esc_attr($r['wd_from']); ?>"></td>
+              <td><input type="time" name="schedule[<?php echo esc_attr($name); ?>][wd_to]" value="<?php echo esc_attr($r['wd_to']); ?>"></td>
+              <td style="border-left:1px solid #dcdcde;"><input type="time" name="schedule[<?php echo esc_attr($name); ?>][sat_from]" value="<?php echo esc_attr($r['sat_from']); ?>"></td>
+              <td><input type="time" name="schedule[<?php echo esc_attr($name); ?>][sat_to]" value="<?php echo esc_attr($r['sat_to']); ?>"></td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+        <p style="color:#888;font-size:12px;max-width:680px;">Ostavi prazno ako neko taj dan ne radi. Imena se uređuju u kodu (<code>dry65_live_staff_all()</code>).</p>
+
+        <div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:14px 16px;max-width:680px;margin:18px 0;">
+          <label style="display:flex;align-items:center;gap:10px;font-weight:600;">
+            <input type="checkbox" name="show_on_live" value="1" <?php checked($show); ?>>
+            Prikaži „ko danas radi" na /live
+          </label>
+          <p style="color:#888;font-size:12px;margin:8px 0 0;">
+            Kad je uključeno, na /live piše ko je <strong>trenutno</strong> u smeni: „<?php echo esc_html($today !== '' ? $today : 'Trenutno rade …'); ?>" (automatski iz rasporeda, po satu). Kad je isključeno, ne vidi se.
+          </p>
+        </div>
+
+        <p><button type="submit" class="button button-primary">Sačuvaj raspored</button></p>
+      </form>
+    </div>
+    <?php
+}
+
+add_action('admin_post_dry65_live_schedule_save', function() {
+    if (!current_user_can(DRY65_LIVE_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_live_schedule_save');
+    $in  = isset($_POST['schedule']) && is_array($_POST['schedule']) ? $_POST['schedule'] : [];
+    $out = [];
+    foreach (dry65_live_staff_all() as $name) {
+        $r = isset($in[$name]) && is_array($in[$name]) ? $in[$name] : [];
+        $out[$name] = [
+            'wd_from'  => dry65_live_sanitize_time($r['wd_from']  ?? ''),
+            'wd_to'    => dry65_live_sanitize_time($r['wd_to']    ?? ''),
+            'sat_from' => dry65_live_sanitize_time($r['sat_from'] ?? ''),
+            'sat_to'   => dry65_live_sanitize_time($r['sat_to']   ?? ''),
+        ];
+    }
+    update_option('dry65_live_schedule', $out);
+    update_option('dry65_live_chairs_show', isset($_POST['show_on_live']) ? '1' : '0');
+    wp_redirect(add_query_arg(['page' => 'dry65-live-raspored', 'saved' => '1'], admin_url('admin.php')));
+    exit;
+});
 
 /* Snimanje: jedan admin_post handler za sva dugmad. */
 add_action('admin_post_dry65_live_save', function() {
@@ -727,37 +876,6 @@ function dry65_live_admin_page() {
         </div>
 
         <?php
-        $staff       = (array) get_option('dry65_live_staff', []);
-        $chairs_show = get_option('dry65_live_chairs_show', '0') === '1';
-        ?>
-        <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;max-width:560px;margin-top:26px;">
-            <h2 style="margin-top:0;">💇 Ko danas radi</h2>
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                <input type="hidden" name="action" value="dry65_live_save_chairs">
-                <?php wp_nonce_field('dry65_live_save_chairs'); ?>
-
-                <label style="display:block;font-weight:600;margin-bottom:8px;">Klikni na svakog ko je danas u smeni:</label>
-                <div class="dry65-chairs">
-                    <?php foreach (dry65_live_staff_all() as $name):
-                        $active = in_array($name, $staff, true);
-                    ?>
-                    <button type="submit" name="staff_toggle" value="<?php echo esc_attr($name); ?>"
-                        class="<?php echo $active ? 'is-current' : ''; ?>"><?php echo esc_html($name); ?></button>
-                    <?php endforeach; ?>
-                </div>
-
-                <div style="margin-top:16px;">
-                    <button type="submit" name="chairs_toggle" value="1" class="button button-<?php echo $chairs_show ? 'primary' : 'secondary'; ?>">
-                        <?php echo $chairs_show ? '● Prikaz na /live: UKLJUČEN' : '○ Prikaz na /live: ISKLJUČEN'; ?>
-                    </button>
-                    <span style="color:#888;font-size:12px;margin-left:8px;">klikni da <?php echo $chairs_show ? 'sakriješ' : 'prikažeš'; ?></span>
-                </div>
-                <?php $preview = dry65_live_staff_text($staff); ?>
-                <p style="color:#888;font-size:12px;margin-top:12px;">Kad je uključeno, na /live piše: „<?php echo esc_html($preview !== '' ? $preview : 'Danas rade …'); ?>". Kad je isključeno, ne vidi se.</p>
-            </form>
-        </div>
-
-        <?php
         $api_key = dry65_live_api_key();
         $api_base = home_url('/wp-json/dry65/v1/live');
         ?>
@@ -774,11 +892,9 @@ function dry65_live_admin_page() {
                 <li>Slobodni smo &nbsp;→&nbsp; …/live?key=…&amp;set=0</li>
                 <li>Za danas popunjeni &nbsp;→&nbsp; …/live?key=…&amp;set=full</li>
                 <li>Zatvoreni &nbsp;→&nbsp; …/live?key=…&amp;set=closed</li>
-                <li>Ko radi &nbsp;→&nbsp; …/live?key=…&amp;staff=Jelena,Ema</li>
-                <li>Toggle jedne &nbsp;→&nbsp; …/live?key=…&amp;staff_toggle=Nikola</li>
                 <li>Prikaži/sakrij ko radi &nbsp;→&nbsp; …/live?key=…&amp;staff_show=1 (ili 0)</li>
             </ul>
-            <p style="color:#888;font-size:12px;"><code>set</code>: <?php echo esc_html(dry65_live_allowed_waits_text()); ?>, full. &nbsp; <code>staff</code>: imena zarezom (<?php echo esc_html(implode(',', dry65_live_staff_all())); ?>). Odgovor vraća novi status (za potvrdu u Prečici).</p>
+            <p style="color:#888;font-size:12px;"><code>set</code>: <?php echo esc_html(dry65_live_allowed_waits_text()); ?>, full. &nbsp; „Ko danas radi" se sad vodi iz <strong>Raspored smene</strong> (automatski), a <code>staff_show</code> samo pali/gasi prikaz. Odgovor vraća novi status.</p>
 
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Novi ključ poništava sve postojeće Prečice. Nastaviti?');" style="margin-top:12px;">
                 <input type="hidden" name="action" value="dry65_live_regen_key">
@@ -890,7 +1006,7 @@ function dry65_live_ajax() {
         'stale'         => (bool) $st['stale'],
         'viewers'       => (int) $viewers,
         'viewers_min'   => (int) DRY65_LIVE_VIEWERS_MIN,
-        'staff_text'    => dry65_live_staff_text(get_option('dry65_live_staff', [])),
+        'staff_text'    => dry65_live_today_text(),
         'chairs_show'   => get_option('dry65_live_chairs_show', '0') === '1',
     ]);
 }
@@ -1039,26 +1155,7 @@ function dry65_live_rest_set($req) {
         $did = true;
     }
 
-    // Ko radi: staff=Jelena,Ema (postavi tačno te) ILI staff_toggle=Jelena (uključi/isključi jednu)
-    $staff_param = $req->get_param('staff');
-    if ($staff_param !== null) {
-        $names = array_filter(array_map('trim', explode(',', (string) $staff_param)));
-        $names = array_values(array_intersect(dry65_live_staff_all(), $names));
-        update_option('dry65_live_staff', $names);
-        $did = true;
-    }
-    $toggle = $req->get_param('staff_toggle');
-    if ($toggle !== null && $toggle !== '') {
-        $name = trim((string) $toggle);
-        if (in_array($name, dry65_live_staff_all(), true)) {
-            $active = (array) get_option('dry65_live_staff', []);
-            if (in_array($name, $active, true)) $active = array_diff($active, [$name]);
-            else $active[] = $name;
-            update_option('dry65_live_staff', array_values(array_intersect(dry65_live_staff_all(), $active)));
-            $did = true;
-        }
-    }
-    // Prikaz „ko radi" na /live: staff_show=1 / 0
+    // Prikaz „ko radi" na /live: staff_show=1 / 0. („Ko radi" se vodi iz Rasporeda smene.)
     $staff_show = $req->get_param('staff_show');
     if ($staff_show !== null && $staff_show !== '') {
         $on = ($staff_show === '1' || strtolower((string) $staff_show) === 'true');
@@ -1067,7 +1164,7 @@ function dry65_live_rest_set($req) {
     }
 
     if (!$did) {
-        return new WP_Error('dry65_nothing', 'Pošalji "set", "message", "staff", "staff_toggle" ili "staff_show".', ['status' => 400]);
+        return new WP_Error('dry65_nothing', 'Pošalji "set", "message" ili "staff_show".', ['status' => 400]);
     }
 
     update_option('dry65_live_updated_at', current_time('timestamp'));
@@ -1081,7 +1178,7 @@ function dry65_live_rest_set($req) {
         'wait'       => (int) $st['wait'],
         'closed'     => (bool) $st['closed'],
         'tier'       => $st['tier'],
-        'staff_text' => dry65_live_staff_text(get_option('dry65_live_staff', [])),
+        'staff_text' => dry65_live_today_text(),
     ];
 }
 
@@ -1094,33 +1191,6 @@ function dry65_live_rest_status() {
         'closed'        => (bool) $st['closed'],
     ];
 }
-
-/* Sačuvaj stolice (broj + prikaz na /live). */
-add_action('admin_post_dry65_live_save_chairs', function () {
-    if (!current_user_can(DRY65_LIVE_CAP)) wp_die('Nemate dozvolu.');
-    check_admin_referer('dry65_live_save_chairs');
-
-    if (isset($_POST['staff_toggle'])) {
-        $name = sanitize_text_field(wp_unslash($_POST['staff_toggle']));
-        if (in_array($name, dry65_live_staff_all(), true)) {
-            $active = (array) get_option('dry65_live_staff', []);
-            if (in_array($name, $active, true)) {
-                $active = array_diff($active, [$name]);
-            } else {
-                $active[] = $name;
-            }
-            // sačuvaj u kanonskom redosledu
-            $active = array_values(array_intersect(dry65_live_staff_all(), $active));
-            update_option('dry65_live_staff', $active);
-        }
-    }
-    if (isset($_POST['chairs_toggle'])) {
-        $cur = get_option('dry65_live_chairs_show', '0') === '1';
-        update_option('dry65_live_chairs_show', $cur ? '0' : '1');
-    }
-    wp_redirect(add_query_arg(['page' => 'dry65-live', 'saved' => '1'], admin_url('admin.php')));
-    exit;
-});
 
 /* Sačuvaj editabilne tekstove (naslov + opis po vremenu). */
 add_action('admin_post_dry65_live_save_texts', function () {

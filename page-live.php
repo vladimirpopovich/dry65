@@ -34,7 +34,7 @@ get_header();
       <p class="lead live-sub" id="live-sub"><?php echo esc_html($st['sub']); ?></p>
 
       <?php
-      $live_staff_text  = dry65_live_staff_text(get_option('dry65_live_staff', []));
+      $live_staff_text  = dry65_live_today_text();
       $live_chairs_show = get_option('dry65_live_chairs_show', '0') === '1';
       $live_chairs_vis  = $live_chairs_show && $live_staff_text !== '' && !$st['closed'];
       ?>
@@ -180,7 +180,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
     full:         <?php echo !empty($st['full']) ? 'true' : 'false'; ?>,
     fullH:        <?php echo wp_json_encode($st['tier'] === 'full' ? $st['headline'] : dry65_live_full_copy()[0], JSON_UNESCAPED_UNICODE); ?>,
     fullS:        <?php echo wp_json_encode($st['tier'] === 'full' ? $st['sub'] : dry65_live_full_copy()[1], JSON_UNESCAPED_UNICODE); ?>,
-    staffText:    <?php echo wp_json_encode(dry65_live_staff_text(get_option('dry65_live_staff', []))); ?>,
+    staffText:    <?php echo wp_json_encode(dry65_live_today_text()); ?>,
     chairsShow:   <?php echo get_option('dry65_live_chairs_show', '0') === '1' ? 'true' : 'false'; ?>,
     message:      <?php echo wp_json_encode(get_option('dry65_live_message', '')); ?>,
     hoursText:    <?php echo wp_json_encode(dry65_live_hours_text()); ?>,
