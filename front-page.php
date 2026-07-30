@@ -195,24 +195,38 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
       </div>
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('usluge'))); ?>" class="textlink">Pogledaj sve <span>→</span></a>
     </div>
+    <style>
+      .hp-svc-links { list-style:none; padding:0; margin:16px 0 0; }
+      .hp-svc-links li + li { border-top:1px solid var(--cream-deep,#ece7df); }
+      .hp-svc-link { display:flex; align-items:center; gap:8px; padding:9px 0; color:var(--ink);
+        text-decoration:none; font-family:var(--font-sans); font-size:15.5px; font-weight:500; transition:color .2s, gap .2s; }
+      .hp-svc-link:hover { color:var(--clay); gap:12px; }
+      .hp-svc-link .arr { color:var(--clay); font-size:14px; }
+    </style>
     <div class="grid cols-3">
-      <?php foreach ($services as $i => $s): $usl_url = get_permalink(get_page_by_path('usluge')); ?>
-      <a href="<?php echo esc_url($usl_url); ?>" class="reveal card hover svc-card" style="height:100%;display:flex;flex-direction:column;color:inherit;text-decoration:none;" data-delay="<?php echo $i * 80; ?>">
-        <div style="aspect-ratio:4/3;overflow:hidden;">
-          <?php echo dry65_picture($s['img'], $s['title'], [
-            'loading' => 'lazy',
-            'style'   => 'width:100%;height:100%;object-fit:cover;display:block;',
-          ]); ?>
-        </div>
-        <div style="padding:26px 24px 28px;display:flex;flex-direction:column;flex:1;">
-          <span class="mono" style="color:var(--clay);"><?php echo esc_html($s['kicker']); ?></span>
-          <h3 class="display" style="font-size:29px;margin-top:10px;"><?php echo esc_html($s['title']); ?></h3>
-          <p class="muted" style="margin-top:12px;font-size:16px;flex:1;"><?php echo esc_html($s['short']); ?></p>
-          <div style="margin-top:20px;">
-            <span class="textlink">Saznaj više <span>→</span></span>
+      <?php foreach (dry65_service_tree() as $i => $cat): ?>
+      <div class="reveal card svc-card" style="height:100%;display:flex;flex-direction:column;" data-delay="<?php echo $i * 80; ?>">
+        <a href="<?php echo esc_url($cat['url']); ?>" style="display:block;text-decoration:none;color:inherit;">
+          <div style="aspect-ratio:4/3;overflow:hidden;">
+            <?php echo dry65_picture($cat['img'], $cat['title'], ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
           </div>
+        </a>
+        <div style="padding:24px 24px 26px;display:flex;flex-direction:column;flex:1;">
+          <a href="<?php echo esc_url($cat['url']); ?>" style="text-decoration:none;color:inherit;">
+            <h3 class="display" style="font-size:27px;"><?php echo esc_html($cat['title']); ?></h3>
+          </a>
+          <?php if (!empty($cat['children'])): ?>
+          <ul class="hp-svc-links">
+            <?php foreach ($cat['children'] as $c): ?>
+            <li><a class="hp-svc-link" href="<?php echo esc_url($c['url']); ?>"><span class="arr">→</span> <?php echo esc_html($c['title']); ?></a></li>
+            <?php endforeach; ?>
+          </ul>
+          <?php else: ?>
+          <?php if ($cat['intro']): ?><p class="muted" style="margin-top:12px;font-size:15.5px;flex:1;"><?php echo esc_html($cat['intro']); ?></p><?php endif; ?>
+          <div style="margin-top:18px;"><a href="<?php echo esc_url($cat['url']); ?>" class="textlink">Saznaj više <span>→</span></a></div>
+          <?php endif; ?>
         </div>
-      </a>
+      </div>
       <?php endforeach; ?>
     </div>
   </div>
