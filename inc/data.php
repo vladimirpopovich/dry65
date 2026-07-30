@@ -211,6 +211,29 @@ function dry65_service_image($post) {
     return $img;
 }
 
+/* Galerija strane: sve slike okačene na taj post (osim glavne/featured).
+   Osoblje samo uploaduje fotke na uslugu u wp-adminu i galerija se pojavi. */
+function dry65_service_gallery($post_id) {
+    $atts = get_posts([
+        'post_type'      => 'attachment',
+        'post_mime_type' => 'image',
+        'post_parent'    => (int) $post_id,
+        'posts_per_page' => 16,
+        'orderby'        => 'menu_order date',
+        'order'          => 'ASC',
+        'fields'         => 'ids',
+        'post_status'    => 'inherit',
+    ]);
+    $main = (int) get_post_thumbnail_id($post_id);
+    $out = [];
+    foreach ($atts as $aid) {
+        if ((int) $aid === $main) continue;
+        $url = wp_get_attachment_image_url($aid, 'large');
+        if ($url) $out[] = $url;
+    }
+    return $out;
+}
+
 /* Stablo usluga: kategorije (parent=0) svaka sa svojom decom. Za /usluge grid. */
 function dry65_service_tree() {
     $parents = get_posts(['post_type' => 'dry65_service', 'post_parent' => 0, 'posts_per_page' => -1, 'orderby' => 'menu_order', 'order' => 'ASC']);

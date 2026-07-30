@@ -86,39 +86,55 @@ $parent = (int) get_post_field('post_parent', $id);
 </section>
 <?php else: ?>
 
-<!-- SLIKA + TEKST -->
+<style>
+  .svc-gallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:clamp(10px,1.4vw,16px); }
+  .svc-gallery-item { aspect-ratio:3/4; border-radius:var(--radius-lg); overflow:hidden; background:var(--cream); }
+  .svc-gallery-item img { transition:transform .6s var(--ease); }
+  .svc-gallery-item:hover img { transform:scale(1.04); }
+  .svc-article { max-width:720px; margin:0 auto; }
+  .svc-article > p { margin:0 0 18px; font-family:var(--font-sans); font-size:17px; line-height:1.72; color:var(--ink-soft); }
+  .svc-article > h2 { font-family:var(--font-display); font-weight:300; font-size:clamp(24px,3.2vw,34px); line-height:1.08; letter-spacing:0.01em; margin:44px 0 14px; }
+  .svc-article > h3 { font-family:var(--font-display); font-weight:400; font-size:clamp(19px,2.2vw,25px); line-height:1.15; margin:30px 0 8px; color:var(--oxblood); }
+  .svc-article > *:first-child { margin-top:0; }
+</style>
+
+<!-- GALERIJA (na vrhu) -->
+<?php $gallery = function_exists('dry65_service_gallery') ? dry65_service_gallery($id) : []; ?>
+<?php if ($gallery): ?>
+<section class="section-sm" style="padding-top:clamp(18px,2.6vw,32px);padding-bottom:0;">
+  <div class="wrap">
+    <div class="svc-gallery">
+      <?php foreach ($gallery as $g): ?>
+      <div class="svc-gallery-item"><?php echo dry65_picture($g, $title, ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?></div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<!-- ARTICLE -->
 <section class="section">
   <div class="wrap">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,64px);align-items:start;" class="svc-single-grid">
-      <?php if ($img): ?>
-      <div style="aspect-ratio:4/5;border-radius:var(--radius-lg);overflow:hidden;position:sticky;top:100px;">
-        <?php echo dry65_picture($img, $title, ['loading' => 'eager', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
+    <div class="svc-article">
+      <?php if ($body): ?>
+        <?php foreach (preg_split('/\n\s*\n/', trim($body)) as $para): if (trim($para) === '') continue; ?>
+        <p><?php echo esc_html(trim($para)); ?></p>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <?php the_content(); ?>
+      <?php endif; ?>
+
+      <?php if ($points): ?>
+      <div class="btn-row" style="margin-top:24px;gap:10px;flex-wrap:wrap;">
+        <?php foreach ($points as $pt): ?><span class="chip"><?php echo esc_html($pt); ?></span><?php endforeach; ?>
       </div>
       <?php endif; ?>
 
-      <div<?php echo $img ? '' : ' style="grid-column:1 / -1;max-width:720px;"'; ?>>
-        <?php if ($body): ?>
-          <?php foreach (preg_split('/\n\s*\n/', trim($body)) as $para): if (trim($para) === '') continue; ?>
-          <p class="lead" style="margin:0 0 18px;"><?php echo esc_html(trim($para)); ?></p>
-          <?php endforeach; ?>
-        <?php else: ?>
-          <div class="lead svc-content"><?php the_content(); ?></div>
-        <?php endif; ?>
-
-        <?php if ($points): ?>
-        <div class="btn-row" style="margin-top:24px;gap:10px;flex-wrap:wrap;">
-          <?php foreach ($points as $pt): ?>
-          <span class="chip"><?php echo esc_html($pt); ?></span>
-          <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
-
-        <div class="btn-row" style="margin-top:32px;gap:12px;flex-wrap:wrap;">
-          <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">Kako do nas <span class="arrow">→</span></a>
-          <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-outline">Cenovnik</a>
-        </div>
-        <p class="muted" style="margin-top:18px;font-size:15px;">Bez zakazivanja — samo svrati. West 65, Novi Beograd.</p>
+      <div class="btn-row" style="margin-top:36px;gap:12px;flex-wrap:wrap;">
+        <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">Kako do nas <span class="arrow">→</span></a>
+        <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-outline">Cenovnik</a>
       </div>
+      <p class="muted" style="margin-top:18px;font-size:15px;">Bez zakazivanja, samo svrati. West 65, Novi Beograd.</p>
     </div>
   </div>
 </section>
