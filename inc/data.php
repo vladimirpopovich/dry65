@@ -211,9 +211,19 @@ function dry65_service_image($post) {
     return $img;
 }
 
-/* Galerija strane: sve slike okačene na taj post (osim glavne/featured).
-   Osoblje samo uploaduje fotke na uslugu u wp-adminu i galerija se pojavi. */
+/* Galerija strane: prvo ACF „Galerija — slika 1..6" polja; ako su prazna,
+   fallback na sve slike okačene na taj post (osim glavne/featured). */
 function dry65_service_gallery($post_id) {
+    // 1) ACF slotovi (galerija_1..6) — najjednostavniji za unos u wp-adminu
+    if (function_exists('dry65_get_field')) {
+        $out = [];
+        for ($i = 1; $i <= 6; $i++) {
+            $u = dry65_get_field('galerija_' . $i, $post_id);
+            if ($u) $out[] = $u;
+        }
+        if ($out) return $out;
+    }
+    // 2) Fallback: slike okačene na post
     $atts = get_posts([
         'post_type'      => 'attachment',
         'post_mime_type' => 'image',

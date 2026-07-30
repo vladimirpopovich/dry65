@@ -74,6 +74,12 @@ add_action('acf/init', function() {
             ['key' => 'field_svc_p1',     'label' => 'Stavka 1',            'name' => 'point_1','type' => 'text'],
             ['key' => 'field_svc_p2',     'label' => 'Stavka 2',            'name' => 'point_2','type' => 'text'],
             ['key' => 'field_svc_p3',     'label' => 'Stavka 3',            'name' => 'point_3','type' => 'text'],
+            ['key' => 'field_svc_g1', 'label' => 'Galerija — slika 1', 'name' => 'galerija_1', 'type' => 'image', 'return_format' => 'url', 'instructions' => 'Fotke koje se prikazuju u galeriji na vrhu strane.'],
+            ['key' => 'field_svc_g2', 'label' => 'Galerija — slika 2', 'name' => 'galerija_2', 'type' => 'image', 'return_format' => 'url'],
+            ['key' => 'field_svc_g3', 'label' => 'Galerija — slika 3', 'name' => 'galerija_3', 'type' => 'image', 'return_format' => 'url'],
+            ['key' => 'field_svc_g4', 'label' => 'Galerija — slika 4', 'name' => 'galerija_4', 'type' => 'image', 'return_format' => 'url'],
+            ['key' => 'field_svc_g5', 'label' => 'Galerija — slika 5', 'name' => 'galerija_5', 'type' => 'image', 'return_format' => 'url'],
+            ['key' => 'field_svc_g6', 'label' => 'Galerija — slika 6', 'name' => 'galerija_6', 'type' => 'image', 'return_format' => 'url'],
         ],
         'location' => [[['param' => 'post_type', 'operator' => '==', 'value' => 'dry65_service']]],
     ]);
