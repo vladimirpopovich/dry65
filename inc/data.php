@@ -211,33 +211,14 @@ function dry65_service_image($post) {
     return $img;
 }
 
-/* Galerija strane: vraća [ ['url'=>, 'alt'=>], ... ].
-   Prvo ACF „Galerija — slika 1..6" polja; ako su prazna, fallback na slike
-   okačene na taj post (osim glavne/featured). Alt se čita iz svake slike. */
+/* Galerija strane: vraća [ ['url'=>, 'alt'=>], ... ] iz ACF „Galerija — slika 1..6"
+   polja (return_format 'id'). Alt se čita iz svake slike (Media biblioteka). */
 function dry65_service_gallery($post_id) {
     $ids = [];
-    // 1) ACF slotovi (galerija_1..6) — return_format 'id'
     if (function_exists('dry65_get_field')) {
         for ($i = 1; $i <= 6; $i++) {
             $v = dry65_get_field('galerija_' . $i, $post_id);
             if ($v) $ids[] = (int) $v;
-        }
-    }
-    // 2) Fallback: slike okačene na post
-    if (!$ids) {
-        $atts = get_posts([
-            'post_type'      => 'attachment',
-            'post_mime_type' => 'image',
-            'post_parent'    => (int) $post_id,
-            'posts_per_page' => 16,
-            'orderby'        => 'menu_order date',
-            'order'          => 'ASC',
-            'fields'         => 'ids',
-            'post_status'    => 'inherit',
-        ]);
-        $main = (int) get_post_thumbnail_id($post_id);
-        foreach ($atts as $aid) {
-            if ((int) $aid !== $main) $ids[] = (int) $aid;
         }
     }
     $out = [];
