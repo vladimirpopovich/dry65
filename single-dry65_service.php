@@ -96,6 +96,13 @@ $parent = (int) get_post_field('post_parent', $id);
   .svc-article > h2 { font-family:var(--font-display); font-weight:300; font-size:clamp(24px,3.2vw,34px); line-height:1.08; letter-spacing:0.01em; margin:44px 0 14px; }
   .svc-article > h3 { font-family:var(--font-display); font-weight:400; font-size:clamp(19px,2.2vw,25px); line-height:1.15; margin:30px 0 8px; color:var(--oxblood); }
   .svc-article > *:first-child { margin-top:0; }
+  /* Cenovnik blok unutar članka */
+  .svc-price { border:1px solid var(--sage-line,#e5e5e0); border-radius:var(--radius-lg); background:var(--cream); padding:clamp(20px,3vw,30px); margin:38px 0; }
+  .svc-price-top { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
+  .svc-price-top h2 { font-family:var(--font-display); font-weight:300; font-size:clamp(23px,2.8vw,32px); line-height:1.05; margin:0; }
+  .svc-price-list { margin-top:20px; background:var(--paper,#fff); border-radius:12px; border:1px solid var(--sage-line,#e5e5e0); overflow:hidden; }
+  .svc-price-row { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; }
+  .svc-price-row + .svc-price-row { border-top:1px solid var(--sage-line,#e5e5e0); }
 </style>
 
 <!-- GALERIJA (na vrhu) -->
@@ -116,13 +123,46 @@ $parent = (int) get_post_field('post_parent', $id);
 <section class="section">
   <div class="wrap">
     <div class="svc-article">
-      <?php if ($body): ?>
-        <?php foreach (preg_split('/\n\s*\n/', trim($body)) as $para): if (trim($para) === '') continue; ?>
-        <p><?php echo esc_html(trim($para)); ?></p>
-        <?php endforeach; ?>
-      <?php else: ?>
-        <?php the_content(); ?>
-      <?php endif; ?>
+      <?php
+      // Cenovnik blok (po dužini kose) — ide odmah posle uvodnog teksta
+      $lengths = function_exists('dry65_lengths') ? dry65_lengths() : [];
+      $price_title = preg_replace('/^Feniranje\b/u', 'Cenovnik feniranja', $title);
+      if ($price_title === $title) $price_title = 'Cenovnik';
+      ob_start(); ?>
+      <div class="svc-price">
+        <div class="svc-price-top">
+          <div>
+            <h2><?php echo esc_html($price_title); ?></h2>
+            <p class="muted" style="margin:4px 0 0;font-size:15px;">Bez zakazivanja</p>
+          </div>
+          <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark" style="white-space:nowrap;">Ceo cenovnik <span class="arrow">→</span></a>
+        </div>
+        <?php if ($lengths): ?>
+        <div class="svc-price-list">
+          <?php foreach ($lengths as $li => $l): ?>
+          <div class="svc-price-row">
+            <span class="row" style="gap:12px;"><span class="mono" style="color:var(--clay);"><?php echo str_pad($li + 1, 2, '0', STR_PAD_LEFT); ?></span><span style="font-weight:500;font-size:17px;"><?php echo esc_html($l['label']); ?></span></span>
+            <span class="display num" style="font-size:26px;"><?php echo dry65_rsd($l['price']); ?><span class="u" style="font-size:13px;margin-left:3px;">din</span></span>
+          </div>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+      </div>
+      <?php $price_block = ob_get_clean();
+
+      if ($body):
+          foreach (preg_split('/\n\s*\n/', trim($body)) as $para): if (trim($para) === '') continue; ?>
+          <p><?php echo esc_html(trim($para)); ?></p>
+          <?php endforeach;
+          echo $price_block;
+      else:
+          $content_html = apply_filters('the_content', get_the_content());
+          $parts = preg_split('/(?=<h2)/i', $content_html, 2); // podeli na prvom H2 (posle uvoda)
+          echo $parts[0];
+          echo $price_block;
+          if (isset($parts[1])) echo $parts[1];
+      endif;
+      ?>
 
       <?php if ($points): ?>
       <div class="btn-row" style="margin-top:24px;gap:10px;flex-wrap:wrap;">
