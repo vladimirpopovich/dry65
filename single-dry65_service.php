@@ -103,6 +103,15 @@ $parent = (int) get_post_field('post_parent', $id);
   .svc-price-list { margin-top:20px; background:var(--paper,#fff); border-radius:12px; border:1px solid var(--sage-line,#e5e5e0); overflow:hidden; }
   .svc-price-row { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; }
   .svc-price-row + .svc-price-row { border-top:1px solid var(--sage-line,#e5e5e0); }
+  /* dry65 live poziv */
+  .svc-live { display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; border:1px solid var(--sage-line,#e5e5e0); border-radius:var(--radius-lg); background:var(--paper,#fff); padding:clamp(20px,3vw,28px); margin:38px 0; }
+  .svc-live-h { font-family:var(--font-display); font-weight:300; font-size:clamp(22px,2.6vw,28px); line-height:1.05; }
+  .svc-live p { font-family:var(--font-sans); font-size:16px; color:var(--ink-soft); margin:8px 0 0; max-width:44ch; }
+  .svc-live-link { display:inline-flex; align-items:center; gap:9px; white-space:nowrap; font-family:var(--font-sans); font-weight:600; font-size:15px; color:var(--ink); text-decoration:none; border:1px solid rgba(17,28,29,0.18); border-radius:999px; padding:11px 20px; transition:border-color .2s, background .2s; }
+  .svc-live-link:hover { border-color:rgba(17,28,29,0.45); }
+  .svc-live-dot { width:9px; height:9px; border-radius:50%; background:#2f9e44; flex-shrink:0; box-shadow:0 0 0 0 rgba(47,158,68,0.5); animation:svcLivePulse 2s ease-out infinite; }
+  @keyframes svcLivePulse { 0%{box-shadow:0 0 0 0 rgba(47,158,68,0.5);} 70%{box-shadow:0 0 0 6px rgba(47,158,68,0);} 100%{box-shadow:0 0 0 0 rgba(47,158,68,0);} }
+  @media (prefers-reduced-motion: reduce){ .svc-live-dot{animation:none;} }
 </style>
 
 <!-- GALERIJA (na vrhu) -->
@@ -148,19 +157,32 @@ $parent = (int) get_post_field('post_parent', $id);
         </div>
         <?php endif; ?>
       </div>
-      <?php $price_block = ob_get_clean();
+      <?php $price_block = ob_get_clean(); ob_start(); ?>
+      <div class="svc-live">
+        <div>
+          <div class="svc-live-h">Danas dolazite?</div>
+          <p>Pogledajte trenutno stanje u salonu i procenu čekanja uživo.</p>
+        </div>
+        <a href="<?php echo esc_url(home_url('/live/')); ?>" class="svc-live-link"><span class="svc-live-dot" aria-hidden="true"></span> dry65 live <span class="arrow">→</span></a>
+      </div>
+      <?php $live_block = ob_get_clean();
 
       if ($body):
           foreach (preg_split('/\n\s*\n/', trim($body)) as $para): if (trim($para) === '') continue; ?>
           <p><?php echo esc_html(trim($para)); ?></p>
           <?php endforeach;
           echo $price_block;
+          echo $live_block;
       else:
           $content_html = apply_filters('the_content', get_the_content());
-          $parts = preg_split('/(?=<h2)/i', $content_html, 2); // podeli na prvom H2 (posle uvoda)
-          echo $parts[0];
+          $parts = preg_split('/(?=<h2)/i', $content_html); // deli na svakom H2
+          $intro = array_shift($parts);          // pre prvog H2 (uvod)
+          $first = array_shift($parts);          // prva H2 sekcija ispod cenovnika
+          echo $intro;
           echo $price_block;
-          if (isset($parts[1])) echo $parts[1];
+          if ($first !== null) echo $first;
+          echo $live_block;                       // box posle te sekcije
+          echo implode('', $parts);               // ostatak članka
       endif;
       ?>
 
