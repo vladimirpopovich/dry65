@@ -157,7 +157,7 @@ add_action('init', 'dry65_create_settings_page'); // Radi i bez theme reactivati
    Postojeće kategorije (feniranje/stilizovanje/nega) dobijaju intro; stari flat
    stubovi (v1) se brišu i prave iznova kao deca. Admin sve popunjava kasnije. */
 function dry65_seed_services() {
-    if (get_option('dry65_services_seed_v') === '4') return;
+    if (get_option('dry65_services_seed_v') === '5') return;
 
     // 1) Kategorije-roditelji + intro tekst (razdvajanje tehnike).
     // „Feniranje na četke" je glavni hub (tehnika); deca su konkretni look-ovi.
@@ -232,6 +232,12 @@ function dry65_seed_services() {
             ['Hollywood talasi',  'hollywood-talasi',  'Glatki, uniformni retro talasi u stilu crvenog tepiha. Za venčanja, proslave i velike izlaske.'],
             ['Beach Waves',       'beach-waves',       'Opušteni, blago razbarušeni letnji talasi. Neobavezan, moderan look koji izgleda prirodno a sređeno.'],
         ],
+        'nega' => [
+            ['Infuzija',       'infuzija-kose', 'Dubinska infuzija hranljivih sastojaka koja obnavlja kosu iznutra, za sjaj, snagu i mekoću.'],
+            ['Maska',          'maska-za-kosu', 'Intenzivna maska koja hidrira, hrani i vraća elastičnost oštećenoj i suvoj kosi.'],
+            ['Booster',        'booster-za-kosu', 'Koncentrovani booster tretman za dodatnu snagu, sjaj i zaštitu vlasi.'],
+            ['Parna stanica',  'parna-stanica', 'Tretman parom koji otvara vlas i pojačava dejstvo nege, za dubinski i dugotrajan efekat.'],
+        ],
     ];
     foreach ($children as $pslug => $list) {
         $order = 10;
@@ -255,7 +261,7 @@ function dry65_seed_services() {
     }
 
     flush_rewrite_rules(false);
-    update_option('dry65_services_seed_v', '4');
+    update_option('dry65_services_seed_v', '5');
 }
 add_action('init', 'dry65_seed_services', 20);
 

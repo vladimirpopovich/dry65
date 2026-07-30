@@ -202,18 +202,26 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         text-decoration:none; font-family:var(--font-sans); font-size:15.5px; font-weight:500; transition:color .2s, gap .2s; }
       .hp-svc-link:hover { color:var(--clay); gap:12px; }
       .hp-svc-link .arr { color:var(--clay); font-size:14px; }
+      /* Glavna kategorija — jasan hover da se vidi da je klikabilna */
+      .hp-cat-card { transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
+      .hp-cat-card:hover { transform: translateY(-4px); box-shadow: 0 20px 44px -24px rgba(17,28,29,0.35); }
+      .hp-cat-title { text-decoration:none; color:inherit; display:inline-block; }
+      .hp-cat-title h3 { transition: color .2s; }
+      .hp-cat-title .cat-arr { color:var(--clay); opacity:0; margin-left:2px; font-size:0.68em; display:inline-block; transition:opacity .2s, margin .2s; }
+      .hp-cat-card:hover .hp-cat-title h3, .hp-cat-title:hover h3 { color:var(--clay); }
+      .hp-cat-card:hover .cat-arr, .hp-cat-title:hover .cat-arr { opacity:1; margin-left:9px; }
     </style>
     <div class="grid cols-3">
       <?php foreach (dry65_service_tree() as $i => $cat): ?>
-      <div class="reveal card svc-card" style="height:100%;display:flex;flex-direction:column;" data-delay="<?php echo $i * 80; ?>">
-        <a href="<?php echo esc_url($cat['url']); ?>" style="display:block;text-decoration:none;color:inherit;">
+      <div class="reveal card svc-card hp-cat-card" style="height:100%;display:flex;flex-direction:column;" data-delay="<?php echo $i * 80; ?>">
+        <a href="<?php echo esc_url($cat['url']); ?>" style="display:block;text-decoration:none;color:inherit;" aria-label="<?php echo esc_attr($cat['title']); ?>">
           <div style="aspect-ratio:4/3;overflow:hidden;">
             <?php echo dry65_picture($cat['img'], $cat['title'], ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
           </div>
         </a>
         <div style="padding:24px 24px 26px;display:flex;flex-direction:column;flex:1;">
-          <a href="<?php echo esc_url($cat['url']); ?>" style="text-decoration:none;color:inherit;">
-            <h3 class="display" style="font-size:27px;"><?php echo esc_html($cat['title']); ?></h3>
+          <a href="<?php echo esc_url($cat['url']); ?>" class="hp-cat-title">
+            <h3 class="display" style="font-size:27px;"><?php echo esc_html($cat['title']); ?><span class="cat-arr">→</span></h3>
           </a>
           <?php if (!empty($cat['children'])): ?>
           <ul class="hp-svc-links">
