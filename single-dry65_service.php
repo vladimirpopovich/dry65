@@ -87,10 +87,24 @@ $parent = (int) get_post_field('post_parent', $id);
 <?php else: ?>
 
 <style>
-  .svc-gallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:clamp(10px,1.4vw,16px); }
-  .svc-gallery-item { aspect-ratio:3/4; border-radius:var(--radius-lg); overflow:hidden; background:var(--cream); }
-  .svc-gallery-item img { transition:transform .6s var(--ease); }
-  .svc-gallery-item:hover img { transform:scale(1.04); }
+  /* Galerija — horizontalna traka (curi do ivice ekrana) */
+  .svc-gallery-strip { display:flex; gap:clamp(10px,1.4vw,16px); overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; padding:2px var(--gutter) 12px; padding-left:max(var(--gutter), calc((100vw - var(--maxw))/2 + var(--gutter))); }
+  .svc-gallery-strip::-webkit-scrollbar { height:7px; }
+  .svc-gallery-strip::-webkit-scrollbar-thumb { background:rgba(17,28,29,0.2); border-radius:99px; }
+  .svc-gallery-item { flex:0 0 auto; width:clamp(180px,44vw,240px); aspect-ratio:3/4; border-radius:var(--radius-lg); overflow:hidden; scroll-snap-align:start; padding:0; border:0; margin:0; background:var(--cream); cursor:pointer; display:block; }
+  .svc-gallery-item img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s var(--ease); }
+  .svc-gallery-item:hover img { transform:scale(1.05); }
+  /* Lightbox */
+  .svc-lb { position:fixed; inset:0; z-index:9999; background:rgba(17,28,29,0.94); display:none; align-items:center; justify-content:center; }
+  .svc-lb.open { display:flex; }
+  .svc-lb img { max-width:92vw; max-height:88vh; object-fit:contain; border-radius:8px; box-shadow:0 30px 80px -20px rgba(0,0,0,0.6); }
+  .svc-lb button { position:absolute; background:rgba(255,255,255,0.12); color:#fff; border:0; cursor:pointer; border-radius:999px; display:flex; align-items:center; justify-content:center; line-height:1; transition:background .2s; }
+  .svc-lb button:hover { background:rgba(255,255,255,0.26); }
+  .svc-lb-close { top:18px; right:18px; width:44px; height:44px; font-size:26px; }
+  .svc-lb-prev, .svc-lb-next { top:50%; transform:translateY(-50%); width:52px; height:52px; font-size:32px; }
+  .svc-lb-prev { left:18px; } .svc-lb-next { right:18px; }
+  .svc-lb-count { position:absolute; bottom:22px; left:50%; transform:translateX(-50%); color:#fff; font-family:var(--font-sans); font-size:14px; opacity:.8; background:none; }
+  @media (max-width:560px){ .svc-lb-prev,.svc-lb-next{width:44px;height:44px;font-size:26px;} }
   .svc-article { max-width:720px; margin:0 auto; }
   .svc-article > p { margin:0 0 18px; font-family:var(--font-sans); font-size:17px; line-height:1.72; color:var(--ink-soft); }
   .svc-article > h2 { font-family:var(--font-display); font-weight:300; font-size:clamp(24px,3.2vw,34px); line-height:1.08; letter-spacing:0.01em; margin:44px 0 14px; }
@@ -114,18 +128,44 @@ $parent = (int) get_post_field('post_parent', $id);
   @media (prefers-reduced-motion: reduce){ .svc-live-dot{animation:none;} }
 </style>
 
-<!-- GALERIJA (na vrhu) -->
+<!-- GALERIJA (na vrhu) — horizontalna traka + lightbox -->
 <?php $gallery = function_exists('dry65_service_gallery') ? dry65_service_gallery($id) : []; ?>
 <?php if ($gallery): ?>
 <section class="section-sm" style="padding-top:clamp(18px,2.6vw,32px);padding-bottom:0;">
-  <div class="wrap">
-    <div class="svc-gallery">
-      <?php foreach ($gallery as $g): ?>
-      <div class="svc-gallery-item"><?php echo dry65_picture($g, $title, ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?></div>
-      <?php endforeach; ?>
-    </div>
+  <div class="svc-gallery-strip">
+    <?php foreach ($gallery as $gi => $g): $alt = $g['alt'] !== '' ? $g['alt'] : ($title . ' — fotografija ' . ($gi + 1)); ?>
+    <button type="button" class="svc-gallery-item" data-idx="<?php echo (int) $gi; ?>" aria-label="Uvećaj: <?php echo esc_attr($alt); ?>">
+      <img src="<?php echo esc_url($g['url']); ?>" alt="<?php echo esc_attr($alt); ?>" loading="lazy" decoding="async">
+    </button>
+    <?php endforeach; ?>
   </div>
 </section>
+
+<div class="svc-lb" id="svcLb" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Galerija">
+  <button class="svc-lb-close" id="svcLbClose" aria-label="Zatvori">&times;</button>
+  <button class="svc-lb-prev" id="svcLbPrev" aria-label="Prethodna">&lsaquo;</button>
+  <img id="svcLbImg" src="" alt="">
+  <button class="svc-lb-next" id="svcLbNext" aria-label="Sledeća">&rsaquo;</button>
+  <div class="svc-lb-count" id="svcLbCount"></div>
+</div>
+<script>
+(function(){
+  var imgs = <?php echo wp_json_encode(array_values($gallery)); ?>;
+  if(!imgs.length) return;
+  var lb=document.getElementById('svcLb'), im=document.getElementById('svcLbImg'), ct=document.getElementById('svcLbCount'), idx=0;
+  function show(i){ idx=(i+imgs.length)%imgs.length; im.src=imgs[idx].url; im.alt=imgs[idx].alt||''; ct.textContent=(idx+1)+' / '+imgs.length; }
+  function open(i){ show(i); lb.classList.add('open'); lb.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
+  function close(){ lb.classList.remove('open'); lb.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+  document.querySelectorAll('.svc-gallery-item').forEach(function(b){ b.addEventListener('click',function(){ open(parseInt(b.dataset.idx,10)||0); }); });
+  document.getElementById('svcLbClose').addEventListener('click',close);
+  document.getElementById('svcLbPrev').addEventListener('click',function(e){ e.stopPropagation(); show(idx-1); });
+  document.getElementById('svcLbNext').addEventListener('click',function(e){ e.stopPropagation(); show(idx+1); });
+  lb.addEventListener('click',function(e){ if(e.target===lb) close(); });
+  document.addEventListener('keydown',function(e){ if(!lb.classList.contains('open')) return; if(e.key==='Escape') close(); else if(e.key==='ArrowLeft') show(idx-1); else if(e.key==='ArrowRight') show(idx+1); });
+  var sx=0; lb.addEventListener('touchstart',function(e){ sx=e.touches[0].clientX; },{passive:true});
+  lb.addEventListener('touchend',function(e){ var dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>40) show(idx+(dx<0?1:-1)); });
+})();
+</script>
 <?php endif; ?>
 
 <!-- ARTICLE -->
