@@ -88,7 +88,8 @@ $parent = (int) get_post_field('post_parent', $id);
 
 <style>
   /* Galerija — horizontalna traka (curi do ivice ekrana) */
-  .svc-gallery-strip { display:flex; gap:clamp(10px,1.4vw,16px); overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; padding:2px var(--gutter) 12px; padding-left:max(var(--gutter), calc((100vw - var(--maxw))/2 + var(--gutter))); }
+  /* padding-left poravnava prvu sliku sa .wrap sadržajem (maxw 1240, gutter do 64) na svim širinama */
+  .svc-gallery-strip { display:flex; gap:clamp(10px,1.4vw,16px); overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; padding:2px var(--gutter) 12px; padding-left:max(var(--gutter), calc(50vw - 556px)); }
   .svc-gallery-strip::-webkit-scrollbar { height:7px; }
   .svc-gallery-strip::-webkit-scrollbar-thumb { background:rgba(17,28,29,0.2); border-radius:99px; }
   .svc-gallery-item { flex:0 0 auto; width:clamp(180px,44vw,240px); aspect-ratio:3/4; border-radius:var(--radius-lg); overflow:hidden; scroll-snap-align:start; padding:0; border:0; margin:0; background:var(--cream); cursor:pointer; display:block; }
