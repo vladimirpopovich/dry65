@@ -88,10 +88,9 @@ $parent = (int) get_post_field('post_parent', $id);
 
 <style>
   /* Galerija — horizontalna traka (curi do ivice ekrana) */
-  /* padding-left poravnava prvu sliku sa .wrap sadržajem (maxw 1240, gutter do 64) na svim širinama */
-  .svc-gallery-strip { display:flex; gap:clamp(10px,1.4vw,16px); overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; padding:2px var(--gutter) 12px; padding-left:max(var(--gutter), calc(50vw - 556px)); }
-  .svc-gallery-strip::-webkit-scrollbar { height:7px; }
-  .svc-gallery-strip::-webkit-scrollbar-thumb { background:rgba(17,28,29,0.2); border-radius:99px; }
+  /* Strip je u .wrap (levo poravnat sa tekstom); curi desno negativnom marginom. Scrollbar sakriven. */
+  .svc-gallery-strip { display:flex; gap:clamp(10px,1.4vw,16px); overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; margin-right:calc(-1 * var(--gutter)); padding:2px 0 4px; scrollbar-width:none; -ms-overflow-style:none; }
+  .svc-gallery-strip::-webkit-scrollbar { display:none; }
   .svc-gallery-item { flex:0 0 auto; width:clamp(180px,44vw,240px); aspect-ratio:3/4; border-radius:var(--radius-lg); overflow:hidden; scroll-snap-align:start; padding:0; border:0; margin:0; background:var(--cream); cursor:pointer; display:block; }
   .svc-gallery-item img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s var(--ease); }
   .svc-gallery-item:hover img { transform:scale(1.05); }
@@ -133,12 +132,14 @@ $parent = (int) get_post_field('post_parent', $id);
 <?php $gallery = function_exists('dry65_service_gallery') ? dry65_service_gallery($id) : []; ?>
 <?php if ($gallery): ?>
 <section class="section-sm" style="padding-top:clamp(18px,2.6vw,32px);padding-bottom:0;">
-  <div class="svc-gallery-strip">
-    <?php foreach ($gallery as $gi => $g): $alt = $g['alt'] !== '' ? $g['alt'] : ($title . ' — fotografija ' . ($gi + 1)); ?>
-    <button type="button" class="svc-gallery-item" data-idx="<?php echo (int) $gi; ?>" aria-label="Uvećaj: <?php echo esc_attr($alt); ?>">
-      <img src="<?php echo esc_url($g['url']); ?>" alt="<?php echo esc_attr($alt); ?>" loading="lazy" decoding="async">
-    </button>
-    <?php endforeach; ?>
+  <div class="wrap">
+    <div class="svc-gallery-strip">
+      <?php foreach ($gallery as $gi => $g): $alt = $g['alt'] !== '' ? $g['alt'] : ($title . ' — fotografija ' . ($gi + 1)); ?>
+      <button type="button" class="svc-gallery-item" data-idx="<?php echo (int) $gi; ?>" aria-label="Uvećaj: <?php echo esc_attr($alt); ?>">
+        <img src="<?php echo esc_url($g['url']); ?>" alt="<?php echo esc_attr($alt); ?>" loading="lazy" decoding="async">
+      </button>
+      <?php endforeach; ?>
+    </div>
   </div>
 </section>
 
