@@ -113,7 +113,7 @@ function dry65_live_is_open_now() {
 /* Radno vreme kao TEKST (prikaz kad je zatvoreno). Logika je iznad, u
    dry65_live_is_open_now() — ako menjaš sate, promeni i brojeve i ovaj tekst. */
 function dry65_live_hours_text() {
-    return 'Radnim danima od 8h do 20h, subotom od 10h do 18h, nedeljom ne radimo.';
+    return 'Radno vreme: ponedeljak do petak od 8h do 20h, subotom od 10h do 18h, nedeljom ne radimo.';
 }
 
 /* Dinamičan tekst za „Za danas popunjeni": kad se sledeći put otvaramo.
