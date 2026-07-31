@@ -369,18 +369,18 @@ function dry65_live_resolve() {
     if ($closed) {
         $data = ['tier' => 'closed', 'emoji' => '⚪', 'headline' => 'Zatvoreni smo',
                  'wait_label' => 'Zatvoreno', 'sub' => dry65_live_hours_text(),
-                 'note' => '', 'eyebrow' => 'TRENUTNI STATUS', 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
+                 'note' => '', 'eyebrow' => 'Trenutni status', 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
     } elseif ($full) {
         list($fh, $fs) = dry65_live_full_copy();
         $data = ['tier' => 'full', 'emoji' => '🩶', 'headline' => $fh,
                  'wait_label' => 'Popunjeni', 'sub' => $fs,
-                 'note' => '', 'eyebrow' => 'TRENUTNI STATUS', 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
+                 'note' => '', 'eyebrow' => 'Trenutni status', 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
     } else {
         $data = dry65_live_tier_copy($remaining_min, $phone); // za boju (tier) + emoji
         list($hl, $sub_new) = dry65_live_copy($remaining_min);
         $data['headline']   = $hl;
         $data['sub']        = $sub_new;
-        $data['eyebrow']    = ($remaining_min <= 0) ? 'SLOBODAN TERMIN' : 'SLEDEĆI SLOBODAN TERMIN JE ZA MANJE OD';
+        $data['eyebrow']    = ($remaining_min <= 0) ? 'Slobodan termin' : 'Sledeći slobodan termin je za manje od';
         $data['is_free']    = ($remaining_min <= 0);
         $data['ring_num']   = ($remaining_min <= 0) ? '' : (string) dry65_live_ring_num($remaining_min);
         $data['footnote']   = 'Prikazano vreme je procena zasnovana na trenutnoj popunjenosti salona i ažurira se uživo kako se mesta oslobađaju i popunjavaju.';

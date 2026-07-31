@@ -85,32 +85,32 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
   .live-eyebrow {
     font-family: var(--font-sans); font-size: 14px; font-weight: 400;
-    letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
-    margin: 0 auto 22px; line-height: 1.4;
+    letter-spacing: 0.01em; color: var(--muted);
+    margin: 0 auto 20px; line-height: 1.4;
   }
   .live-ring {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    width: 150px; height: 150px;
+    width: clamp(164px,46vw,196px); height: clamp(164px,46vw,196px);
     border-radius: 50%; border: 3px solid var(--accent);
     margin: 0 auto 24px; color: var(--accent);
   }
   .live-ring-num {
     font-family: 'Inter', var(--font-sans); font-weight: 700; line-height: 1;
-    font-size: 48px; letter-spacing: -0.01em; color: #000;
+    font-size: clamp(60px,14vw,84px); letter-spacing: -0.015em; color: #000;
   }
   .live-ring-unit {
-    font-family: var(--font-sans); font-size: 14px; font-weight: 400;
-    color: #000; margin-top: 4px;
+    font-family: var(--font-sans); font-size: 15px; font-weight: 400;
+    color: #000; margin-top: 6px;
   }
   .live-check { width: 44%; height: 44%; }
   .live-closed-icon { width: 44%; height: 44%; color: var(--muted); }
   .live-heart { width: 46%; height: 46%; color: var(--ink); }
 
   .live-headline {
-    font-size: 40px; font-weight: 300;
+    font-size: clamp(22px,3.4vw,28px); font-weight: 300;
     color: var(--ink);
     margin: 4px 0 14px;
-    line-height: 1.05;
+    line-height: 1.1;
   }
   .live-sub {
     max-width: 46ch; margin: 16px auto 0; color: var(--ink-soft);
@@ -229,7 +229,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
     // Eyebrow
     if (elEyebrow) {
-      elEyebrow.textContent = (state.closed || state.full) ? 'TRENUTNI STATUS' : (free ? 'SLOBODAN TERMIN' : 'SLEDEĆI SLOBODAN TERMIN JE ZA MANJE OD');
+      elEyebrow.textContent = (state.closed || state.full) ? 'Trenutni status' : (free ? 'Slobodan termin' : 'Sledeći slobodan termin je za manje od');
       elEyebrow.style.display = '';
     }
     // Prsten: kvačica (slobodno) / broj+minuta (čekanje) / ⊖ (zatvoreno) / ♥ (popunjeni)
