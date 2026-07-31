@@ -62,7 +62,6 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 </main>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap');
   .live-card {
     max-width: 640px;
     margin: 0 auto;
