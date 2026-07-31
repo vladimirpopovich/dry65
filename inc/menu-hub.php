@@ -44,6 +44,8 @@ add_action('template_redirect', function () {
     <style>
       .menu-hub { max-width:620px; margin:0 auto; }
       .menu-hub .eyebrow { color:var(--clay); }
+      .menu-h { font-family:var(--font-display); font-weight:300; font-size:clamp(19px,2.6vw,24px); line-height:1.05; letter-spacing:0.01em; margin:0 0 10px; }
+      .menu-more { display:inline-flex; align-items:center; gap:6px; margin-top:14px; color:var(--clay); font-weight:600; font-size:15px; }
       .menu-card { display:block; text-decoration:none; color:inherit; border:1px solid var(--sage-line,#e5e5e0); border-radius:var(--radius-lg); background:var(--paper,#fff); padding:clamp(18px,3vw,24px); transition:border-color .2s, transform .2s; }
       .menu-card:hover { border-color:rgba(17,28,29,0.28); transform:translateY(-2px); }
       .menu-card-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
@@ -60,13 +62,13 @@ add_action('template_redirect', function () {
       .menu-live-txt strong { font-size:18px; }
       .menu-live-txt span { color:var(--muted); font-size:14px; }
       /* Cenovnik */
-      .menu-price-list { margin-top:14px; }
+      .menu-price-list { margin-top:2px; }
       .menu-price-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; }
       .menu-price-row + .menu-price-row { border-top:1px solid var(--sage-line,#eee); }
       .menu-price-row .num { font-family:var(--font-num); font-size:22px; }
       .menu-price-row .u { font-size:12px; margin-left:3px; color:var(--muted); }
       /* Galerija */
-      .menu-gallery { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
+      .menu-gallery { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:2px; }
       .menu-gallery .gi { aspect-ratio:3/4; border-radius:10px; overflow:hidden; background:var(--cream); }
       @media (max-width:520px){ .menu-gallery { grid-template-columns:repeat(4,1fr); } }
     </style>
@@ -84,36 +86,45 @@ add_action('template_redirect', function () {
         <div class="wrap menu-hub" style="display:flex;flex-direction:column;gap:clamp(14px,2.4vw,20px);">
 
           <!-- MINI LIVE -->
-          <a href="<?php echo esc_url(home_url('/live/')); ?>" class="menu-card menu-live" id="menuLive" data-tier="<?php echo esc_attr($st['tier']); ?>">
-            <span class="menu-live-dot"></span>
-            <span class="menu-live-txt">
-              <strong id="menuLiveHead"><?php echo esc_html($st['headline'] ?: 'Status uživo'); ?></strong>
-              <span id="menuLiveWait"><?php echo esc_html($st['wait_label'] ?? ''); ?></span>
-            </span>
-            <span class="arrow" style="margin-left:auto;color:var(--clay);">→</span>
-          </a>
+          <div>
+            <h2 class="menu-h">Koliko se čeka u ovom trenutku</h2>
+            <a href="<?php echo esc_url(home_url('/live/')); ?>" class="menu-card menu-live" id="menuLive" data-tier="<?php echo esc_attr($st['tier']); ?>">
+              <span class="menu-live-dot"></span>
+              <span class="menu-live-txt">
+                <strong id="menuLiveHead"><?php echo esc_html($st['headline'] ?: 'Status uživo'); ?></strong>
+                <span id="menuLiveWait"><?php echo esc_html($st['wait_label'] ?? ''); ?></span>
+              </span>
+              <span class="arrow" style="margin-left:auto;color:var(--clay);">→</span>
+            </a>
+          </div>
 
           <!-- MINI CENOVNIK -->
-          <a href="<?php echo esc_url($cen_url); ?>" class="menu-card">
-            <div class="menu-card-head"><h2>Cenovnik</h2><span class="arrow" style="color:var(--clay);">→</span></div>
-            <?php if ($lengths): ?>
-            <div class="menu-price-list">
-              <?php foreach ($lengths as $l): ?>
-              <div class="menu-price-row"><span style="font-weight:500;"><?php echo esc_html($l['label']); ?></span><span class="num"><?php echo function_exists('dry65_rsd') ? dry65_rsd($l['price']) : (int) $l['price']; ?><span class="u">din</span></span></div>
-              <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-          </a>
+          <div>
+            <h2 class="menu-h">Cenovnik za feniranje sa četkom</h2>
+            <a href="<?php echo esc_url($cen_url); ?>" class="menu-card">
+              <?php if ($lengths): ?>
+              <div class="menu-price-list">
+                <?php foreach ($lengths as $l): ?>
+                <div class="menu-price-row"><span style="font-weight:500;"><?php echo esc_html($l['label']); ?></span><span class="num"><?php echo function_exists('dry65_rsd') ? dry65_rsd($l['price']) : (int) $l['price']; ?><span class="u">din</span></span></div>
+                <?php endforeach; ?>
+              </div>
+              <?php endif; ?>
+              <span class="menu-more">Ceo cenovnik <span class="arrow">→</span></span>
+            </a>
+          </div>
 
           <!-- MINI GALERIJA -->
-          <a href="<?php echo esc_url($amb_url); ?>" class="menu-card">
-            <div class="menu-card-head"><h2>Ambijent</h2><span class="arrow" style="color:var(--clay);">→</span></div>
-            <div class="menu-gallery">
-              <?php foreach (['s02', 's03', 's04', 's05'] as $s): ?>
-              <div class="gi"><?php echo dry65_picture('assets/salon/' . $s . '.webp', 'Dry65 salon, Novi Beograd', ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?></div>
-              <?php endforeach; ?>
-            </div>
-          </a>
+          <div>
+            <h2 class="menu-h">Ambijent salona</h2>
+            <a href="<?php echo esc_url($amb_url); ?>" class="menu-card">
+              <div class="menu-gallery">
+                <?php foreach (['s02', 's03', 's04', 's05'] as $s): ?>
+                <div class="gi"><?php echo dry65_picture('assets/salon/' . $s . '.webp', 'Dry65 salon, Novi Beograd', ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?></div>
+                <?php endforeach; ?>
+              </div>
+              <span class="menu-more">Pogledaj salon <span class="arrow">→</span></span>
+            </a>
+          </div>
 
           <!-- CTA -->
           <div class="btn-row" style="gap:12px;flex-wrap:wrap;margin-top:4px;">
