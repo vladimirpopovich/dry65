@@ -93,7 +93,7 @@ add_action('template_redirect', function () {
           $lv_tier = $st['tier']; $lv_min = (int) ($st['remaining_min'] ?? 0); $lv_cl = !empty($st['closed']);
           if ($lv_cl || $lv_tier === 'closed') { $lv_b = 'Zatvoreno'; $lv_s = 'Trenutno ne radimo'; }
           elseif ($lv_tier === 'full')          { $lv_b = 'Za danas popunjeni'; $lv_s = 'Vidimo se sutra'; }
-          elseif ($lv_min > 0)                  { $lv_b = '~' . $lv_min . ' min čekanja'; $lv_s = 'Trenutna procena'; }
+          elseif ($lv_min > 0)                  { $lv_b = '~' . ((int) (ceil($lv_min / 5) * 5)) . ' min čekanja'; $lv_s = 'Trenutna procena'; }
           else                                  { $lv_b = 'Slobodan termin'; $lv_s = 'Slobodno, samo dođite'; }
           ?>
           <div>
@@ -159,7 +159,7 @@ add_action('template_redirect', function () {
           var b, s;
           if(d.closed || d.tier==='closed'){ b='Zatvoreno'; s='Trenutno ne radimo'; }
           else if(d.tier==='full'){ b='Za danas popunjeni'; s='Vidimo se sutra'; }
-          else if(d.remaining_min>0){ b='~'+d.remaining_min+' min čekanja'; s='Trenutna procena'; }
+          else if(d.remaining_min>0){ b='~'+(Math.ceil(d.remaining_min/5)*5)+' min čekanja'; s='Trenutna procena'; }
           else { b='Slobodan termin'; s='Slobodno, samo dođite'; }
           h.textContent=b; w.textContent=s;
         }).catch(function(){});
