@@ -46,6 +46,10 @@ add_action('template_redirect', function () {
       .menu-hub .eyebrow { color:var(--clay); }
       .menu-h { font-family:var(--font-display); font-weight:300; font-size:clamp(19px,2.6vw,24px); line-height:1.05; letter-spacing:0.01em; margin:0 0 10px; }
       .menu-more { display:inline-flex; align-items:center; gap:6px; margin-top:14px; color:var(--clay); font-weight:600; font-size:15px; }
+      .menu-note { font-size:13.5px; color:var(--muted); margin:14px 0 0; line-height:1.5; }
+      .menu-more-btn { border:1px solid var(--clay); border-radius:999px; padding:10px 18px; transition:background .2s, color .2s; }
+      .menu-card:hover .menu-more-btn { background:var(--clay); color:#fff; }
+      .menu-card:hover .menu-more-btn .arrow { color:#fff; }
       .menu-card { display:block; text-decoration:none; color:inherit; border:1px solid var(--sage-line,#e5e5e0); border-radius:var(--radius-lg); background:var(--paper,#fff); padding:clamp(18px,3vw,24px); transition:border-color .2s, transform .2s; }
       .menu-card:hover { border-color:rgba(17,28,29,0.28); transform:translateY(-2px); }
       .menu-card-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
@@ -100,7 +104,7 @@ add_action('template_redirect', function () {
 
           <!-- MINI CENOVNIK -->
           <div>
-            <h2 class="menu-h">Cenovnik za feniranje sa četkom</h2>
+            <h2 class="menu-h">Cenovnik za feniranje</h2>
             <a href="<?php echo esc_url($cen_url); ?>" class="menu-card">
               <?php if ($lengths): ?>
               <div class="menu-price-list">
@@ -109,7 +113,8 @@ add_action('template_redirect', function () {
                 <?php endforeach; ?>
               </div>
               <?php endif; ?>
-              <span class="menu-more">Ceo cenovnik <span class="arrow">→</span></span>
+              <p class="menu-note">Cene feniranja po dužini kose. U <strong>detaljnom cenovniku</strong> su i ostale usluge, tretmani i paketi.</p>
+              <span class="menu-more menu-more-btn">Vidi ceo cenovnik <span class="arrow">→</span></span>
             </a>
           </div>
 
