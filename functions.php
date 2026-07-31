@@ -9,6 +9,7 @@ require_once get_template_directory() . '/inc/acf-fields.php';
 require_once get_template_directory() . '/inc/google-reviews.php';
 require_once get_template_directory() . '/inc/seo.php';
 require_once get_template_directory() . '/inc/live.php';
+require_once get_template_directory() . '/inc/menu-hub.php';
 
 /* ---- WebP kao podrazumevani output za thumbnaile ----
    Bez ovog WP generise .jpg thumbnaile cak i ako je original .webp.
