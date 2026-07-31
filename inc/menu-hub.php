@@ -124,6 +124,15 @@ add_action('template_redirect', function () {
             </a>
           </div>
 
+          <!-- MAPA + KAKO DO NAS -->
+          <div>
+            <h2 class="menu-h">Gde se nalazimo</h2>
+            <div class="menu-card" style="padding:0;overflow:hidden;">
+              <iframe src="https://maps.google.com/maps?q=<?php echo rawurlencode('Dry65, Omladinskih Brigada 86Ž, Novi Beograd'); ?>&amp;z=16&amp;hl=sr&amp;output=embed" style="width:100%;height:clamp(220px,42vw,300px);border:0;display:block;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa, Dry65 Novi Beograd"></iframe>
+            </div>
+            <a href="<?php echo esc_url($maps); ?>" target="_blank" rel="noopener" class="btn btn-dark" style="margin-top:14px;">Kako do nas <span class="arrow">→</span></a>
+          </div>
+
           <!-- MINI GALERIJA -->
           <div>
             <h2 class="menu-h">Ambijent salona</h2>
@@ -137,10 +146,11 @@ add_action('template_redirect', function () {
             </a>
           </div>
 
-          <!-- CTA -->
-          <div class="btn-row" style="gap:12px;flex-wrap:wrap;margin-top:4px;">
-            <a href="<?php echo esc_url($maps); ?>" target="_blank" rel="noopener" class="btn btn-dark">Kako do nas <span class="arrow">→</span></a>
-            <?php if ($phone): ?><a href="tel:<?php echo esc_attr($phone); ?>" class="btn btn-outline">Pozovi <?php echo esc_html($phone_d); ?></a><?php endif; ?>
+          <!-- IMATE PITANJA -->
+          <div style="text-align:center;margin-top:clamp(12px,2.4vw,22px);">
+            <h2 class="menu-h" style="margin-bottom:6px;">Imate pitanja?</h2>
+            <p style="color:var(--ink-soft);font-size:16px;margin:0 0 16px;">Pozovite nas, rado ćemo pomoći.</p>
+            <?php if ($phone): ?><a href="tel:<?php echo esc_attr($phone); ?>" class="btn btn-dark">Pozovite <?php echo esc_html($phone_d); ?></a><?php endif; ?>
           </div>
 
         </div>
