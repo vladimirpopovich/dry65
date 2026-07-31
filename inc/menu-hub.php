@@ -81,7 +81,7 @@ add_action('template_redirect', function () {
       <section class="bg-paper2 section-sm" style="padding-top:clamp(22px,3vw,36px);padding-bottom:clamp(18px,2.4vw,28px);">
         <div class="wrap menu-hub">
           <h1 class="script" style="font-size:clamp(34px,6vw,56px);line-height:1;">Dobrodošli</h1>
-          <p class="lead" style="margin-top:16px;font-size:17px;max-width:560px;">Na ovoj stranici možete videti trenutni status čekanja u salonu, osnovni cenovnik feniranja po dužini kose, ambijent salona i kako da do nas dođete.</p>
+          <p class="lead" style="margin-top:16px;font-size:18px;max-width:560px;">Dry65, feniranje bez zakazivanja. Na pravom ste mestu.</p>
         </div>
       </section>
 
