@@ -34,7 +34,7 @@ get_header();
       <p class="lead live-sub" id="live-sub"><?php echo esc_html($st['sub']); ?></p>
 
       <?php
-      $live_staff_text  = dry65_live_staff_text(get_option('dry65_live_staff', []));
+      $live_staff_text  = dry65_live_today_text();
       $live_chairs_show = get_option('dry65_live_chairs_show', '0') === '1';
       $live_chairs_vis  = $live_chairs_show && $live_staff_text !== '' && !$st['closed'];
       ?>
@@ -62,7 +62,6 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 </main>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap');
   .live-card {
     max-width: 640px;
     margin: 0 auto;
@@ -85,32 +84,32 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
   .live-eyebrow {
     font-family: var(--font-sans); font-size: 14px; font-weight: 400;
-    letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
-    margin: 0 auto 22px; line-height: 1.4;
+    letter-spacing: 0.01em; color: var(--muted);
+    margin: 0 auto 20px; line-height: 1.4;
   }
   .live-ring {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    width: 150px; height: 150px;
+    width: clamp(164px,46vw,196px); height: clamp(164px,46vw,196px);
     border-radius: 50%; border: 3px solid var(--accent);
     margin: 0 auto 24px; color: var(--accent);
   }
   .live-ring-num {
     font-family: 'Inter', var(--font-sans); font-weight: 700; line-height: 1;
-    font-size: 48px; letter-spacing: -0.01em; color: #000;
+    font-size: clamp(60px,14vw,84px); letter-spacing: -0.015em; color: #000;
   }
   .live-ring-unit {
-    font-family: var(--font-sans); font-size: 14px; font-weight: 400;
-    color: #000; margin-top: 4px;
+    font-family: var(--font-sans); font-size: 15px; font-weight: 400;
+    color: #000; margin-top: 6px;
   }
   .live-check { width: 44%; height: 44%; }
   .live-closed-icon { width: 44%; height: 44%; color: var(--muted); }
   .live-heart { width: 46%; height: 46%; color: var(--ink); }
 
   .live-headline {
-    font-size: 40px; font-weight: 300;
+    font-size: clamp(22px,3.4vw,28px); font-weight: 300;
     color: var(--ink);
     margin: 4px 0 14px;
-    line-height: 1.05;
+    line-height: 1.1;
   }
   .live-sub {
     max-width: 46ch; margin: 16px auto 0; color: var(--ink-soft);
@@ -180,7 +179,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
     full:         <?php echo !empty($st['full']) ? 'true' : 'false'; ?>,
     fullH:        <?php echo wp_json_encode($st['tier'] === 'full' ? $st['headline'] : dry65_live_full_copy()[0], JSON_UNESCAPED_UNICODE); ?>,
     fullS:        <?php echo wp_json_encode($st['tier'] === 'full' ? $st['sub'] : dry65_live_full_copy()[1], JSON_UNESCAPED_UNICODE); ?>,
-    staffText:    <?php echo wp_json_encode(dry65_live_staff_text(get_option('dry65_live_staff', []))); ?>,
+    staffText:    <?php echo wp_json_encode(dry65_live_today_text()); ?>,
     chairsShow:   <?php echo get_option('dry65_live_chairs_show', '0') === '1' ? 'true' : 'false'; ?>,
     message:      <?php echo wp_json_encode(get_option('dry65_live_message', '')); ?>,
     hoursText:    <?php echo wp_json_encode(dry65_live_hours_text()); ?>,
@@ -229,7 +228,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
     // Eyebrow
     if (elEyebrow) {
-      elEyebrow.textContent = (state.closed || state.full) ? 'TRENUTNI STATUS' : (free ? 'SLOBODAN TERMIN' : 'SLEDEĆI SLOBODAN TERMIN JE ZA MANJE OD');
+      elEyebrow.textContent = (state.closed || state.full) ? 'Trenutni status' : (free ? 'Slobodan termin' : 'Sledeći slobodan termin je za manje od');
       elEyebrow.style.display = '';
     }
     // Prsten: kvačica (slobodno) / broj+minuta (čekanje) / ⊖ (zatvoreno) / ♥ (popunjeni)

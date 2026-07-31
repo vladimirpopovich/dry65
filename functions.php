@@ -9,6 +9,7 @@ require_once get_template_directory() . '/inc/acf-fields.php';
 require_once get_template_directory() . '/inc/google-reviews.php';
 require_once get_template_directory() . '/inc/seo.php';
 require_once get_template_directory() . '/inc/live.php';
+require_once get_template_directory() . '/inc/menu-hub.php';
 
 /* ---- WebP kao podrazumevani output za thumbnaile ----
    Bez ovog WP generise .jpg thumbnaile cak i ako je original .webp.
@@ -45,16 +46,18 @@ add_action('wp_enqueue_scripts', 'dry65_scripts');
    - Samo Cormorant, Oooh Baby, Hanken Grotesk (Baloo i Newsreader izbaceni)
    - Async load preko preload trick-a — ne blokira render */
 function dry65_head_fonts() {
-    $url = 'https://fonts.googleapis.com/css2?'
-         . 'family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300'
-         . '&family=Oooh+Baby'
-         . '&family=Hanken+Grotesk:wght@400;500;600'
-         . '&display=swap';
-
-    echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
-    echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
-    echo '<link rel="preload" as="style" href="' . esc_url($url) . '" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n";
-    echo '<noscript><link rel="stylesheet" href="' . esc_url($url) . '"></noscript>' . "\n";
+    $tpl = get_template_directory_uri();
+    // Preload ključnih fontova (telo + glavni naslovi) da su spremni pre iscrtavanja
+    foreach (['hanken-grotesk-400-latin', 'hanken-grotesk-400-latin-ext', 'cormorant-garamond-300-latin', 'cormorant-garamond-300-latin-ext'] as $f) {
+        echo '<link rel="preload" href="' . esc_url($tpl . '/assets/fonts/' . $f . '.woff2') . '" as="font" type="font/woff2" crossorigin>' . "\n";
+    }
+    // @font-face UGRAĐEN u head (ne eksterni fajl) — LiteSpeed ne može da ga odloži, pa nema FOUT skoka
+    static $css = null;
+    if ($css === null) {
+        $raw = @file_get_contents(get_template_directory() . '/assets/fonts/fonts.css');
+        $css = $raw ? str_replace('url(fonts/', 'url(' . $tpl . '/assets/fonts/', $raw) : '';
+    }
+    if ($css) echo '<style id="dry65-fonts">' . $css . '</style>' . "\n";
 }
 add_action('wp_head', 'dry65_head_fonts', 1);
 
