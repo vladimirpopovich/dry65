@@ -47,12 +47,17 @@ add_action('wp_enqueue_scripts', 'dry65_scripts');
    - Async load preko preload trick-a — ne blokira render */
 function dry65_head_fonts() {
     $tpl = get_template_directory_uri();
-    // Preload ključnih fontova (telo + glavni naslovi) da nema FOUT „skoka"
+    // Preload ključnih fontova (telo + glavni naslovi) da su spremni pre iscrtavanja
     foreach (['hanken-grotesk-400-latin', 'hanken-grotesk-400-latin-ext', 'cormorant-garamond-300-latin', 'cormorant-garamond-300-latin-ext'] as $f) {
         echo '<link rel="preload" href="' . esc_url($tpl . '/assets/fonts/' . $f . '.woff2') . '" as="font" type="font/woff2" crossorigin>' . "\n";
     }
-    // Self-hosted @font-face (bez poziva ka Google-u)
-    echo '<link rel="stylesheet" href="' . esc_url($tpl . '/assets/fonts/fonts.css') . '?v=1">' . "\n";
+    // @font-face UGRAĐEN u head (ne eksterni fajl) — LiteSpeed ne može da ga odloži, pa nema FOUT skoka
+    static $css = null;
+    if ($css === null) {
+        $raw = @file_get_contents(get_template_directory() . '/assets/fonts/fonts.css');
+        $css = $raw ? str_replace('url(fonts/', 'url(' . $tpl . '/assets/fonts/', $raw) : '';
+    }
+    if ($css) echo '<style id="dry65-fonts">' . $css . '</style>' . "\n";
 }
 add_action('wp_head', 'dry65_head_fonts', 1);
 
