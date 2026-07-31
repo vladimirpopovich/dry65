@@ -97,7 +97,7 @@ add_action('template_redirect', function () {
           else                                  { $lv_b = 'Slobodan termin'; $lv_s = 'Slobodno, samo dođite'; }
           ?>
           <div>
-            <h2 class="menu-h">Koliko se čeka u ovom trenutku</h2>
+            <h2 class="menu-h">Trenutni status salona</h2>
             <a href="<?php echo esc_url(home_url('/live/')); ?>" class="menu-card menu-live" id="menuLive" data-tier="<?php echo esc_attr($st['tier']); ?>">
               <span class="menu-live-dot"></span>
               <span class="menu-live-txt">
