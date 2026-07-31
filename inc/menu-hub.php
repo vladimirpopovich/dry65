@@ -80,23 +80,29 @@ add_action('template_redirect', function () {
     <main class="page-enter">
       <section class="bg-paper2 section-sm" style="padding-top:clamp(22px,3vw,36px);padding-bottom:clamp(18px,2.4vw,28px);">
         <div class="wrap menu-hub">
-          <span class="script" style="font-size:clamp(26px,3.4vw,40px);display:block;">Dobrodošli</span>
-          <h1 class="display caps" style="font-size:clamp(26px,4vw,42px);margin-top:4px;line-height:1.02;">Dry65 — West 65, Novi Beograd</h1>
-          <p class="lead" style="margin-top:12px;font-size:17px;">Walk-in feniranje, bez zakazivanja. Sve na jednom mestu.</p>
+          <h1 class="script" style="font-size:clamp(34px,6vw,56px);line-height:1;">Dobrodošli</h1>
+          <p class="lead" style="margin-top:16px;font-size:17px;max-width:560px;">Na ovoj stranici možete videti trenutni status čekanja u salonu, osnovni cenovnik feniranja po dužini kose, ambijent salona i kako da do nas dođete.</p>
         </div>
       </section>
 
-      <section class="section-sm" style="padding-bottom:0;">
+      <section class="section-sm" style="padding-bottom:clamp(48px,7vw,84px);">
         <div class="wrap menu-hub" style="display:flex;flex-direction:column;gap:clamp(14px,2.4vw,20px);">
 
           <!-- MINI LIVE -->
+          <?php
+          $lv_tier = $st['tier']; $lv_min = (int) ($st['remaining_min'] ?? 0); $lv_cl = !empty($st['closed']);
+          if ($lv_cl || $lv_tier === 'closed') { $lv_b = 'Zatvoreno'; $lv_s = 'Trenutno ne radimo'; }
+          elseif ($lv_tier === 'full')          { $lv_b = 'Za danas popunjeni'; $lv_s = 'Vidimo se sutra'; }
+          elseif ($lv_min > 0)                  { $lv_b = '~' . $lv_min . ' min čekanja'; $lv_s = 'Trenutna procena'; }
+          else                                  { $lv_b = 'Slobodan termin'; $lv_s = 'Slobodno, samo dođite'; }
+          ?>
           <div>
             <h2 class="menu-h">Koliko se čeka u ovom trenutku</h2>
             <a href="<?php echo esc_url(home_url('/live/')); ?>" class="menu-card menu-live" id="menuLive" data-tier="<?php echo esc_attr($st['tier']); ?>">
               <span class="menu-live-dot"></span>
               <span class="menu-live-txt">
-                <strong id="menuLiveHead"><?php echo esc_html($st['headline'] ?: 'Status uživo'); ?></strong>
-                <span id="menuLiveWait"><?php echo esc_html($st['wait_label'] ?? ''); ?></span>
+                <strong id="menuLiveHead"><?php echo esc_html($lv_b); ?></strong>
+                <span id="menuLiveWait"><?php echo esc_html($lv_s); ?></span>
               </span>
               <span class="arrow" style="margin-left:auto;color:var(--clay);">→</span>
             </a>
@@ -150,10 +156,12 @@ add_action('template_redirect', function () {
         fetch(URL+'?_='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
           if(!d) return;
           if(d.tier) el.setAttribute('data-tier', d.tier);
-          if(d.status) h.textContent = d.status;
-          if(d.closed) w.textContent = 'Zatvoreno';
-          else if(d.remaining_min>0) w.textContent = '~'+d.remaining_min+' min do slobodnog';
-          else w.textContent = 'Slobodno, samo dođite';
+          var b, s;
+          if(d.closed || d.tier==='closed'){ b='Zatvoreno'; s='Trenutno ne radimo'; }
+          else if(d.tier==='full'){ b='Za danas popunjeni'; s='Vidimo se sutra'; }
+          else if(d.remaining_min>0){ b='~'+d.remaining_min+' min čekanja'; s='Trenutna procena'; }
+          else { b='Slobodan termin'; s='Slobodno, samo dođite'; }
+          h.textContent=b; w.textContent=s;
         }).catch(function(){});
       }
       refresh();
