@@ -19,59 +19,35 @@ $tpl  = get_template_directory_uri();
 </section>
 
 <style>
-  /* /usluge — editorial: tekst levo, arch/oval kartice desno */
-  .uslart { display:grid; grid-template-columns:minmax(240px,320px) 1fr; gap:clamp(32px,5vw,76px); align-items:start; }
-  .uslart-txt h2 { font-size:clamp(30px,3.6vw,48px); line-height:1.02; letter-spacing:0.01em; }
-  .uslart-txt .lead { margin-top:18px; }
-  .uslart-more { display:inline-flex; align-items:center; gap:6px; margin-top:20px; color:var(--clay); font-weight:600; text-decoration:none; }
-  .uslart-more:hover { text-decoration:underline; text-underline-offset:3px; }
-  .uslart-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(18px,2.4vw,34px); }
-  .arch { display:block; text-decoration:none; color:inherit; }
-  .arch-frame { aspect-ratio:4/5; border-radius:1000px; overflow:hidden; background:var(--cream); }
-  .arch-frame img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .55s var(--ease); }
-  .arch:hover .arch-frame img { transform:scale(1.045); }
-  .arch h3 { font-size:clamp(18px,1.9vw,24px); margin-top:16px; line-height:1.1; }
-  .arch .more { display:inline-block; margin-top:6px; color:var(--clay); font-weight:600; text-decoration:underline; text-underline-offset:3px; font-size:14px; }
-  @media (max-width:900px){
-    .uslart { grid-template-columns:1fr; gap:26px; }
-    .uslart-cards { grid-template-columns:repeat(3,1fr); gap:16px; }
-  }
-  @media (max-width:600px){
-    .uslart-cards { grid-template-columns:repeat(2,1fr); }
-  }
+  /* /usluge — tekst + linkovi (bez slika, spremno za live) */
+  .usl-cat { max-width:760px; }
+  .usl-cat > h2 { font-size:clamp(28px,4vw,44px); line-height:1.02; letter-spacing:0.01em; }
+  .usl-cat > .lead { margin-top:16px; }
+  .usl-links { list-style:none; padding:0; margin:22px 0 0; display:grid; grid-template-columns:repeat(2,1fr); gap:0 28px; }
+  .usl-link { display:flex; align-items:center; gap:10px; padding:12px 0; color:var(--ink); text-decoration:none;
+    font-family:var(--font-sans); font-size:17px; font-weight:500; border-bottom:1px solid var(--cream-deep,#ece7df);
+    transition:color .2s, gap .2s; }
+  .usl-link:hover { color:var(--clay); gap:14px; }
+  .usl-link .arr { color:var(--clay); font-size:15px; }
+  @media (max-width:600px){ .usl-links { grid-template-columns:1fr; } }
 </style>
 
 <?php foreach ($tree as $ci => $cat): $kids = $cat['children']; ?>
 <section class="section<?php echo $ci % 2 ? ' bg-paper2' : ''; ?>">
   <div class="wrap">
-    <div class="uslart">
-      <div class="uslart-txt">
-        <h2 class="display">
-          <a href="<?php echo esc_url($cat['url']); ?>" style="color:inherit;text-decoration:none;"><?php echo esc_html($cat['title']); ?></a>
-        </h2>
-        <?php if ($cat['intro']): ?><p class="lead"><?php echo esc_html($cat['intro']); ?></p><?php endif; ?>
-        <a href="<?php echo esc_url($cat['url']); ?>" class="uslart-more">Saznaj više <span class="arrow">→</span></a>
-      </div>
-
+    <div class="usl-cat">
+      <h2 class="display">
+        <a href="<?php echo esc_url($cat['url']); ?>" style="color:inherit;text-decoration:none;"><?php echo esc_html($cat['title']); ?></a>
+      </h2>
+      <?php if ($cat['intro']): ?><p class="lead"><?php echo esc_html($cat['intro']); ?></p><?php endif; ?>
       <?php if ($kids): ?>
-      <div class="uslart-cards">
+      <ul class="usl-links">
         <?php foreach ($kids as $c): ?>
-        <a href="<?php echo esc_url($c['url']); ?>" class="arch reveal">
-          <div class="arch-frame">
-            <?php echo dry65_picture($c['img'], $c['title'], ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
-          </div>
-          <h3 class="display"><?php echo esc_html($c['title']); ?></h3>
-          <span class="more">Saznaj više</span>
-        </a>
+        <li><a class="usl-link" href="<?php echo esc_url($c['url']); ?>"><span class="arr">→</span> <?php echo esc_html($c['title']); ?></a></li>
         <?php endforeach; ?>
-      </div>
+      </ul>
       <?php else: ?>
-      <a href="<?php echo esc_url($cat['url']); ?>" class="arch reveal" style="max-width:340px;">
-        <div class="arch-frame">
-          <?php echo dry65_picture($cat['img'], $cat['title'], ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
-        </div>
-        <span class="more">Saznaj više</span>
-      </a>
+      <a href="<?php echo esc_url($cat['url']); ?>" class="usl-link" style="display:inline-flex;border:0;margin-top:18px;font-weight:600;color:var(--clay);"><span class="arr">→</span> Saznaj više</a>
       <?php endif; ?>
     </div>
   </div>
