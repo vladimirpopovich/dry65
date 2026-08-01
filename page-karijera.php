@@ -44,6 +44,7 @@ $positions = [
             'Stabilan tim i prijatna atmosfera',
         ],
     ],
+    /* PRIVREMENO SAKRIVENO — ne zapošljavamo recepcionara za sada
     [
         'id'       => 'recepcionar',
         'kicker'   => '03',
@@ -64,6 +65,7 @@ $positions = [
             'Prostor za napredovanje',
         ],
     ],
+    */
 ];
 ?>
 
