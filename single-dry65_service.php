@@ -13,6 +13,7 @@ $short  = dry65_get_field('short', $id) ?: get_the_excerpt();
 $body   = dry65_get_field('body', $id) ?: '';
 $img    = dry65_get_field('image', $id);
 if (!$img && has_post_thumbnail($id)) $img = get_the_post_thumbnail_url($id, 'full');
+$hero_img = $img ?: (function_exists('dry65_service_image') ? dry65_service_image(get_post($id)) : '');
 $points = array_values(array_filter([
     dry65_get_field('point_1', $id),
     dry65_get_field('point_2', $id),
@@ -27,21 +28,40 @@ $parent = (int) get_post_field('post_parent', $id);
 
 <main class="page-enter">
 
+<style>
+  /* Hero: tekst levo + jedna velika fotka desno (mirror oblik) */
+  .svc-hero { display:grid; grid-template-columns:1.05fr 0.95fr; gap:clamp(28px,5vw,72px); align-items:center; }
+  .svc-hero-img { aspect-ratio:4/5; border-radius:1000px; overflow:hidden; background:var(--cream); }
+  .svc-hero-img img { width:100%; height:100%; object-fit:cover; display:block; }
+  @media (max-width:820px){
+    .svc-hero { grid-template-columns:1fr; gap:24px; }
+    .svc-hero-img { max-width:320px; margin:4px 0 0; }
+  }
+</style>
 <!-- HERO -->
-<section class="bg-paper2 section-sm" style="padding-top:clamp(24px,3vw,40px);padding-bottom:clamp(20px,2.5vw,32px);">
+<section class="bg-paper2 section" style="padding-top:clamp(24px,3vw,44px);padding-bottom:clamp(28px,4vw,56px);">
   <div class="wrap">
-    <p class="mono" style="margin:0 0 10px;font-size:13px;color:var(--muted);">
-      <a href="<?php echo esc_url($usluge_url); ?>" style="color:var(--clay);text-decoration:none;">Usluge</a>
-      <?php if ($parent): ?> &nbsp;/&nbsp; <a href="<?php echo esc_url(get_permalink($parent)); ?>" style="color:var(--clay);text-decoration:none;"><?php echo esc_html(get_the_title($parent)); ?></a><?php endif; ?>
-      &nbsp;/&nbsp; <?php echo esc_html($title); ?>
-    </p>
-    <?php if ($kicker): ?><span class="mono" style="color:var(--clay);"><?php echo esc_html($kicker); ?></span><?php endif; ?>
-    <h1 class="display caps" style="font-size:clamp(30px,4.6vw,56px);margin-top:8px;max-width:20ch;line-height:1.02;letter-spacing:0.01em;">
-      <?php echo esc_html($title); ?>
-    </h1>
-    <?php if ($short): ?>
-    <p class="lead" style="margin-top:22px;max-width:660px;"><?php echo esc_html($short); ?></p>
-    <?php endif; ?>
+    <div class="svc-hero">
+      <div>
+        <p class="mono" style="margin:0 0 10px;font-size:13px;color:var(--muted);">
+          <a href="<?php echo esc_url($usluge_url); ?>" style="color:var(--clay);text-decoration:none;">Usluge</a>
+          <?php if ($parent): ?> &nbsp;/&nbsp; <a href="<?php echo esc_url(get_permalink($parent)); ?>" style="color:var(--clay);text-decoration:none;"><?php echo esc_html(get_the_title($parent)); ?></a><?php endif; ?>
+          &nbsp;/&nbsp; <?php echo esc_html($title); ?>
+        </p>
+        <?php if ($kicker): ?><span class="mono" style="color:var(--clay);"><?php echo esc_html($kicker); ?></span><?php endif; ?>
+        <h1 class="display caps" style="font-size:clamp(30px,4.6vw,56px);margin-top:8px;max-width:20ch;line-height:1.02;letter-spacing:0.01em;">
+          <?php echo esc_html($title); ?>
+        </h1>
+        <?php if ($short): ?>
+        <p class="lead" style="margin-top:22px;max-width:560px;"><?php echo esc_html($short); ?></p>
+        <?php endif; ?>
+      </div>
+      <?php if ($hero_img): ?>
+      <div class="svc-hero-img">
+        <?php echo dry65_picture($hero_img, $title, ['loading' => 'eager', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
+      </div>
+      <?php endif; ?>
+    </div>
   </div>
 </section>
 
@@ -128,9 +148,9 @@ $parent = (int) get_post_field('post_parent', $id);
   @media (prefers-reduced-motion: reduce){ .svc-live-dot{animation:none;} }
 </style>
 
-<!-- GALERIJA (na vrhu) — horizontalna traka + lightbox -->
+<!-- GALERIJA (na vrhu) — PRIVREMENO ISKLJUČENA (bez fotki za sad; vrati na "if ($gallery)") -->
 <?php $gallery = function_exists('dry65_service_gallery') ? dry65_service_gallery($id) : []; ?>
-<?php if ($gallery): ?>
+<?php if (false && $gallery): ?>
 <section class="section-sm" style="padding-top:clamp(18px,2.6vw,32px);padding-bottom:0;">
   <div class="wrap">
     <div class="svc-gallery-strip">
