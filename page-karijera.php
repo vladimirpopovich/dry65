@@ -14,6 +14,7 @@ $positions = [
         'lead'     => 'Podrška tima. Osoba koja uči zanat pored najboljih, uz konkretno praktično iskustvo od prvog dana.',
         'reqs' => [
             'Interesovanje za rad u frizerskoj industriji',
+            'Pohađanje frizerske škole ili kursa',
             'Volja za učenjem i predanost',
             'Odgovornost i timski duh',
         ],
