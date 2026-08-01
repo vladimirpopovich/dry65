@@ -35,8 +35,17 @@ $parent = (int) get_post_field('post_parent', $id);
   .svc-hero-img img { width:100%; height:100%; object-fit:cover; display:block; }
   @media (max-width:820px){
     .svc-hero { grid-template-columns:1fr; gap:24px; }
-    .svc-hero-img { max-width:320px; margin:4px 0 0; }
+    .svc-hero-img { max-width:320px; margin:4px auto 0; }
   }
+  /* Hub: opisni tekst iste dimenzije kao članak + linkovi kao na /usluge */
+  .svc-hub-body { max-width:720px; }
+  .svc-hub-body p { margin:0 0 18px; font-family:var(--font-sans); font-size:17px; line-height:1.72; color:var(--ink-soft); }
+  .svc-hub-links { list-style:none; padding:0; margin:0; max-width:720px; display:grid; grid-template-columns:repeat(2,1fr); gap:0 28px; }
+  .svc-hub-link { display:flex; align-items:center; gap:10px; padding:12px 0; color:var(--ink); text-decoration:none;
+    font-family:var(--font-sans); font-size:17px; font-weight:500; border-bottom:1px solid var(--cream-deep,#ece7df); transition:color .2s, gap .2s; }
+  .svc-hub-link:hover { color:var(--clay); gap:14px; }
+  .svc-hub-link .arr { color:var(--clay); font-size:15px; }
+  @media (max-width:600px){ .svc-hub-links { grid-template-columns:1fr; } }
 </style>
 <!-- HERO -->
 <section class="bg-paper2 section" style="padding-top:clamp(24px,3vw,44px);padding-bottom:clamp(28px,4vw,56px);">
@@ -66,39 +75,28 @@ $parent = (int) get_post_field('post_parent', $id);
 </section>
 
 <?php if ($is_hub): ?>
-<!-- HUB: opisni tekst kategorije -->
+<!-- HUB: opisni tekst kategorije (iste dimenzije kao članak) + linkovi kao na /usluge -->
 <?php $hub_body = $body ?: get_post_field('post_content', $id); ?>
-<?php if (trim((string) $hub_body)): ?>
-<section class="section" style="padding-bottom:clamp(20px,2.5vw,32px);">
-  <div class="wrap" style="max-width:720px;">
-    <?php foreach (preg_split('/\n\s*\n/', trim($hub_body)) as $para): if (trim($para) === '') continue; ?>
-    <p class="lead" style="margin:0 0 18px;"><?php echo esc_html(trim($para)); ?></p>
-    <?php endforeach; ?>
-  </div>
-</section>
-<?php endif; ?>
-
-<!-- HUB: podstranice (stilovi u ovoj kategoriji) -->
-<section class="section" style="padding-top:clamp(20px,2.5vw,32px);">
+<section class="section">
   <div class="wrap">
-    <h2 class="display caps" style="font-size:clamp(22px,3vw,34px);margin:0 0 clamp(24px,3vw,36px);letter-spacing:0.01em;">Izaberi svoj stil</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(22px,3vw,38px);">
-      <?php foreach ($kids as $c):
-        $c_img = function_exists('dry65_service_image') ? dry65_service_image($c) : '';
-      ?>
-      <a href="<?php echo esc_url(get_permalink($c->ID)); ?>" class="svc-card reveal" style="display:block;text-decoration:none;color:inherit;">
-        <?php if ($c_img): ?>
-        <div style="aspect-ratio:4/3;border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px;">
-          <?php echo dry65_picture($c_img, $c->post_title, ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
-        </div>
-        <?php endif; ?>
-        <h2 class="display" style="font-size:clamp(21px,2.5vw,28px);"><?php echo esc_html($c->post_title); ?></h2>
-        <?php if ($c->post_excerpt): ?><p class="lead" style="margin-top:8px;font-size:16px;"><?php echo esc_html($c->post_excerpt); ?></p><?php endif; ?>
-        <span style="display:inline-flex;align-items:center;gap:6px;margin-top:12px;color:var(--clay);font-weight:600;">Saznaj više <span class="arrow">→</span></span>
-      </a>
+    <?php if (trim((string) $hub_body)): ?>
+    <div class="svc-hub-body">
+      <?php foreach (preg_split('/\n\s*\n/', trim($hub_body)) as $para): if (trim($para) === '') continue; ?>
+      <p><?php echo esc_html(trim($para)); ?></p>
       <?php endforeach; ?>
     </div>
-    <div class="btn-row" style="margin-top:clamp(32px,5vw,52px);gap:12px;flex-wrap:wrap;">
+    <?php endif; ?>
+
+    <?php if ($kids): ?>
+    <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:clamp(30px,4vw,44px) 0 14px;">Izaberi svoj stil</h2>
+    <ul class="svc-hub-links">
+      <?php foreach ($kids as $c): ?>
+      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($c->ID)); ?>"><span class="arr">→</span> <?php echo esc_html($c->post_title); ?></a></li>
+      <?php endforeach; ?>
+    </ul>
+    <?php endif; ?>
+
+    <div class="btn-row" style="margin-top:clamp(28px,4vw,44px);gap:12px;flex-wrap:wrap;">
       <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">Kako do nas <span class="arrow">→</span></a>
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-outline">Cenovnik</a>
     </div>

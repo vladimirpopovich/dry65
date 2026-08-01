@@ -57,8 +57,8 @@ $tpl  = get_template_directory_uri();
 <!-- Schwarzkopf band (tekst + slika) -->
 <section class="section">
   <div class="wrap">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,64px);align-items:center;" class="svc-single-grid">
-      <div style="aspect-ratio:4/3;border-radius:var(--radius-lg);overflow:hidden;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,64px);align-items:center;" class="hero-grid">
+      <div style="aspect-ratio:4/5;border-radius:1000px;overflow:hidden;">
         <?php echo dry65_picture('assets/salon/s03.webp', 'Dry65 salon, Schwarzkopf Professional proizvodi', ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
       </div>
       <div>
