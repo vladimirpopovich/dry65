@@ -5,8 +5,8 @@
  * Pokretanje na produkciji: uloguj se kao admin i otvori:
  *     https://TVOJ-SAJT/wp-admin/?dry65_seed=feniranje
  *
- * Upisuje SAMO tekst: post_content, podnaslov (short), body i 3 taga (point_1..3).
- * NE dira slike ni Yoast (to radiš ručno preko admina).
+ * Upisuje tekst (post_content, short, body, point_1..3) i Yoast (fokus rec, meta opis, skor).
+ * NE dira slike (to radiš ručno preko admina).
  * Idempotentno: nalazi strane po slugu -> update ako postoje, create ako ne.
  * Posle uspešnog upisa se sam zaključa (opcija dry65_seed_feniranje_done),
  * pa ponovni poziv ništa ne radi dok se opcija ručno ne obriše.
@@ -51,6 +51,12 @@ Ako niste sigurni koji stil feniranja vam najviše odgovara, feniranje na četke
       0 => 'Pranje kose',
       1 => 'Feniranje prema dužini',
       2 => 'Bez zakazivanja',
+    ),
+    'yoast' => 
+    array (
+      'focuskw' => 'feniranje na četke',
+      'metadesc' => 'Feniranje na četke u Dry65 salonu, Novi Beograd. Ravno, talasi, lokne ili volumen, sve bez zakazivanja. Dugotrajna, negovana i sjajna kosa.',
+      'linkdex' => '80',
     ),
   ),
   'children' => 
@@ -106,6 +112,12 @@ Ako niste sigurni koji stil feniranja vam najviše odgovara, feniranje na četke
         0 => '',
         1 => '',
         2 => '',
+      ),
+      'yoast' => 
+      array (
+        'focuskw' => 'feniranje na ravno',
+        'metadesc' => 'Feniranje na ravno u Dry65 salonu, Novi Beograd. Glatka, sjajna i negovana kosa bez zakazivanja. Saznajte sve o klasicnom ravnom feniranju.',
+        'linkdex' => '80',
       ),
     ),
     1 => 
@@ -167,6 +179,12 @@ Ako niste sigurni koji stil feniranja vam najviše odgovara, feniranje na četke
         1 => 'Volumen i pokret',
         2 => 'Za svaki tip kose',
       ),
+      'yoast' => 
+      array (
+        'focuskw' => 'feniranje na talase',
+        'metadesc' => 'Feniranje na talase u Dry65 salonu, Novi Beograd. Prirodan pokret, volumen i mekoća za svaki tip kose, bez zakazivanja. Saznajte više o talasima.',
+        'linkdex' => '80',
+      ),
     ),
     2 => 
     array (
@@ -223,6 +241,12 @@ Ako niste sigurni koji stil feniranja vam najviše odgovara, feniranje na četke
         1 => 'Postojane lokne',
         2 => 'Za posebne prilike',
       ),
+      'yoast' => 
+      array (
+        'focuskw' => 'feniranje na lokne',
+        'metadesc' => 'Feniranje na lokne u Dry65 salonu, Novi Beograd. Bogate, postojane i elegantne lokne za svaki tip kose, bez zakazivanja. Saznajte više o loknama.',
+        'linkdex' => '80',
+      ),
     ),
     3 => 
     array (
@@ -278,6 +302,12 @@ Ako niste sigurni koji stil feniranja vam najviše odgovara, feniranje na četke
         1 => 'Podignut koren',
         2 => 'Za svaki tip kose',
       ),
+      'yoast' => 
+      array (
+        'focuskw' => 'feniranje na volumen',
+        'metadesc' => 'Feniranje na volumen u Dry65 salonu, Novi Beograd. Puna, lepršava i bogata kosa koja izgleda prirodno, bez zakazivanja. Saznajte više.',
+        'linkdex' => '80',
+      ),
     ),
   ),
 );
@@ -303,6 +333,7 @@ function dry65_seed_feniranje_upsert($row, $parent_id) {
     $id = wp_insert_post($arr, true);
     if (is_wp_error($id)) return $id;
 
+    // ACF tekst polja
     $fields = [
         'short'   => $row['short'],
         'body'    => $row['body'],
@@ -314,6 +345,12 @@ function dry65_seed_feniranje_upsert($row, $parent_id) {
         if (function_exists('update_field')) update_field($k, $v, $id);
         else update_post_meta($id, $k, $v);
     }
+
+    // Yoast (nativni meta) — fokus rec, meta opis, SEO skor
+    if (!empty($row['yoast']['focuskw']))  update_post_meta($id, '_yoast_wpseo_focuskw',  $row['yoast']['focuskw']);
+    if (!empty($row['yoast']['metadesc'])) update_post_meta($id, '_yoast_wpseo_metadesc', $row['yoast']['metadesc']);
+    if (!empty($row['yoast']['linkdex']))  update_post_meta($id, '_yoast_wpseo_linkdex',  $row['yoast']['linkdex']);
+
     return $id;
 }
 
