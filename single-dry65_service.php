@@ -262,6 +262,30 @@ $parent = (int) get_post_field('post_parent', $id);
     </div>
   </div>
 </section>
+
+<!-- Interno povezivanje: ostali stilovi iz iste kategorije + nazad na hub -->
+<?php
+$siblings = $parent ? get_posts([
+    'post_type'      => 'dry65_service',
+    'post_parent'    => $parent,
+    'post__not_in'   => [$id],
+    'posts_per_page' => -1,
+    'orderby'        => 'menu_order',
+    'order'          => 'ASC',
+]) : [];
+if ($siblings): ?>
+<section class="section-sm bg-paper2">
+  <div class="wrap">
+    <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:0 0 14px;">Ostali stilovi feniranja</h2>
+    <ul class="svc-hub-links">
+      <?php foreach ($siblings as $s): ?>
+      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($s->ID)); ?>"><span class="arr">→</span> <?php echo esc_html($s->post_title); ?></a></li>
+      <?php endforeach; ?>
+    </ul>
+    <a href="<?php echo esc_url(get_permalink($parent)); ?>" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;color:var(--clay);font-weight:600;text-decoration:none;">Sve o: <?php echo esc_html(get_the_title($parent)); ?> <span class="arrow">→</span></a>
+  </div>
+</section>
+<?php endif; ?>
 <?php endif; ?>
 
 <!-- FAQ (reusable, kategorija 'usluge') -->
