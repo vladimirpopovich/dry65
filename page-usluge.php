@@ -29,24 +29,41 @@ $tpl  = get_template_directory_uri();
     transition:color .2s, gap .2s; }
   .usl-link:hover { color:var(--clay); gap:14px; }
   .usl-link .arr { color:var(--clay); font-size:15px; }
+  /* Stavke bez linka (strane još u pripremi) — isti izgled, bez hovera/klika */
+  .usl-item { display:flex; align-items:center; gap:10px; padding:12px 0; color:var(--ink);
+    font-family:var(--font-sans); font-size:17px; font-weight:500; border-bottom:1px solid var(--cream-deep,#ece7df); }
+  .usl-item .dot { color:var(--clay); font-size:18px; line-height:1; }
   @media (max-width:600px){ .usl-links { grid-template-columns:1fr; } }
 </style>
 
-<?php foreach ($tree as $ci => $cat): $kids = $cat['children']; ?>
+<?php
+// PRIVREMENO: strane za Stilizovanje i Negu još nisu spremne — prikazujemo ih kao
+// obične stavke bez linkova. Kad se napišu tekstovi, izbaci slug iz ovog niza.
+$no_link_cats = ['stilizovanje', 'nega'];
+?>
+<?php foreach ($tree as $ci => $cat): $kids = $cat['children']; $no_link = in_array($cat['slug'], $no_link_cats, true); ?>
 <section class="section<?php echo $ci % 2 ? ' bg-paper2' : ''; ?>">
   <div class="wrap">
     <div class="usl-cat">
       <h2 class="display">
+        <?php if ($no_link): ?>
+        <?php echo esc_html($cat['title']); ?>
+        <?php else: ?>
         <a href="<?php echo esc_url($cat['url']); ?>" style="color:inherit;text-decoration:none;"><?php echo esc_html($cat['title']); ?></a>
+        <?php endif; ?>
       </h2>
       <?php if ($cat['intro']): ?><p class="lead"><?php echo esc_html($cat['intro']); ?></p><?php endif; ?>
       <?php if ($kids): ?>
       <ul class="usl-links">
         <?php foreach ($kids as $c): ?>
+        <?php if ($no_link): ?>
+        <li class="usl-item"><span class="dot">•</span> <?php echo esc_html($c['title']); ?></li>
+        <?php else: ?>
         <li><a class="usl-link" href="<?php echo esc_url($c['url']); ?>"><span class="arr">→</span> <?php echo esc_html($c['title']); ?></a></li>
+        <?php endif; ?>
         <?php endforeach; ?>
       </ul>
-      <?php else: ?>
+      <?php elseif (!$no_link): ?>
       <a href="<?php echo esc_url($cat['url']); ?>" class="usl-link" style="display:inline-flex;border:0;margin-top:18px;font-weight:600;color:var(--clay);"><span class="arr">→</span> Saznaj više</a>
       <?php endif; ?>
     </div>

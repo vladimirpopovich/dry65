@@ -249,6 +249,7 @@ function dry65_service_tree() {
         $out[] = [
             'id'       => $p->ID,
             'title'    => $p->post_title,
+            'slug'     => $p->post_name,
             'intro'    => $p->post_excerpt,
             'url'      => get_permalink($p->ID),
             'img'      => dry65_service_image($p),

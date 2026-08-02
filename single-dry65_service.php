@@ -33,6 +33,8 @@ $parent = (int) get_post_field('post_parent', $id);
   .svc-hero { display:grid; grid-template-columns:1.05fr 0.95fr; gap:clamp(28px,5vw,72px); align-items:center; }
   .svc-hero-img { aspect-ratio:4/5; border-radius:1000px; overflow:hidden; background:var(--cream); }
   .svc-hero-img img { width:100%; height:100%; object-fit:cover; display:block; }
+  /* Hub nema hero fotku — tekst preko cele sirine */
+  .svc-hero-solo { grid-template-columns:1fr; }
   @media (max-width:820px){
     .svc-hero { grid-template-columns:1fr; gap:24px; }
     .svc-hero-img { max-width:320px; margin:4px auto 0; }
@@ -50,7 +52,7 @@ $parent = (int) get_post_field('post_parent', $id);
 <!-- HERO -->
 <section class="bg-paper2 section" style="padding-top:clamp(24px,3vw,44px);padding-bottom:clamp(28px,4vw,56px);">
   <div class="wrap">
-    <div class="svc-hero">
+    <div class="svc-hero<?php echo $is_hub ? ' svc-hero-solo' : ''; ?>">
       <div>
         <p class="mono" style="margin:0 0 10px;font-size:13px;color:var(--muted);">
           <a href="<?php echo esc_url($usluge_url); ?>" style="color:var(--clay);text-decoration:none;">Usluge</a>
@@ -65,7 +67,7 @@ $parent = (int) get_post_field('post_parent', $id);
         <p class="lead" style="margin-top:22px;max-width:560px;"><?php echo esc_html($short); ?></p>
         <?php endif; ?>
       </div>
-      <?php if ($hero_img): ?>
+      <?php if ($hero_img && !$is_hub): ?>
       <div class="svc-hero-img">
         <?php echo dry65_picture($hero_img, $title, ['loading' => 'eager', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
       </div>
@@ -75,25 +77,25 @@ $parent = (int) get_post_field('post_parent', $id);
 </section>
 
 <?php if ($is_hub): ?>
-<!-- HUB: opisni tekst kategorije (iste dimenzije kao članak) + linkovi kao na /usluge -->
+<!-- HUB: linkovi ka stilovima (odmah ispod hero-a) + opisni tekst -->
 <?php $hub_body = $body ?: get_post_field('post_content', $id); ?>
 <section class="section">
   <div class="wrap">
-    <?php if (trim((string) $hub_body)): ?>
-    <div class="svc-hub-body">
-      <?php foreach (preg_split('/\n\s*\n/', trim($hub_body)) as $para): if (trim($para) === '') continue; ?>
-      <p><?php echo esc_html(trim($para)); ?></p>
-      <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
-
     <?php if ($kids): ?>
-    <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:clamp(30px,4vw,44px) 0 14px;">Izaberi svoj stil</h2>
+    <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:0 0 14px;">Izaberi svoj stil</h2>
     <ul class="svc-hub-links">
       <?php foreach ($kids as $c): ?>
       <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($c->ID)); ?>"><span class="arr">→</span> <?php echo esc_html($c->post_title); ?></a></li>
       <?php endforeach; ?>
     </ul>
+    <?php endif; ?>
+
+    <?php if (trim((string) $hub_body)): ?>
+    <div class="svc-hub-body" style="margin-top:clamp(34px,5vw,56px);">
+      <?php foreach (preg_split('/\n\s*\n/', trim($hub_body)) as $para): if (trim($para) === '') continue; ?>
+      <p><?php echo esc_html(trim($para)); ?></p>
+      <?php endforeach; ?>
+    </div>
     <?php endif; ?>
 
     <div class="btn-row" style="margin-top:clamp(28px,4vw,44px);gap:12px;flex-wrap:wrap;">
