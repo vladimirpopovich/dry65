@@ -250,7 +250,7 @@ function dry65_service_tree() {
             'id'       => $p->ID,
             'title'    => $p->post_title,
             'slug'     => $p->post_name,
-            'intro'    => $p->post_excerpt,
+            'intro'    => $p->post_excerpt ?: (function_exists('dry65_get_field') ? (dry65_get_field('short', $p->ID) ?: '') : ''),
             'url'      => get_permalink($p->ID),
             'img'      => dry65_service_image($p),
             'children' => $children,
