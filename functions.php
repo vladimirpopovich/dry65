@@ -11,6 +11,7 @@ require_once get_template_directory() . '/inc/seo.php';
 require_once get_template_directory() . '/inc/live.php';
 require_once get_template_directory() . '/inc/menu-hub.php';
 require_once get_template_directory() . '/inc/seed-feniranje.php'; // jednokratni seed teksta (obrisati posle upotrebe)
+require_once get_template_directory() . '/inc/services-noindex.php'; // noindex + sitemap-exclude za nespremne kategorije (Stilizovanje/Nega)
 
 /* ---- WebP kao podrazumevani output za thumbnaile ----
    Bez ovog WP generise .jpg thumbnaile cak i ako je original .webp.
