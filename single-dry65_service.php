@@ -191,7 +191,7 @@ $parent = (int) get_post_field('post_parent', $id);
 </script>
 <?php endif; ?>
 
-<!-- TRUST: Google agregat + jedna bogatija recenzija (social proof) -->
+<!-- TRUST: Google agregat + bogata recenzija (razlicita po strani, cela) -->
 <?php
 $g_meta   = function_exists('dry65_google_meta') ? dry65_google_meta() : ['rating' => 0, 'total' => 0];
 $g_rating = $g_meta['rating'] ?: 5.0;
@@ -199,13 +199,16 @@ $g_total  = (int) ($g_meta['total'] ?? 0);
 $g_rating_disp = number_format($g_rating, 1, ',', '');
 $g_quote = null;
 if (function_exists('dry65_reviews_smart')) {
-    $revs = (array) dry65_reviews_smart();
-    foreach ($revs as $rv) {
-        if ((int) ($rv['rating'] ?? 5) < 5) continue;
-        $len = mb_strlen($rv['text'] ?? '');
-        if ($len >= 60 && (!$g_quote || $len > mb_strlen($g_quote['text']))) $g_quote = $rv;
+    $g_pool = array_values(array_filter((array) dry65_reviews_smart(), function ($r) {
+        return (int) ($r['rating'] ?? 5) >= 5 && trim($r['text'] ?? '') !== '';
+    }));
+    usort($g_pool, fn($a, $b) => mb_strlen($b['text']) <=> mb_strlen($a['text'])); // najbogatije prve
+    if ($g_pool) {
+        $g_sib = get_posts(['post_type' => 'dry65_service', 'post_parent' => $parent, 'posts_per_page' => -1, 'orderby' => 'menu_order', 'order' => 'ASC', 'fields' => 'ids']);
+        $g_pos = array_search($id, $g_sib, true);
+        if ($g_pos === false) $g_pos = 0;
+        $g_quote = $g_pool[$g_pos % count($g_pool)]; // razlicita recenzija po strani
     }
-    if (!$g_quote && !empty($revs)) $g_quote = $revs[0];
 }
 ?>
 <?php if ($g_total > 0 || $g_quote): ?>
@@ -218,23 +221,35 @@ if (function_exists('dry65_reviews_smart')) {
         <?php if ($g_total > 0): ?><span class="svc-trust-total">· <?php echo esc_html($g_total); ?> recenzija na Google-u</span><?php endif; ?>
       </a>
       <?php if ($g_quote && !empty($g_quote['text'])): ?>
-      <blockquote class="svc-trust-quote">„<?php echo esc_html(mb_strimwidth($g_quote['text'], 0, 175, '…')); ?>"
-        <?php if (!empty($g_quote['name'])): ?><cite class="svc-trust-cite"><?php echo esc_html($g_quote['name']); ?></cite><?php endif; ?>
+      <blockquote class="svc-trust-quote">
+        <div class="svc-trust-head">
+          <?php if (!empty($g_quote['photo'])): ?>
+          <img class="svc-trust-avatar" src="<?php echo esc_url($g_quote['photo']); ?>" alt="<?php echo esc_attr($g_quote['name'] ?? ''); ?>" width="40" height="40" loading="lazy" referrerpolicy="no-referrer">
+          <?php endif; ?>
+          <div>
+            <?php if (!empty($g_quote['name'])): ?><span class="svc-trust-cite"><?php echo esc_html($g_quote['name']); ?></span><?php endif; ?>
+            <span class="svc-trust-stars-sm" aria-hidden="true">★★★★★</span>
+          </div>
+        </div>
+        <p class="svc-trust-text">„<?php echo nl2br(esc_html(trim($g_quote['text']))); ?>"</p>
       </blockquote>
       <?php endif; ?>
     </div>
   </div>
 </section>
 <style>
-  .svc-trust { max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+  .svc-trust { max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
   .svc-trust-rate { display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink); font-family:var(--font-sans); }
   .svc-trust-stars { color:#f5a623; font-size:17px; letter-spacing:1px; }
   .svc-trust-num { font-weight:700; font-size:17px; }
   .svc-trust-total { color:var(--muted); font-size:15px; }
   .svc-trust-rate:hover .svc-trust-total { color:var(--clay); }
-  .svc-trust-quote { margin:0; padding:14px 18px; border-left:3px solid var(--clay); background:var(--cream); border-radius:8px;
-    font-family:var(--font-sans); font-size:16px; line-height:1.6; color:var(--ink-soft); }
-  .svc-trust-cite { display:block; margin-top:8px; font-style:normal; font-weight:600; color:var(--clay); font-size:14px; }
+  .svc-trust-quote { margin:0; padding:18px 20px; border-left:3px solid var(--clay); background:var(--cream); border-radius:10px; }
+  .svc-trust-head { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .svc-trust-avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+  .svc-trust-cite { display:block; font-weight:600; color:var(--ink); font-size:15px; }
+  .svc-trust-stars-sm { color:#f5a623; font-size:13px; letter-spacing:1px; }
+  .svc-trust-text { margin:0; font-family:var(--font-sans); font-size:16px; line-height:1.65; color:var(--ink-soft); white-space:pre-line; }
 </style>
 <?php endif; ?>
 

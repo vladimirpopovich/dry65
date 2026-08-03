@@ -253,6 +253,14 @@ function dry65_google_reviews_archive($filters = []) {
         return $sort === 'oldest' ? ($ta <=> $tb) : ($tb <=> $ta);
     });
 
+    // Osvezi relativno vreme iz timestampa — 'when' u arhivi zastari kad recenzija
+    // ispadne iz API prozora (Google vraca samo ~5 najnovijih), pa se vise ne racuna.
+    foreach ($items as &$it) {
+        $ts = (int) ($it['time'] ?? $it['first_seen'] ?? 0);
+        if ($ts > 0) $it['when'] = dry65_time_ago_latinica($ts);
+    }
+    unset($it);
+
     return array_values($items);
 }
 
