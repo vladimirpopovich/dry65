@@ -39,7 +39,7 @@ $tpl  = get_template_directory_uri();
 <?php
 // PRIVREMENO: strane za Stilizovanje i Negu još nisu spremne — prikazujemo ih kao
 // obične stavke bez linkova. Kad se napišu tekstovi, izbaci slug iz ovog niza.
-$no_link_cats = ['stilizovanje', 'nega'];
+$no_link_cats = function_exists('dry65_unready_service_slugs') ? dry65_unready_service_slugs() : ['stilizovanje', 'nega'];
 ?>
 <?php foreach ($tree as $ci => $cat): $kids = $cat['children']; $no_link = in_array($cat['slug'], $no_link_cats, true); ?>
 <section class="section<?php echo $ci % 2 ? ' bg-paper2' : ''; ?>">

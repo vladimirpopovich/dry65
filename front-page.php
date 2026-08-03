@@ -202,9 +202,10 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         text-decoration:none; font-family:var(--font-sans); font-size:15.5px; font-weight:500; transition:color .2s, gap .2s; }
       .hp-svc-link:hover { color:var(--clay); gap:12px; }
       .hp-svc-link .arr { color:var(--clay); font-size:14px; }
-      /* Kategorija u pripremi — stavke bez linka (tačkica umesto strelice) */
-      .hp-svc-item { display:flex; align-items:center; gap:8px; padding:9px 0; color:var(--ink); font-family:var(--font-sans); font-size:15.5px; font-weight:500; }
-      .hp-svc-item .dot { color:var(--clay); font-size:17px; line-height:1; }
+      /* Kategorija u pripremi — obična bullet lista (jasno da nije link) */
+      .hp-svc-plain { list-style: disc; padding:0 0 0 20px; margin:16px 0 0; }
+      .hp-svc-plain li { padding:5px 0; color:var(--ink); font-family:var(--font-sans); font-size:15.5px; font-weight:500; }
+      .hp-svc-plain li::marker { color: var(--clay); }
       /* Glavna kategorija — jasan hover da se vidi da je klikabilna */
       .hp-cat-card { transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
       .hp-cat-card:hover { transform: translateY(-4px); box-shadow: 0 20px 44px -24px rgba(17,28,29,0.35); }
@@ -241,15 +242,19 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
           </a>
           <?php endif; ?>
           <?php if (!empty($cat['children'])): ?>
-          <ul class="hp-svc-links">
+          <?php if ($locked): ?>
+          <ul class="hp-svc-plain">
             <?php foreach ($cat['children'] as $c): ?>
-            <?php if ($locked): ?>
-            <li><span class="hp-svc-item"><span class="dot">•</span> <?php echo esc_html($c['title']); ?></span></li>
-            <?php else: ?>
-            <li><a class="hp-svc-link" href="<?php echo esc_url($c['url']); ?>"><span class="arr">→</span> <?php echo esc_html($c['title']); ?></a></li>
-            <?php endif; ?>
+            <li><?php echo esc_html($c['title']); ?></li>
             <?php endforeach; ?>
           </ul>
+          <?php else: ?>
+          <ul class="hp-svc-links">
+            <?php foreach ($cat['children'] as $c): ?>
+            <li><a class="hp-svc-link" href="<?php echo esc_url($c['url']); ?>"><span class="arr">→</span> <?php echo esc_html($c['title']); ?></a></li>
+            <?php endforeach; ?>
+          </ul>
+          <?php endif; ?>
           <?php elseif (!$locked): ?>
           <?php if ($cat['intro']): ?><p class="muted" style="margin-top:12px;font-size:15.5px;flex:1;"><?php echo esc_html($cat['intro']); ?></p><?php endif; ?>
           <div style="margin-top:18px;"><a href="<?php echo esc_url($cat['url']); ?>" class="textlink">Saznaj više <span>→</span></a></div>
