@@ -24,28 +24,17 @@ function dry65_seed_feniranje_data() {
     'order' => 1,
     'content' => '<p>Feniranje na četke predstavlja osnovu profesionalnog oblikovanja kose i tehniku kojom se postižu gotovo svi najpopularniji stilovi feniranja. Bilo da želite savršeno ravnu kosu, prirodne talase, bogate lokne ili više volumena, sve počinje pravilnim izborom četke, iskustvom frizera i tehnikom prilagođenom vašoj kosi.</p>
 <p>Za razliku od oblikovanja uz pomoć figara ili prese za kosu, feniranje na četke omogućava prirodniji izgled, više pokreta i mekoću koju je teško postići drugim metodama. Cilj nije samo osušiti kosu, već oblikovati frizuru koja izgleda negovano, traje tokom dana i odgovara vašem stilu.</p>
+<h2>Tehnika prilagođena vašoj kosi</h2>
 <p>Profesionalni frizer bira veličinu i tip četke u zavisnosti od dužine, gustine i teksture kose, ali i od rezultata koji želite da postignete. Manje četke koriste se za kraću kosu, oblikovanje šiški ili izraženije uvijanje krajeva, dok veće četke stvaraju glatku završnicu, prirodan volumen i lepršav pokret na srednje dugoj i dugoj kosi.</p>
 <p>Dobro feniranje na četke nije univerzalan postupak. Svaka kosa zahteva drugačiji pristup, zbog čega isti stil neće biti urađen na isti način kod svake osobe. Pravilna kontrola toplote, usmeravanje vazduha i napetost prilikom rada omogućavaju da kosa ostane sjajna, mekana i zaštićena od nepotrebnog oštećenja.</p>
+<h2>Stilovi koje postižemo</h2>
 <p>Upravo zahvaljujući ovoj tehnici moguće je kreirati različite stilove feniranja. Ravno feniranje pruža elegantan i uredan izgled sa prirodnim sjajem. Feniranje na talase daje pokret i ležernu, modernu eleganciju. Feniranje na lokne donosi više definicije, volumena i glamura, dok feniranje na volumen podiže koren i stvara utisak gušće i bogatije kose.</p>
 <p>Jedna od najvećih prednosti feniranja na četke jeste njegova prilagodljivost. Bez obzira da li imate tanku, gustu, ravnu, talasastu ili blago kovrdžavu kosu, pravilna tehnika može istaći ono što je najlepše na vašoj frizuri. Količina volumena, pokret, završni oblik i način na koji kosa pada određuju se prema vašim željama i karakteristikama same kose.</p>
+<h2>Feniranje na četke u Dry65</h2>
 <p>U salonu Dry65 svaki stil feniranja počinje upravo ovom tehnikom. Ne postoji unapred određena formula niti isti postupak za svaku mušteriju. Cilj je da rezultat izgleda prirodno, bude dugotrajan i da kosa ostane mekana, lagana i jednostavna za održavanje.</p>
 <p>Ako niste sigurni koji stil feniranja vam najviše odgovara, feniranje na četke pruža najveću slobodu izbora. U dogovoru sa frizerom možete odabrati potpuno ravnu kosu, prirodne talase, elegantne lokne ili dodatni volumen, uz tehniku koja će najbolje odgovarati vašoj dužini, teksturi i obliku frizure.</p>',
     'short' => 'Feniranje na četke jedan je od najlepših načina da kosa dobije punoću, prirodan oblik i zdrav sjaj. U Dry65 ovu tehniku koristimo kako bismo istakli lepotu vaše kose, stvarajući frizuru koja izgleda negovano, prozračno i elegantno. Bez obzira na dužinu ili tip kose, rezultat je prirodan izgled koji traje i lako se uklapa u svaku priliku.',
-    'body' => 'Feniranje na četke predstavlja osnovu profesionalnog oblikovanja kose i tehniku kojom se postižu gotovo svi najpopularniji stilovi feniranja. Bilo da želite savršeno ravnu kosu, prirodne talase, bogate lokne ili više volumena, sve počinje pravilnim izborom četke, iskustvom frizera i tehnikom prilagođenom vašoj kosi.
-
-Za razliku od oblikovanja uz pomoć figara ili prese za kosu, feniranje na četke omogućava prirodniji izgled, više pokreta i mekoću koju je teško postići drugim metodama. Cilj nije samo osušiti kosu, već oblikovati frizuru koja izgleda negovano, traje tokom dana i odgovara vašem stilu.
-
-Profesionalni frizer bira veličinu i tip četke u zavisnosti od dužine, gustine i teksture kose, ali i od rezultata koji želite da postignete. Manje četke koriste se za kraću kosu, oblikovanje šiški ili izraženije uvijanje krajeva, dok veće četke stvaraju glatku završnicu, prirodan volumen i lepršav pokret na srednje dugoj i dugoj kosi.
-
-Dobro feniranje na četke nije univerzalan postupak. Svaka kosa zahteva drugačiji pristup, zbog čega isti stil neće biti urađen na isti način kod svake osobe. Pravilna kontrola toplote, usmeravanje vazduha i napetost prilikom rada omogućavaju da kosa ostane sjajna, mekana i zaštićena od nepotrebnog oštećenja.
-
-Upravo zahvaljujući ovoj tehnici moguće je kreirati različite stilove feniranja. Ravno feniranje pruža elegantan i uredan izgled sa prirodnim sjajem. Feniranje na talase daje pokret i ležernu, modernu eleganciju. Feniranje na lokne donosi više definicije, volumena i glamura, dok feniranje na volumen podiže koren i stvara utisak gušće i bogatije kose.
-
-Jedna od najvećih prednosti feniranja na četke jeste njegova prilagodljivost. Bez obzira da li imate tanku, gustu, ravnu, talasastu ili blago kovrdžavu kosu, pravilna tehnika može istaći ono što je najlepše na vašoj frizuri. Količina volumena, pokret, završni oblik i način na koji kosa pada određuju se prema vašim željama i karakteristikama same kose.
-
-U salonu Dry65 svaki stil feniranja počinje upravo ovom tehnikom. Ne postoji unapred određena formula niti isti postupak za svaku mušteriju. Cilj je da rezultat izgleda prirodno, bude dugotrajan i da kosa ostane mekana, lagana i jednostavna za održavanje.
-
-Ako niste sigurni koji stil feniranja vam najviše odgovara, feniranje na četke pruža najveću slobodu izbora. U dogovoru sa frizerom možete odabrati potpuno ravnu kosu, prirodne talase, elegantne lokne ili dodatni volumen, uz tehniku koja će najbolje odgovarati vašoj dužini, teksturi i obliku frizure.',
+    'body' => '',
     'points' => 
     array (
       0 => 'Pranje kose',

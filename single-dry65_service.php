@@ -42,6 +42,9 @@ $parent = (int) get_post_field('post_parent', $id);
   /* Hub: opisni tekst iste dimenzije kao članak + linkovi kao na /usluge */
   .svc-hub-body { max-width:720px; }
   .svc-hub-body p { margin:0 0 18px; font-family:var(--font-sans); font-size:17px; line-height:1.72; color:var(--ink-soft); }
+  .svc-hub-body h2 { font-family:var(--font-display); font-weight:300; font-size:clamp(24px,3.2vw,34px); line-height:1.08; letter-spacing:0.01em; margin:38px 0 12px; }
+  .svc-hub-body h3 { font-family:var(--font-display); font-weight:400; font-size:clamp(19px,2.2vw,25px); line-height:1.15; margin:26px 0 8px; color:var(--oxblood); }
+  .svc-hub-body > *:first-child { margin-top:0; }
   .svc-hub-links { list-style:none; padding:0; margin:0; max-width:720px; display:grid; grid-template-columns:repeat(2,1fr); gap:0 28px; }
   .svc-hub-link { display:flex; align-items:center; gap:10px; padding:12px 0; color:var(--ink); text-decoration:none;
     font-family:var(--font-sans); font-size:17px; font-weight:500; border-bottom:1px solid var(--cream-deep,#ece7df); transition:color .2s, gap .2s; }
@@ -78,7 +81,7 @@ $parent = (int) get_post_field('post_parent', $id);
 
 <?php if ($is_hub): ?>
 <!-- HUB: linkovi ka stilovima (odmah ispod hero-a) + opisni tekst -->
-<?php $hub_body = $body ?: get_post_field('post_content', $id); ?>
+<?php $hub_html = trim((string) get_post_field('post_content', $id)); ?>
 <section class="section">
   <div class="wrap">
     <?php if ($kids): ?>
@@ -90,11 +93,9 @@ $parent = (int) get_post_field('post_parent', $id);
     </ul>
     <?php endif; ?>
 
-    <?php if (trim((string) $hub_body)): ?>
+    <?php if ($hub_html): ?>
     <div class="svc-hub-body" style="margin-top:clamp(34px,5vw,56px);">
-      <?php foreach (preg_split('/\n\s*\n/', trim($hub_body)) as $para): if (trim($para) === '') continue; ?>
-      <p><?php echo esc_html(trim($para)); ?></p>
-      <?php endforeach; ?>
+      <?php echo apply_filters('the_content', $hub_html); ?>
     </div>
     <?php endif; ?>
 
