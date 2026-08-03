@@ -208,7 +208,7 @@ if (function_exists('dry65_reviews_smart')) {
         'feniranje-na-ravno'   => 'Ana Maria Constanca Delic',
         'feniranje-na-talase'  => 'Marija Culibrk',
         'feniranje-na-lokne'   => 'Marija Anastasijevic',
-        'feniranje-na-volumen' => 'Andjela Jadnak',
+        'feniranje-na-volumen' => 'Andjela Jednak',
     ];
     $g_slug = get_post_field('post_name', $id);
     if (!empty($g_manual[$g_slug])) {
@@ -232,9 +232,11 @@ if (function_exists('dry65_reviews_smart')) {
     }
 }
 ?>
-<?php if ($g_total > 0 || $g_quote): ?>
-<section class="section-sm" style="padding-top:clamp(16px,2.4vw,26px);padding-bottom:0;">
-  <div class="wrap">
+<?php
+// Sastavi review blok u promenljivu — ubacuje se UNUTAR clanka (ispod uvodnih pasusa), ne skroz gore.
+$g_review_html = '';
+if ($g_total > 0 || $g_quote):
+    ob_start(); ?>
     <div class="svc-trust">
       <a class="svc-trust-rate" href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener">
         <span class="svc-trust-stars" aria-hidden="true">★★★★★</span>
@@ -269,10 +271,8 @@ if (function_exists('dry65_reviews_smart')) {
       </blockquote>
       <?php endif; ?>
     </div>
-  </div>
-</section>
 <style>
-  .svc-trust { max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+  .svc-trust { max-width:720px; margin:clamp(30px,4vw,46px) auto; display:flex; flex-direction:column; gap:16px; }
   .svc-trust-rate { display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink); font-family:var(--font-sans); }
   .svc-trust-stars { color:#f5a623; font-size:17px; letter-spacing:1px; }
   .svc-trust-num { font-weight:700; font-size:17px; }
@@ -289,7 +289,9 @@ if (function_exists('dry65_reviews_smart')) {
   .svc-trust-when { color:var(--muted); font-size:13px; }
   .svc-trust-g { width:20px; height:20px; flex-shrink:0; }
 </style>
-<?php endif; ?>
+    <?php $g_review_html = ob_get_clean();
+endif;
+?>
 
 <!-- ARTICLE -->
 <section class="section">
@@ -331,9 +333,13 @@ if (function_exists('dry65_reviews_smart')) {
       <?php $live_block = ob_get_clean();
 
       if ($body):
-          foreach (preg_split('/\n\s*\n/', trim($body)) as $para): if (trim($para) === '') continue; ?>
+          $g_pc = 0;
+          foreach (preg_split('/\n\s*\n/', trim($body)) as $para):
+              if (trim($para) === '') continue; ?>
           <p><?php echo esc_html(trim($para)); ?></p>
-          <?php endforeach;
+          <?php $g_pc++; if ($g_pc === 3) echo $g_review_html;
+          endforeach;
+          if ($g_pc < 3) echo $g_review_html;     // ako ima manje od 3 pasusa
           echo $price_block;
           echo $live_block;
       else:
@@ -342,6 +348,7 @@ if (function_exists('dry65_reviews_smart')) {
           $intro = array_shift($parts);          // pre prvog H2 (uvod)
           $first = array_shift($parts);          // prva H2 sekcija ispod cenovnika
           echo $intro;
+          echo $g_review_html;                    // recenzije ispod uvodnih pasusa (ne skroz gore)
           echo $price_block;
           if ($first !== null) echo $first;
           echo $live_block;                       // box posle te sekcije
