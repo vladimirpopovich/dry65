@@ -191,6 +191,53 @@ $parent = (int) get_post_field('post_parent', $id);
 </script>
 <?php endif; ?>
 
+<!-- TRUST: Google agregat + jedna bogatija recenzija (social proof) -->
+<?php
+$g_meta   = function_exists('dry65_google_meta') ? dry65_google_meta() : ['rating' => 0, 'total' => 0];
+$g_rating = $g_meta['rating'] ?: 5.0;
+$g_total  = (int) ($g_meta['total'] ?? 0);
+$g_rating_disp = number_format($g_rating, 1, ',', '');
+$g_quote = null;
+if (function_exists('dry65_reviews_smart')) {
+    $revs = (array) dry65_reviews_smart();
+    foreach ($revs as $rv) {
+        if ((int) ($rv['rating'] ?? 5) < 5) continue;
+        $len = mb_strlen($rv['text'] ?? '');
+        if ($len >= 60 && (!$g_quote || $len > mb_strlen($g_quote['text']))) $g_quote = $rv;
+    }
+    if (!$g_quote && !empty($revs)) $g_quote = $revs[0];
+}
+?>
+<?php if ($g_total > 0 || $g_quote): ?>
+<section class="section-sm" style="padding-top:clamp(16px,2.4vw,26px);padding-bottom:0;">
+  <div class="wrap">
+    <div class="svc-trust">
+      <a class="svc-trust-rate" href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener">
+        <span class="svc-trust-stars" aria-hidden="true">★★★★★</span>
+        <span class="svc-trust-num"><?php echo esc_html($g_rating_disp); ?></span>
+        <?php if ($g_total > 0): ?><span class="svc-trust-total">· <?php echo esc_html($g_total); ?> recenzija na Google-u</span><?php endif; ?>
+      </a>
+      <?php if ($g_quote && !empty($g_quote['text'])): ?>
+      <blockquote class="svc-trust-quote">„<?php echo esc_html(mb_strimwidth($g_quote['text'], 0, 175, '…')); ?>"
+        <?php if (!empty($g_quote['name'])): ?><cite class="svc-trust-cite"><?php echo esc_html($g_quote['name']); ?></cite><?php endif; ?>
+      </blockquote>
+      <?php endif; ?>
+    </div>
+  </div>
+</section>
+<style>
+  .svc-trust { max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+  .svc-trust-rate { display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink); font-family:var(--font-sans); }
+  .svc-trust-stars { color:#f5a623; font-size:17px; letter-spacing:1px; }
+  .svc-trust-num { font-weight:700; font-size:17px; }
+  .svc-trust-total { color:var(--muted); font-size:15px; }
+  .svc-trust-rate:hover .svc-trust-total { color:var(--clay); }
+  .svc-trust-quote { margin:0; padding:14px 18px; border-left:3px solid var(--clay); background:var(--cream); border-radius:8px;
+    font-family:var(--font-sans); font-size:16px; line-height:1.6; color:var(--ink-soft); }
+  .svc-trust-cite { display:block; margin-top:8px; font-style:normal; font-weight:600; color:var(--clay); font-size:14px; }
+</style>
+<?php endif; ?>
+
 <!-- ARTICLE -->
 <section class="section">
   <div class="wrap">
