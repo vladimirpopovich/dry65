@@ -221,17 +221,30 @@ if (function_exists('dry65_reviews_smart')) {
         <?php if ($g_total > 0): ?><span class="svc-trust-total">· <?php echo esc_html($g_total); ?> recenzija na Google-u</span><?php endif; ?>
       </a>
       <?php if ($g_quote && !empty($g_quote['text'])): ?>
-      <blockquote class="svc-trust-quote">
-        <div class="svc-trust-head">
+      <blockquote class="svc-trust-card">
+        <div class="svc-trust-stars-top" aria-hidden="true">★★★★★</div>
+        <div class="svc-trust-body">
+          <?php foreach (preg_split('/\n{2,}/', trim($g_quote['text'])) as $g_para):
+              $g_para = trim(preg_replace('/\s*\n\s*/u', ' ', $g_para));
+              if ($g_para === '') continue; ?>
+          <p><?php echo esc_html($g_para); ?></p>
+          <?php endforeach; ?>
+        </div>
+        <footer class="svc-trust-foot">
           <?php if (!empty($g_quote['photo'])): ?>
           <img class="svc-trust-avatar" src="<?php echo esc_url($g_quote['photo']); ?>" alt="<?php echo esc_attr($g_quote['name'] ?? ''); ?>" width="40" height="40" loading="lazy" referrerpolicy="no-referrer">
           <?php endif; ?>
-          <div>
-            <?php if (!empty($g_quote['name'])): ?><span class="svc-trust-cite"><?php echo esc_html($g_quote['name']); ?></span><?php endif; ?>
-            <span class="svc-trust-stars-sm" aria-hidden="true">★★★★★</span>
+          <div class="svc-trust-meta">
+            <?php if (!empty($g_quote['name'])): ?><span class="svc-trust-name"><?php echo esc_html($g_quote['name']); ?></span><?php endif; ?>
+            <?php if (!empty($g_quote['when'])): ?><span class="svc-trust-when"><?php echo esc_html($g_quote['when']); ?></span><?php endif; ?>
           </div>
-        </div>
-        <p class="svc-trust-text">„<?php echo nl2br(esc_html(trim($g_quote['text']))); ?>"</p>
+          <svg class="svc-trust-g" viewBox="0 0 48 48" aria-label="Google">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+        </footer>
       </blockquote>
       <?php endif; ?>
     </div>
@@ -244,12 +257,16 @@ if (function_exists('dry65_reviews_smart')) {
   .svc-trust-num { font-weight:700; font-size:17px; }
   .svc-trust-total { color:var(--muted); font-size:15px; }
   .svc-trust-rate:hover .svc-trust-total { color:var(--clay); }
-  .svc-trust-quote { margin:0; padding:18px 20px; border-left:3px solid var(--clay); background:var(--cream); border-radius:10px; }
-  .svc-trust-head { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .svc-trust-card { margin:0; background:#fff; border:1px solid var(--cream-deep,#ece7df); border-radius:16px; padding:24px 26px; box-shadow:0 16px 44px -26px rgba(17,28,29,0.3); }
+  .svc-trust-stars-top { color:#f5a623; font-size:19px; letter-spacing:2px; margin-bottom:14px; }
+  .svc-trust-body p { margin:0 0 12px; font-family:var(--font-sans); font-size:16px; line-height:1.62; color:var(--ink); }
+  .svc-trust-body p:last-child { margin-bottom:0; }
+  .svc-trust-foot { display:flex; align-items:center; gap:12px; margin-top:20px; padding-top:18px; border-top:1px solid var(--cream-deep,#ece7df); }
   .svc-trust-avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; flex-shrink:0; }
-  .svc-trust-cite { display:block; font-weight:600; color:var(--ink); font-size:15px; }
-  .svc-trust-stars-sm { color:#f5a623; font-size:13px; letter-spacing:1px; }
-  .svc-trust-text { margin:0; font-family:var(--font-sans); font-size:16px; line-height:1.65; color:var(--ink-soft); white-space:pre-line; }
+  .svc-trust-meta { display:flex; flex-direction:column; line-height:1.3; margin-right:auto; }
+  .svc-trust-name { font-weight:600; color:var(--ink); font-size:15px; }
+  .svc-trust-when { color:var(--muted); font-size:13px; }
+  .svc-trust-g { width:20px; height:20px; flex-shrink:0; }
 </style>
 <?php endif; ?>
 
