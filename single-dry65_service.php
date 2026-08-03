@@ -205,7 +205,9 @@ if (function_exists('dry65_reviews_smart')) {
 
     // Rucna dodela recenzije po strani (ime recenzenta). Lako se dopunjuje.
     $g_manual = [
+        'feniranje-na-ravno'   => 'Ana Maria Constanca Delic',
         'feniranje-na-talase'  => 'Marija Culibrk',
+        'feniranje-na-lokne'   => 'Marija Anastasijevic',
         'feniranje-na-volumen' => 'Andjela Jadnak',
     ];
     $g_slug = get_post_field('post_name', $id);
