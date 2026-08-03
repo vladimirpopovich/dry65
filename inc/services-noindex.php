@@ -51,3 +51,13 @@ add_filter('wpseo_robots', function ($robots) {
     }
     return $robots;
 });
+
+/* SEO title za strane usluga: naslov + hook + brend + lokacija (bolji CTR).
+   Postuje rucni per-page Yoast SEO title ako je postavljen. */
+add_filter('wpseo_title', function ($title) {
+    if (!is_singular('dry65_service')) return $title;
+    $id = get_queried_object_id();
+    if (!$id) return $title;
+    if (get_post_meta($id, '_yoast_wpseo_title', true)) return $title; // rucni override ima prednost
+    return get_the_title($id) . ' - bez zakazivanja - Dry65, Novi Beograd';
+});
