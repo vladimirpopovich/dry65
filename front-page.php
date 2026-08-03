@@ -202,6 +202,9 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         text-decoration:none; font-family:var(--font-sans); font-size:15.5px; font-weight:500; transition:color .2s, gap .2s; }
       .hp-svc-link:hover { color:var(--clay); gap:12px; }
       .hp-svc-link .arr { color:var(--clay); font-size:14px; }
+      /* Kategorija u pripremi — stavke bez linka (tačkica umesto strelice) */
+      .hp-svc-item { display:flex; align-items:center; gap:8px; padding:9px 0; color:var(--ink); font-family:var(--font-sans); font-size:15.5px; font-weight:500; }
+      .hp-svc-item .dot { color:var(--clay); font-size:17px; line-height:1; }
       /* Glavna kategorija — jasan hover da se vidi da je klikabilna */
       .hp-cat-card { transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
       .hp-cat-card:hover { transform: translateY(-4px); box-shadow: 0 20px 44px -24px rgba(17,28,29,0.35); }
@@ -212,24 +215,42 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
       .hp-cat-card:hover .cat-arr, .hp-cat-title:hover .cat-arr { opacity:1; margin-left:9px; }
     </style>
     <div class="grid cols-3">
-      <?php foreach (dry65_service_tree() as $i => $cat): ?>
-      <div class="reveal card svc-card hp-cat-card" style="height:100%;display:flex;flex-direction:column;" data-delay="<?php echo $i * 80; ?>">
+      <?php
+      $hp_unready = function_exists('dry65_unready_service_slugs') ? dry65_unready_service_slugs() : [];
+      foreach (dry65_service_tree() as $i => $cat):
+          $locked = in_array($cat['slug'], $hp_unready, true);
+      ?>
+      <div class="reveal card svc-card<?php echo $locked ? '' : ' hp-cat-card'; ?>" style="height:100%;display:flex;flex-direction:column;" data-delay="<?php echo $i * 80; ?>">
+        <?php if ($locked): ?>
+        <div style="aspect-ratio:4/3;overflow:hidden;">
+          <?php echo dry65_picture($cat['img'], $cat['title'], ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
+        </div>
+        <?php else: ?>
         <a href="<?php echo esc_url($cat['url']); ?>" style="display:block;text-decoration:none;color:inherit;" aria-label="<?php echo esc_attr($cat['title']); ?>">
           <div style="aspect-ratio:4/3;overflow:hidden;">
             <?php echo dry65_picture($cat['img'], $cat['title'], ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?>
           </div>
         </a>
+        <?php endif; ?>
         <div style="padding:24px 24px 26px;display:flex;flex-direction:column;flex:1;">
+          <?php if ($locked): ?>
+          <h3 class="display" style="font-size:27px;"><?php echo esc_html($cat['title']); ?></h3>
+          <?php else: ?>
           <a href="<?php echo esc_url($cat['url']); ?>" class="hp-cat-title">
             <h3 class="display" style="font-size:27px;"><?php echo esc_html($cat['title']); ?><span class="cat-arr">→</span></h3>
           </a>
+          <?php endif; ?>
           <?php if (!empty($cat['children'])): ?>
           <ul class="hp-svc-links">
             <?php foreach ($cat['children'] as $c): ?>
+            <?php if ($locked): ?>
+            <li><span class="hp-svc-item"><span class="dot">•</span> <?php echo esc_html($c['title']); ?></span></li>
+            <?php else: ?>
             <li><a class="hp-svc-link" href="<?php echo esc_url($c['url']); ?>"><span class="arr">→</span> <?php echo esc_html($c['title']); ?></a></li>
+            <?php endif; ?>
             <?php endforeach; ?>
           </ul>
-          <?php else: ?>
+          <?php elseif (!$locked): ?>
           <?php if ($cat['intro']): ?><p class="muted" style="margin-top:12px;font-size:15.5px;flex:1;"><?php echo esc_html($cat['intro']); ?></p><?php endif; ?>
           <div style="margin-top:18px;"><a href="<?php echo esc_url($cat['url']); ?>" class="textlink">Saznaj više <span>→</span></a></div>
           <?php endif; ?>
