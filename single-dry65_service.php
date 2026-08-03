@@ -202,12 +202,31 @@ if (function_exists('dry65_reviews_smart')) {
     $g_pool = array_values(array_filter((array) dry65_reviews_smart(), function ($r) {
         return (int) ($r['rating'] ?? 5) >= 5 && trim($r['text'] ?? '') !== '';
     }));
-    usort($g_pool, fn($a, $b) => mb_strlen($b['text']) <=> mb_strlen($a['text'])); // najbogatije prve
-    if ($g_pool) {
+
+    // Rucna dodela recenzije po strani (ime recenzenta). Lako se dopunjuje.
+    $g_manual = [
+        'feniranje-na-talase'  => 'Marija Culibrk',
+        'feniranje-na-volumen' => 'Andjela Jadnak',
+    ];
+    $g_slug = get_post_field('post_name', $id);
+    if (!empty($g_manual[$g_slug])) {
+        $g_norm = fn($s) => strtr(mb_strtolower(trim((string) $s)), ['č'=>'c','ć'=>'c','đ'=>'dj','š'=>'s','ž'=>'z']);
+        $g_t = $g_norm($g_manual[$g_slug]);
+        foreach ($g_pool as $g_rv) {
+            $g_rn = $g_norm($g_rv['name'] ?? '');
+            $g_ok = ($g_rn === $g_t);
+            if (!$g_ok) { $g_ok = true; foreach (explode(' ', $g_t) as $g_w) { if ($g_w !== '' && mb_strpos($g_rn, $g_w) === false) { $g_ok = false; break; } } }
+            if ($g_ok) { $g_quote = $g_rv; break; }
+        }
+    }
+
+    // Fallback: auto po poziciji medju bracom (najbogatije prve)
+    if (!$g_quote && $g_pool) {
+        usort($g_pool, fn($a, $b) => mb_strlen($b['text']) <=> mb_strlen($a['text']));
         $g_sib = get_posts(['post_type' => 'dry65_service', 'post_parent' => $parent, 'posts_per_page' => -1, 'orderby' => 'menu_order', 'order' => 'ASC', 'fields' => 'ids']);
         $g_pos = array_search($id, $g_sib, true);
         if ($g_pos === false) $g_pos = 0;
-        $g_quote = $g_pool[$g_pos % count($g_pool)]; // razlicita recenzija po strani
+        $g_quote = $g_pool[$g_pos % count($g_pool)];
     }
 }
 ?>
