@@ -311,9 +311,10 @@ endif;
         </div>
         <?php if ($lengths): ?>
         <div class="svc-price-list">
-          <?php foreach ($lengths as $li => $l): ?>
+          <?php foreach ($lengths as $li => $l):
+            $row_label = $l['label'] . ' kosa'; ?>
           <div class="svc-price-row">
-            <span class="row" style="gap:12px;"><span class="mono" style="color:var(--clay);"><?php echo str_pad($li + 1, 2, '0', STR_PAD_LEFT); ?></span><span style="font-weight:500;font-size:17px;"><?php echo esc_html($l['label']); ?></span></span>
+            <span class="row" style="gap:12px;"><span class="mono" style="color:var(--clay);"><?php echo str_pad($li + 1, 2, '0', STR_PAD_LEFT); ?></span><span style="font-weight:500;font-size:17px;"><?php echo esc_html($row_label); ?></span></span>
             <span class="display num" style="font-size:26px;"><?php echo dry65_rsd($l['price']); ?><span class="u" style="font-size:13px;margin-left:3px;">din</span></span>
           </div>
           <?php endforeach; ?>
