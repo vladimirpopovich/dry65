@@ -300,14 +300,12 @@ endif;
       <?php
       // Cenovnik blok (po dužini kose) — ide odmah posle uvodnog teksta
       $lengths = function_exists('dry65_lengths') ? dry65_lengths() : [];
-      $price_title = preg_replace('/^Feniranje\b/u', 'Cenovnik feniranja', $title);
-      if ($price_title === $title) $price_title = 'Cenovnik';
+      $price_title = $title ? $title . ' cena' : 'Cena';
       ob_start(); ?>
       <div class="svc-price">
         <div class="svc-price-top">
           <div>
             <h2><?php echo esc_html($price_title); ?></h2>
-            <p class="muted" style="margin:4px 0 0;font-size:15px;">Bez zakazivanja</p>
           </div>
           <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark" style="white-space:nowrap;">Ceo cenovnik <span class="arrow">→</span></a>
         </div>
