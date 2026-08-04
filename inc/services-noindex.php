@@ -59,5 +59,10 @@ add_filter('wpseo_title', function ($title) {
     $id = get_queried_object_id();
     if (!$id) return $title;
     if (get_post_meta($id, '_yoast_wpseo_title', true)) return $title; // rucni override ima prednost
-    return get_the_title($id) . ' - bez zakazivanja - Dry65, Novi Beograd';
+    $t = get_the_title($id);
+    // Kratak title (~55 znakova) da Google ne secka; cena kao CTR hook samo na feniranje stranama
+    if (strpos($t, 'Feniranje') === 0) {
+        return $t . ' od 1.400 din | Dry65 Novi Beograd';
+    }
+    return $t . ' | Dry65 Novi Beograd';
 });
