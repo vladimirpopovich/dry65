@@ -168,6 +168,34 @@ function dry65_seo_current_slug() {
     return null;
 }
 
+/* ---- SEO title za pojedinačne usluge (CPT dry65_service) ----
+   Leaf/hub stranice feniranja nisu u $map (to su CPT postovi, ne Pages),
+   pa im title dolazi ovde umesto iz Yoast admin šablona.
+   Format: „<post_title> od 1.400 din | Bez zakazivanja"
+   (npr. „Feniranje na talase od 1.400 din | Bez zakazivanja"). */
+function dry65_service_seo_title() {
+    if (!is_singular('dry65_service')) return null;
+    $t = get_the_title();
+    if (!$t) return null;
+    return $t . ' od 1.400 din | Bez zakazivanja';
+}
+
+/* ---- Meta description za pojedinačne usluge (CPT dry65_service) ----
+   Po slug-u, umesto _yoast_wpseo_metadesc iz seeder-a. */
+function dry65_service_seo_desc() {
+    if (!is_singular('dry65_service')) return null;
+    global $post;
+    $slug = $post ? $post->post_name : null;
+    $map = [
+        'feniranje-na-ravno'   => 'Feniranje na ravno u Novom Beogradu od 1.400 din. Glatka, sjajna i uredna kosa bez zakazivanja. Dođite kada vam odgovara.',
+        'feniranje-na-talase'  => 'Feniranje na talase u Novom Beogradu od 1.400 din. Prirodni talasi, volumen i pokret bez zakazivanja. Dođite kada vam odgovara.',
+        'feniranje-na-lokne'   => 'Feniranje na lokne u Novom Beogradu od 1.400 din. Definisane lokne, volumen i dugotrajan oblik bez zakazivanja.',
+        'feniranje-na-cetke'   => 'Feniranje na četke u Novom Beogradu od 1.400 din. Prirodan izgled, više pokreta i mekoće bez zakazivanja.',
+        'feniranje-na-volumen' => 'Feniranje na volumen u Novom Beogradu od 1.400 din. Više punoće i pokreta za prirodan, dugotrajan rezultat bez zakazivanja.',
+    ];
+    return ($slug && isset($map[$slug])) ? $map[$slug] : null;
+}
+
 /* ---- Override Yoast SEO title ---- */
 add_filter('wpseo_title', function($title) {
     $slug = dry65_seo_current_slug();
@@ -175,6 +203,8 @@ add_filter('wpseo_title', function($title) {
     if ($slug && isset($map[$slug])) {
         return $map[$slug]['title'];
     }
+    $svc = dry65_service_seo_title();
+    if ($svc) return $svc;
     return $title;
 }, 99);
 
@@ -185,6 +215,8 @@ add_filter('wpseo_metadesc', function($desc) {
     if ($slug && isset($map[$slug])) {
         return $map[$slug]['desc'];
     }
+    $svc = dry65_service_seo_desc();
+    if ($svc) return $svc;
     // Fallback za blog postove ili druge stranice bez custom desc
     if (is_singular('post') && (empty($desc) || mb_strlen($desc) < 120)) {
         $excerpt = get_the_excerpt();
@@ -205,6 +237,8 @@ add_filter('wpseo_opengraph_title', function($title) {
     if ($slug && isset($map[$slug])) {
         return $map[$slug]['title'];
     }
+    $svc = dry65_service_seo_title();
+    if ($svc) return $svc;
     return $title;
 }, 99);
 
@@ -215,6 +249,8 @@ add_filter('wpseo_opengraph_desc', function($desc) {
     if ($slug && isset($map[$slug])) {
         return $map[$slug]['desc'];
     }
+    $svc = dry65_service_seo_desc();
+    if ($svc) return $svc;
     return $desc;
 }, 99);
 
@@ -294,6 +330,8 @@ add_filter('wpseo_twitter_title', function($title) {
     if ($slug && isset($map[$slug])) {
         return $map[$slug]['title'];
     }
+    $svc = dry65_service_seo_title();
+    if ($svc) return $svc;
     return $title;
 }, 99);
 
@@ -304,6 +342,8 @@ add_filter('wpseo_twitter_description', function($desc) {
     if ($slug && isset($map[$slug])) {
         return $map[$slug]['desc'];
     }
+    $svc = dry65_service_seo_desc();
+    if ($svc) return $svc;
     return $desc;
 }, 99);
 
