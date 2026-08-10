@@ -39,11 +39,15 @@ function dry65_live_presence_prune($list) {
     return $list;
 }
 
-/* Registruj token (heartbeat) i vrati trenutni broj aktivnih. */
+/* Registruj token (heartbeat) i vrati trenutni broj aktivnih.
+   Kad je token NOV (nije bio u prozoru), uvećaj satni brojač poseta
+   (dry65_live_visit) — tako broj upisa prati posetioce, ne heartbeat-e. */
 function dry65_live_presence_touch($token) {
-    $list = dry65_live_presence_prune(get_transient('dry65_live_presence'));
+    $list   = dry65_live_presence_prune(get_transient('dry65_live_presence'));
+    $is_new = $token && !isset($list[$token]);
     if ($token) $list[$token] = time();
     set_transient('dry65_live_presence', $list, 120);
+    if ($is_new) dry65_live_visit_bump();
     return count($list);
 }
 
@@ -216,6 +220,46 @@ function dry65_live_log_append() {
         'is_full'   => get_option('dry65_live_full', '0') === '1' ? 1 : 0,
         'staff'     => dry65_live_schedule_staff_at(),
     ], ['%s', '%d', '%d', '%d', '%d']);
+}
+
+/* ============================================================
+   Posete /live po satu (za korelaciju sa gužvom / „popular times")
+   Jedan red po satu (Beograd), samo brojač jedinstvenih-ish posetilaca.
+   ~24 reda/dan, ispod 1 MB godišnje. Hvata podatke od trenutka uvođenja.
+   ============================================================ */
+if (!defined('DRY65_LIVE_VISIT_DB')) define('DRY65_LIVE_VISIT_DB', 1);
+
+function dry65_live_visit_table() {
+    global $wpdb;
+    return $wpdb->prefix . 'dry65_live_visit';
+}
+
+function dry65_live_visit_install() {
+    if ((int) get_option('dry65_live_visit_db', 0) === DRY65_LIVE_VISIT_DB) return;
+    global $wpdb;
+    $table   = dry65_live_visit_table();
+    $charset = $wpdb->get_charset_collate();
+    $sql = "CREATE TABLE $table (
+        bucket DATETIME NOT NULL,
+        visitors INT UNSIGNED NOT NULL DEFAULT 0,
+        PRIMARY KEY (bucket)
+    ) $charset;";
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
+    update_option('dry65_live_visit_db', DRY65_LIVE_VISIT_DB);
+}
+add_action('init', 'dry65_live_visit_install');
+
+/* Uvećaj brojač poseta za tekući sat (Beograd). Zove se kad presence vidi NOV token. */
+function dry65_live_visit_bump() {
+    global $wpdb;
+    $bucket = (new DateTime('now', new DateTimeZone('Europe/Belgrade')))->format('Y-m-d H:00:00');
+    $table  = dry65_live_visit_table();
+    $wpdb->query($wpdb->prepare(
+        "INSERT INTO {$table} (bucket, visitors) VALUES (%s, 1)
+         ON DUPLICATE KEY UPDATE visitors = visitors + 1",
+        $bucket
+    ));
 }
 
 /* ---- Srpsko trajanje: "3 minuta" / "2 sata" / "1 dan" ----
@@ -465,6 +509,21 @@ function dry65_live_history_page() {
         $since
     ), ARRAY_A);
 
+    // ---- Posete /live po satu (dana u istom periodu) ----
+    $vtable = dry65_live_visit_table();
+    $vrows  = $wpdb->get_results($wpdb->prepare(
+        "SELECT bucket, visitors FROM {$vtable} WHERE bucket >= %s ORDER BY bucket ASC",
+        $since
+    ), ARRAY_A);
+    $visits_by_hour = array_fill(8, 12, 0);
+    $visits_total   = 0;
+    foreach ($vrows as $vr) {
+        $vh = (int) substr($vr['bucket'], 11, 2);
+        $vn = (int) $vr['visitors'];
+        $visits_total += $vn;
+        if ($vh >= 8 && $vh < 20) $visits_by_hour[$vh] += $vn;
+    }
+
     // Grupisanje po danu
     $by_day = [];
     foreach ($rows as $r) $by_day[substr($r['logged_at'], 0, 10)][] = $r;
@@ -524,18 +583,50 @@ function dry65_live_history_page() {
 
     if (!$rows) { echo '<p><em>Nema podataka za izabrani period.</em></p></div>'; return; }
 
+    // Najveći broj poseta u satu (za skaliranje trake poseta)
+    $max_visits = 0;
+    for ($h = 8; $h < 20; $h++) $max_visits = max($max_visits, $visits_by_hour[$h]);
+
     // ---- Popular times ----
     echo '<h2>Popular times — kad je gužva</h2>';
-    echo '<table class="widefat striped" style="max-width:720px;"><thead><tr><th>Sat</th><th>Prosek čekanja</th><th style="width:45%;">Gužva</th><th>Prosek ekipe</th></tr></thead><tbody>';
+    echo '<table class="widefat striped" style="max-width:880px;"><thead><tr><th>Sat</th><th>Prosek čekanja</th><th style="width:32%;">Gužva</th><th>Prosek ekipe</th><th>Posete /live</th><th style="width:22%;">Posete</th></tr></thead><tbody>';
     for ($h = 8; $h < 20; $h++) {
-        if ($hour_min[$h] <= 0) continue;
-        $avg   = $hour_wsum[$h] / $hour_min[$h];
-        $staff = $hour_staffsum[$h] / $hour_min[$h];
-        $pct   = (int) round(100 * $avg / $max_avg);
+        if ($hour_min[$h] <= 0 && $visits_by_hour[$h] <= 0) continue;
+        $avg    = $hour_min[$h] > 0 ? $hour_wsum[$h] / $hour_min[$h] : 0;
+        $staff  = $hour_min[$h] > 0 ? $hour_staffsum[$h] / $hour_min[$h] : 0;
+        $pct    = (int) round(100 * $avg / $max_avg);
+        $vis    = $visits_by_hour[$h];
+        $vpct   = $max_visits > 0 ? (int) round(100 * $vis / $max_visits) : 0;
         echo '<tr><td><strong>' . sprintf('%02d', $h) . 'h</strong></td>';
         echo '<td>' . number_format($avg, 1) . ' min</td>';
         echo '<td><div style="background:#F6D63B;height:16px;border-radius:3px;width:' . max(2, $pct) . '%;"></div></td>';
-        echo '<td>' . ($staff > 0 ? number_format($staff, 1) : '—') . '</td></tr>';
+        echo '<td>' . ($staff > 0 ? number_format($staff, 1) : '—') . '</td>';
+        echo '<td>' . ($vis > 0 ? $vis : '—') . '</td>';
+        echo '<td>' . ($vis > 0 ? '<div style="background:#3BA7F6;height:16px;border-radius:3px;width:' . max(2, $vpct) . '%;"></div>' : '') . '</td></tr>';
+    }
+    echo '</tbody></table>';
+    if ($visits_total <= 0) {
+        echo '<p style="color:#999;font-size:12px;">Posete /live se loguju od uvođenja ove funkcije — za sad još nema podataka (ili nije prošao nijedan sat sa posetiocem).</p>';
+    }
+
+    // ---- Po periodu dana: gužva vs posete ----
+    $periods = [
+        'Jutro (08–12)'   => [8, 12],
+        'Podne (12–16)'   => [12, 16],
+        'Popodne (16–20)' => [16, 20],
+    ];
+    echo '<h2 style="margin-top:28px;">Po periodu dana — gužva vs posete</h2>';
+    echo '<table class="widefat striped" style="max-width:560px;"><thead><tr><th>Period</th><th>Prosek čekanja</th><th>Posete /live</th></tr></thead><tbody>';
+    foreach ($periods as $label => $range) {
+        $wsum = $mins = 0.0; $vis = 0;
+        for ($h = $range[0]; $h < $range[1]; $h++) {
+            $wsum += $hour_wsum[$h]; $mins += $hour_min[$h];
+            $vis  += $visits_by_hour[$h];
+        }
+        $avg = $mins > 0 ? $wsum / $mins : 0;
+        echo '<tr><td><strong>' . esc_html($label) . '</strong></td>';
+        echo '<td>' . number_format($avg, 1) . ' min</td>';
+        echo '<td>' . ($vis > 0 ? $vis : '—') . '</td></tr>';
     }
     echo '</tbody></table>';
 
