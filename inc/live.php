@@ -687,17 +687,59 @@ function dry65_live_schedule_get() {
     return $out;
 }
 
-/* Broj ljudi koji rade u dati DateTime (na osnovu rasporeda). Ned = 0. */
+/* Izuzeci po datumu: [ 'Y-m-d' => [ 'Ime' => ['from','to'], ... ], ... ].
+   Prošli datumi se automatski odbacuju (ne moraš ručno da čistiš). */
+function dry65_live_schedule_exceptions_get() {
+    $saved = get_option('dry65_live_schedule_exc', []);
+    if (!is_array($saved)) $saved = [];
+    $tz    = new DateTimeZone('Europe/Belgrade');
+    $today = (new DateTime('now', $tz))->format('Y-m-d');
+    $out = [];
+    foreach ($saved as $date => $people) {
+        $date = (string) $date;
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) continue;
+        if ($date < $today) continue;           // prošlo — preskoči
+        if (!is_array($people)) continue;
+        $row = [];
+        foreach (dry65_live_staff_all() as $name) {
+            $p = isset($people[$name]) && is_array($people[$name]) ? $people[$name] : [];
+            $row[$name] = [
+                'from' => dry65_live_sanitize_time($p['from'] ?? ''),
+                'to'   => dry65_live_sanitize_time($p['to']   ?? ''),
+            ];
+        }
+        $out[$date] = $row;
+    }
+    ksort($out);
+    return $out;
+}
+
+/* Raspored za konkretan dan kao [ 'Ime' => ['from','to'], ... ].
+   Ako za taj datum postoji izuzetak, on GAZI osnovni (Pon–Pet/Subota).
+   Nedelja bez izuzetka = []. */
+function dry65_live_shifts_for_date($dt) {
+    $date = $dt->format('Y-m-d');
+    $exc  = dry65_live_schedule_exceptions_get();
+    if (isset($exc[$date])) return $exc[$date];
+
+    $dow = (int) $dt->format('N'); // 1=Pon..7=Ned
+    if ($dow === 7) return [];     // nedelja bez izuzetka = ne radi se
+    $pref = ($dow === 6) ? 'sat' : 'wd';
+    $out = [];
+    foreach (dry65_live_schedule_get() as $name => $r) {
+        $out[$name] = ['from' => $r[$pref . '_from'], 'to' => $r[$pref . '_to']];
+    }
+    return $out;
+}
+
+/* Broj ljudi koji rade u dati DateTime (osnovni raspored + izuzeci). Ned = 0. */
 function dry65_live_schedule_staff_at($dt = null) {
     $tz = new DateTimeZone('Europe/Belgrade');
     $dt = $dt instanceof DateTime ? $dt : new DateTime('now', $tz);
-    $dow = (int) $dt->format('N'); // 1=Pon..7=Ned
-    if ($dow === 7) return 0;
-    $pref = ($dow === 6) ? 'sat' : 'wd';
     $min  = (int) $dt->format('H') * 60 + (int) $dt->format('i');
     $n = 0;
-    foreach (dry65_live_schedule_get() as $r) {
-        $f = $r[$pref . '_from']; $t = $r[$pref . '_to'];
+    foreach (dry65_live_shifts_for_date($dt) as $p) {
+        $f = $p['from']; $t = $p['to'];
         if ($f === '' || $t === '') continue;
         $fm = (int) substr($f, 0, 2) * 60 + (int) substr($f, 3, 2);
         $tm = (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
@@ -706,23 +748,29 @@ function dry65_live_schedule_staff_at($dt = null) {
     return $n;
 }
 
-/* Imena koja rade U OVOM TRENUTKU po rasporedu (smena aktivna sada). Ned = []. */
+/* Imena koja rade U OVOM TRENUTKU (osnovni raspored + izuzeci). Ned = []. */
 function dry65_live_schedule_now_names() {
     $tz  = new DateTimeZone('Europe/Belgrade');
     $now = new DateTime('now', $tz);
-    $dow = (int) $now->format('N');
-    if ($dow === 7) return [];
-    $pref = ($dow === 6) ? 'sat' : 'wd';
-    $min  = (int) $now->format('H') * 60 + (int) $now->format('i');
+    $min = (int) $now->format('H') * 60 + (int) $now->format('i');
     $out = [];
-    foreach (dry65_live_schedule_get() as $name => $r) {
-        $f = $r[$pref . '_from']; $t = $r[$pref . '_to'];
+    foreach (dry65_live_shifts_for_date($now) as $name => $p) {
+        $f = $p['from']; $t = $p['to'];
         if ($f === '' || $t === '') continue;
         $fm = (int) substr($f, 0, 2) * 60 + (int) substr($f, 3, 2);
         $tm = (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
         if ($min >= $fm && $min < $tm) $out[] = $name;
     }
     return $out;
+}
+
+/* Srpski naziv dana za Y-m-d (npr. "Sreda"). */
+function dry65_live_dow_name($date) {
+    $tz = new DateTimeZone('Europe/Belgrade');
+    $d  = DateTime::createFromFormat('Y-m-d', $date, $tz);
+    if (!$d) return '';
+    $names = [1 => 'Ponedeljak', 2 => 'Utorak', 3 => 'Sreda', 4 => 'Četvrtak', 5 => 'Petak', 6 => 'Subota', 7 => 'Nedelja'];
+    return $names[(int) $d->format('N')] ?? '';
 }
 
 /* „Trenutno rade: X, Y i Z" iz rasporeda (za /live). '' ako trenutno niko / nedelja. */
@@ -777,6 +825,95 @@ function dry65_live_schedule_page() {
         </table>
         <p style="color:#888;font-size:12px;max-width:680px;">Ostavi prazno ako neko taj dan ne radi. Imena se uređuju u kodu (<code>dry65_live_staff_all()</code>).</p>
 
+        <?php
+          $exc       = dry65_live_schedule_exceptions_get();
+          $today_str = (new DateTime('now', new DateTimeZone('Europe/Belgrade')))->format('Y-m-d');
+          $staff     = dry65_live_staff_all();
+        ?>
+        <h2 style="margin-top:26px;">Posebni dani (izuzeci)</h2>
+        <p style="color:#666;max-width:680px;font-size:13px;">Za dane koji odstupaju od osnovnog rasporeda: klikni <strong>„+ Dodaj dan"</strong>, izaberi datum i upiši smene za taj dan. Taj datum <strong>gazi</strong> Pon–Pet/Subotu samo za sebe, i sam nestaje kad prođe. Ostavi prazno kod nekoga ko taj dan ne radi.</p>
+
+        <div id="dry65-exc-list">
+          <?php $i = 0; foreach ($exc as $date => $people): ?>
+          <div class="dry65-exc" style="border:1px solid #dcdcde;border-radius:8px;padding:12px 14px;margin:10px 0;background:#fff;max-width:680px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+              <label style="font-weight:600;">Datum: <input type="date" class="dry65-exc-date" name="exc[<?php echo $i; ?>][date]" value="<?php echo esc_attr($date); ?>" min="<?php echo esc_attr($today_str); ?>"></label>
+              <span class="dry65-exc-dow" style="color:#666;font-size:13px;"><?php echo esc_html(dry65_live_dow_name($date)); ?></span>
+              <button type="button" class="button-link dry65-exc-remove" style="margin-left:auto;color:#b32d2e;">Ukloni</button>
+            </div>
+            <table class="widefat striped" style="max-width:520px;">
+              <thead><tr><th>Ime</th><th>Od</th><th>Do</th></tr></thead>
+              <tbody>
+                <?php foreach ($staff as $name): ?>
+                <tr>
+                  <td><strong><?php echo esc_html($name); ?></strong></td>
+                  <td><input type="time" name="exc[<?php echo $i; ?>][people][<?php echo esc_attr($name); ?>][from]" value="<?php echo esc_attr($people[$name]['from'] ?? ''); ?>"></td>
+                  <td><input type="time" name="exc[<?php echo $i; ?>][people][<?php echo esc_attr($name); ?>][to]" value="<?php echo esc_attr($people[$name]['to'] ?? ''); ?>"></td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+          <?php $i++; endforeach; ?>
+        </div>
+
+        <p><button type="button" class="button" id="dry65-exc-add">+ Dodaj dan</button></p>
+
+        <template id="dry65-exc-tpl">
+          <div class="dry65-exc" style="border:1px solid #dcdcde;border-radius:8px;padding:12px 14px;margin:10px 0;background:#fff;max-width:680px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+              <label style="font-weight:600;">Datum: <input type="date" class="dry65-exc-date" name="exc[__IDX__][date]" value="" min="<?php echo esc_attr($today_str); ?>"></label>
+              <span class="dry65-exc-dow" style="color:#666;font-size:13px;"></span>
+              <button type="button" class="button-link dry65-exc-remove" style="margin-left:auto;color:#b32d2e;">Ukloni</button>
+            </div>
+            <table class="widefat striped" style="max-width:520px;">
+              <thead><tr><th>Ime</th><th>Od</th><th>Do</th></tr></thead>
+              <tbody>
+                <?php foreach ($staff as $name): ?>
+                <tr>
+                  <td><strong><?php echo esc_html($name); ?></strong></td>
+                  <td><input type="time" name="exc[__IDX__][people][<?php echo esc_attr($name); ?>][from]" value=""></td>
+                  <td><input type="time" name="exc[__IDX__][people][<?php echo esc_attr($name); ?>][to]" value=""></td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
+        <script>
+        (function () {
+          var list = document.getElementById('dry65-exc-list');
+          var tpl  = document.getElementById('dry65-exc-tpl');
+          var add  = document.getElementById('dry65-exc-add');
+          var idx  = <?php echo (int) $i; ?>;
+          var DOW  = ['Nedelja','Ponedeljak','Utorak','Sreda','Četvrtak','Petak','Subota'];
+
+          function dowName(val) {
+            var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(val || '');
+            if (!m) return '';
+            var d = new Date(+m[1], +m[2] - 1, +m[3]);
+            return DOW[d.getDay()] || '';
+          }
+          function wire(box) {
+            var date = box.querySelector('.dry65-exc-date');
+            var dow  = box.querySelector('.dry65-exc-dow');
+            var rm   = box.querySelector('.dry65-exc-remove');
+            if (date && dow) date.addEventListener('change', function () { dow.textContent = dowName(date.value); });
+            if (rm) rm.addEventListener('click', function () { box.remove(); });
+          }
+          list.querySelectorAll('.dry65-exc').forEach(wire);
+          add.addEventListener('click', function () {
+            var html = tpl.innerHTML.replace(/__IDX__/g, idx++);
+            var wrap = document.createElement('div');
+            wrap.innerHTML = html.trim();
+            var box = wrap.firstChild;
+            list.appendChild(box);
+            wire(box);
+          });
+        })();
+        </script>
+
         <div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:14px 16px;max-width:680px;margin:18px 0;">
           <label style="display:flex;align-items:center;gap:10px;font-weight:600;">
             <input type="checkbox" name="show_on_live" value="1" <?php checked($show); ?>>
@@ -808,6 +945,33 @@ add_action('admin_post_dry65_live_schedule_save', function() {
         ];
     }
     update_option('dry65_live_schedule', $out);
+
+    // Izuzeci po datumu: [ 'Y-m-d' => [ 'Ime' => ['from','to'] ] ]. Prošli/nevalidni se odbacuju.
+    $exc_in    = isset($_POST['exc']) && is_array($_POST['exc']) ? $_POST['exc'] : [];
+    $tz        = new DateTimeZone('Europe/Belgrade');
+    $today_str = (new DateTime('now', $tz))->format('Y-m-d');
+    $exc_out   = [];
+    foreach ($exc_in as $block) {
+        if (!is_array($block)) continue;
+        $date = isset($block['date']) ? trim((string) $block['date']) : '';
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) continue;
+        $d = DateTime::createFromFormat('Y-m-d', $date, $tz);
+        if (!$d || $d->format('Y-m-d') !== $date) continue; // nepostojeći datum
+        if ($date < $today_str) continue;                    // prošlo — preskoči
+        $people = isset($block['people']) && is_array($block['people']) ? $block['people'] : [];
+        $row = [];
+        foreach (dry65_live_staff_all() as $name) {
+            $p = isset($people[$name]) && is_array($people[$name]) ? $people[$name] : [];
+            $row[$name] = [
+                'from' => dry65_live_sanitize_time($p['from'] ?? ''),
+                'to'   => dry65_live_sanitize_time($p['to']   ?? ''),
+            ];
+        }
+        $exc_out[$date] = $row; // isti datum unet dvaput: poslednji pobeđuje
+    }
+    ksort($exc_out);
+    update_option('dry65_live_schedule_exc', $exc_out);
+
     update_option('dry65_live_chairs_show', isset($_POST['show_on_live']) ? '1' : '0');
     wp_redirect(add_query_arg(['page' => 'dry65-live-raspored', 'saved' => '1'], admin_url('admin.php')));
     exit;
