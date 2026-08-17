@@ -171,13 +171,13 @@ function dry65_seo_current_slug() {
 /* ---- SEO title za pojedinačne usluge (CPT dry65_service) ----
    Leaf/hub stranice feniranja nisu u $map (to su CPT postovi, ne Pages),
    pa im title dolazi ovde umesto iz Yoast admin šablona.
-   Format: „<post_title> od 1.400 din | Bez zakazivanja"
-   (npr. „Feniranje na talase od 1.400 din | Bez zakazivanja"). */
+   Format: „<post_title> Novi Beograd | Bez zakazivanja"
+   (npr. „Feniranje na talase Novi Beograd | Bez zakazivanja"). */
 function dry65_service_seo_title() {
     if (!is_singular('dry65_service')) return null;
     $t = get_the_title();
     if (!$t) return null;
-    return $t . ' od 1.400 din | Bez zakazivanja';
+    return $t . ' Novi Beograd | Bez zakazivanja';
 }
 
 /* ---- Meta description za pojedinačne usluge (CPT dry65_service) ----
@@ -187,11 +187,11 @@ function dry65_service_seo_desc() {
     global $post;
     $slug = $post ? $post->post_name : null;
     $map = [
-        'feniranje-na-ravno'   => 'Feniranje na ravno u Novom Beogradu od 1.400 din. Glatka, sjajna i uredna kosa bez zakazivanja. Dođite kada vam odgovara.',
-        'feniranje-na-talase'  => 'Feniranje na talase u Novom Beogradu od 1.400 din. Prirodni talasi, volumen i pokret bez zakazivanja. Dođite kada vam odgovara.',
-        'feniranje-na-lokne'   => 'Feniranje na lokne u Novom Beogradu od 1.400 din. Definisane lokne, volumen i dugotrajan oblik bez zakazivanja.',
-        'feniranje-na-cetke'   => 'Feniranje na četke u Novom Beogradu od 1.400 din. Prirodan izgled, više pokreta i mekoće bez zakazivanja.',
-        'feniranje-na-volumen' => 'Feniranje na volumen u Novom Beogradu od 1.400 din. Više punoće i pokreta za prirodan, dugotrajan rezultat bez zakazivanja.',
+        'feniranje-na-ravno'   => 'Feniranje na ravno na Novom Beogradu od 1.400 din. Glatka, sjajna i uredna kosa bez zakazivanja. Dođite kada vam odgovara.',
+        'feniranje-na-talase'  => 'Feniranje na talase na Novom Beogradu od 1.400 din. Prirodni talasi, volumen i pokret bez zakazivanja. Dođite kada vam odgovara.',
+        'feniranje-na-lokne'   => 'Feniranje na lokne na Novom Beogradu od 1.400 din. Definisane lokne, volumen i dugotrajan oblik bez zakazivanja.',
+        'feniranje-na-cetke'   => 'Feniranje na četke na Novom Beogradu od 1.400 din. Prirodan izgled, više pokreta i mekoće bez zakazivanja.',
+        'feniranje-na-volumen' => 'Feniranje na volumen na Novom Beogradu od 1.400 din. Više punoće i pokreta za prirodan, dugotrajan rezultat bez zakazivanja.',
     ];
     return ($slug && isset($map[$slug])) ? $map[$slug] : null;
 }
