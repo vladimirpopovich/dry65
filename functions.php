@@ -35,7 +35,7 @@ add_action('after_setup_theme', 'dry65_setup');
 
 /* ---- Enqueue ---- */
 function dry65_scripts() {
-    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.1.3');
+    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.1.4');
     wp_enqueue_script('dry65-js', get_template_directory_uri() . '/assets/js/dry65.js', [], '1.3.1', true);
     wp_localize_script('dry65-js', 'dry65', [
         'themeUrl' => get_template_directory_uri(),
@@ -50,7 +50,7 @@ add_action('wp_enqueue_scripts', 'dry65_scripts');
 function dry65_head_fonts() {
     $tpl = get_template_directory_uri();
     // Preload ključnih fontova (telo + glavni naslovi) da su spremni pre iscrtavanja
-    foreach (['hanken-grotesk-400-latin', 'cormorant-garamond-300-latin'] as $f) {
+    foreach (['hanken-grotesk-400-latin', 'hanken-grotesk-400-latin-ext', 'cormorant-garamond-300-latin'] as $f) {
         echo '<link rel="preload" href="' . esc_url($tpl . '/assets/fonts/' . $f . '.woff2') . '" as="font" type="font/woff2" crossorigin>' . "\n";
     }
     // @font-face UGRAĐEN u head (ne eksterni fajl) — LiteSpeed ne može da ga odloži, pa nema FOUT skoka

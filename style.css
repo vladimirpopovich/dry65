@@ -851,6 +851,7 @@ body.offer-modal-open { overflow: hidden; }
 .reviews-slider-wrap { position: relative; }
 .reviews-slider {
   display: flex;
+  min-height: 450px;
   gap: 16px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
