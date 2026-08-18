@@ -318,8 +318,7 @@ a:hover > .pkg-img { transform: translateY(-7px); box-shadow: 0 36px 60px -28px 
 .center { text-align: center; }
 .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; letter-spacing: 0.02em; }
 .big-num { font-family: var(--font-display); font-size: clamp(40px, 6vw, 72px); line-height: 1; }
-.page-enter { animation: pageIn .45s var(--ease); }
-@keyframes pageIn { from { opacity: 0.4; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.page-enter { /* animacija ulaska uklonjena: brzi LCP, bez bljeska */ }
 
 /* ---------- Marquee ---------- */
 .marquee-track { display: inline-flex; gap: 0; animation: marquee 28s linear infinite; }
