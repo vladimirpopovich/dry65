@@ -385,7 +385,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 
     <div class="reviews-slider-wrap">
       <button class="rs-arrow rs-prev" aria-label="Prethodna">‹</button>
-      <div class="reviews-slider" id="reviews-slider">
+      <div class="reviews-slider" id="reviews-slider" tabindex="0" role="region" aria-label="Recenzije mušterija (pomeranje strelicama)">
         <?php foreach ($reviews as $i => $r):
           $initial = function_exists('mb_substr') ? mb_substr($r['name'], 0, 1, 'UTF-8') : substr($r['name'], 0, 1);
         ?>

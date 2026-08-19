@@ -12,7 +12,7 @@ $tpl  = get_template_directory_uri();
 
       <div>
         <a class="brand" href="<?php echo esc_url(home_url('/')); ?>" aria-label="Dry65, Blowout Hair Bar">
-          <img class="brand-img" src="<?php echo $tpl; ?>/assets/logo-light.svg" alt="Dry65, Blowout Hair Bar" width="140" height="52">
+          <img class="brand-img" src="<?php echo $tpl; ?>/assets/logo-light.svg" alt="Dry65, Blowout Hair Bar" loading="lazy" decoding="async" width="140" height="52">
         </a>
         <p style="margin-top:18px;max-width:260px;color:rgba(242,225,190,0.7);font-size:15px;">
           Blowout hair bar bez zakazivanja. Radimo jednu stvar, feniramo. I to savršeno.
