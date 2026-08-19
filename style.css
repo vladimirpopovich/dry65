@@ -25,11 +25,11 @@ Text Domain: dry65
   --bg: var(--paper);
   --fg: var(--ink);
   --muted: #6E6A60;
-  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-display: "Cormorant Garamond", "Cormorant Garamond Fallback", Georgia, "Times New Roman", serif;
   --font-script: "Oooh Baby", "Cormorant Garamond", cursive;
   --font-logo: system-ui, sans-serif;
-  --font-sans: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
-  --font-num: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: "Hanken Grotesk", "Hanken Grotesk Fallback", system-ui, -apple-system, sans-serif;
+  --font-num: "Cormorant Garamond", "Cormorant Garamond Fallback", Georgia, "Times New Roman", serif;
   --maxw: 1240px;
   --gutter: clamp(20px, 5vw, 64px);
   --nav-h: 76px;
