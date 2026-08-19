@@ -28,7 +28,7 @@ $positions = [
     [
         'id'       => 'blowout',
         'kicker'   => '02',
-        'status'   => 'soon',
+        'status'   => 'open',
         'title'    => 'Blowout specijalista',
         'lead'     => 'Ključna članica tima. Osoba koja svaki dan pravi da klijentkinje izlaze sa savršenim feniranjem.',
         'reqs' => [

@@ -205,6 +205,10 @@ function dry65_jobposting_schema() {
             'title' => 'Asistent u radu',
             'desc'  => 'Podrška tima u Dry65 walk-in salonu na Novom Beogradu. Osoba koja uči zanat pored najboljih, uz konkretno praktično iskustvo od prvog dana.',
         ],
+        [
+            'title' => 'Blowout specijalista',
+            'desc'  => 'Ključna članica tima u Dry65 walk-in salonu na Novom Beogradu, u West65. Osoba koja svaki dan pravi da klijentkinje izlaze sa savršenim feniranjem, uz poznavanje tehnika: lokne, talasi, ravno i volumen.',
+        ],
     ];
 
     $today = date('Y-m-d');
