@@ -26,7 +26,7 @@ Text Domain: dry65
   --fg: var(--ink);
   --muted: #6E6A60;
   --font-display: "Cormorant Garamond", "Cormorant Garamond Fallback", Georgia, "Times New Roman", serif;
-  --font-script: "Oooh Baby", "Cormorant Garamond", cursive;
+  --font-script: "Cormorant Garamond", "Cormorant Garamond Fallback", Georgia, "Times New Roman", serif;
   --font-logo: system-ui, sans-serif;
   --font-sans: "Hanken Grotesk", "Hanken Grotesk Fallback", system-ui, -apple-system, sans-serif;
   --font-num: "Cormorant Garamond", "Cormorant Garamond Fallback", Georgia, "Times New Roman", serif;

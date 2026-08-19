@@ -23,9 +23,6 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         <h1 class="display caps" style="font-size:clamp(32px,4.8vw,64px);margin:0;line-height:1.04;letter-spacing:0.005em;color:var(--ink);font-weight:300;">
           Feniranje bez zakazivanja, Novi Beograd
         </h1>
-        <h2 class="script" style="font-size:clamp(32px,4.2vw,54px);margin:24px 0 0;line-height:1.15;color:var(--clay);font-weight:400;">
-          Samo dođeš
-        </h2>
         <p class="lead" style="margin-top:28px;max-width:480px;">
           Dry65 je <strong>frizerski salon na Novom Beogradu, u West 65</strong>, specijalizovan za feniranje. Walk-in, bez zakazivanja. Lokne, talasi, glatko, volumen, sve za savršenu frizuru koja drži danima.
         </p>
