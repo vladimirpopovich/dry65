@@ -23,4 +23,5 @@
 /* Metric-override fallback fontovi — sprecavaju CLS/reflow na font swap-u.
    Vrednosti izracunate iz woff2 metrika (size-adjust + ascent/descent override). */
 @font-face{font-family:'Cormorant Garamond Fallback';src:local('Georgia');font-weight:1 1000;size-adjust:98.74%;ascent-override:93.58%;descent-override:29.07%;line-gap-override:0%;}
-@font-face{font-family:'Hanken Grotesk Fallback';src:local('Arial');font-weight:1 1000;size-adjust:123.47%;ascent-override:80.99%;descent-override:24.54%;line-gap-override:0%;}
+@font-face{font-family:'Hanken Grotesk Fallback';src:local('Arial');font-weight:1 599;size-adjust:123.47%;ascent-override:80.99%;descent-override:24.54%;line-gap-override:0%;}
+@font-face{font-family:'Hanken Grotesk Fallback';src:local('Arial Bold'),local('Arial-BoldMT');font-weight:600 1000;size-adjust:113.89%;ascent-override:87.8%;descent-override:26.6%;line-gap-override:0%;}
