@@ -1107,6 +1107,16 @@ function dry65_pk_card_theme($acc) {
     $t = $themes[$tier]; $t['tier'] = $tier;
     return $t;
 }
+/* Bonus (nagrada) za prikaz: iz naloga, a ako je prazno — po planu/broju feniranja. */
+function dry65_pk_effective_reward($acc) {
+    if (!empty($acc->reward)) return $acc->reward;
+    foreach (dry65_pk_presets() as $p) {
+        if (strcasecmp($p['name'], (string) $acc->plan) === 0 || (int) $p['sessions'] === (int) $acc->initial) {
+            return $p['reward'];
+        }
+    }
+    return '';
+}
 /* Ikonica bonusa — PRIVREMENA (bočica). Vlada šalje prave pa ćemo zameniti. */
 function dry65_pk_bonus_icon_svg($color) {
     return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="' . esc_attr($color) . '" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4M10 2.2v2.8M14 2.2v2.8M9 5h6l1 3.2V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8.2z"/><path d="M8.4 11.2h7.2"/></svg>';
@@ -1143,6 +1153,7 @@ add_action('template_redirect', function () {
             $th        = dry65_pk_card_theme($acc);
             $is_paket  = $acc->type === 'paket';
             $used      = max(0, (int) $acc->initial - (int) $acc->balance);
+            $reward    = dry65_pk_effective_reward($acc);
           ?>
             <div style="max-width:400px;margin:6px auto 0;background:<?php echo $th['bg']; ?>;color:<?php echo $th['ink']; ?>;border-radius:26px;padding:clamp(26px,6vw,38px) clamp(20px,5vw,30px);text-align:center;box-shadow:0 18px 50px rgba(0,0,0,0.16);">
               <div class="mono" style="letter-spacing:0.22em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;"><?php echo esc_html($is_paket ? ($acc->plan ?: 'Paket') : 'Vaučer'); ?></div>
@@ -1153,7 +1164,7 @@ add_action('template_redirect', function () {
               </div>
 
               <?php if ($is_paket): ?>
-              <div class="mono" style="letter-spacing:0.1em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;margin-bottom:16px;"><?php echo (int) $acc->initial; ?> feniranja<?php if ($acc->reward) echo ' + ' . esc_html($acc->reward); ?></div>
+              <div class="mono" style="letter-spacing:0.1em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;margin-bottom:16px;"><?php echo (int) $acc->initial; ?> feniranja<?php if ($reward) echo ' + ' . esc_html($reward); ?></div>
 
               <div style="display:flex;flex-wrap:wrap;gap:11px;justify-content:center;align-items:center;">
                 <?php for ($i = 0; $i < (int) $acc->initial; $i++): $on = $i < $used; ?>
@@ -1161,7 +1172,7 @@ add_action('template_redirect', function () {
                     <?php if ($on): ?><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="<?php echo $th['ink']; ?>" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><?php endif; ?>
                   </span>
                 <?php endfor; ?>
-                <?php if ($acc->reward): ?>
+                <?php if ($reward): ?>
                   <span style="font-size:22px;line-height:1;color:<?php echo $th['sub']; ?>;">+</span>
                   <span style="width:44px;height:44px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;">
                     <?php echo dry65_pk_bonus_icon_svg(empty($acc->reward_used_at) ? '#241c15' : '#9a8064'); ?>
