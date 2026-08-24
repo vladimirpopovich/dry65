@@ -1084,12 +1084,13 @@ add_action('admin_post_dry65_pk_spend', function () {
 add_action('init', function () {
     add_rewrite_rule('^kartica/([^/]+)/?$', 'index.php?dry65_kartica=$matches[1]', 'top');
     add_rewrite_rule('^skener/?$', 'index.php?dry65_skener=1', 'top');
-    if (get_option('dry65_pk_rewrite_v') !== '2') {
+    add_rewrite_rule('^registracija/?$', 'index.php?dry65_registracija=1', 'top');
+    if (get_option('dry65_pk_rewrite_v') !== '3') {
         flush_rewrite_rules(false);
-        update_option('dry65_pk_rewrite_v', '2');
+        update_option('dry65_pk_rewrite_v', '3');
     }
 });
-add_filter('query_vars', function ($vars) { $vars[] = 'dry65_kartica'; $vars[] = 'dry65_skener'; return $vars; });
+add_filter('query_vars', function ($vars) { $vars[] = 'dry65_kartica'; $vars[] = 'dry65_skener'; $vars[] = 'dry65_registracija'; return $vars; });
 
 add_action('template_redirect', function () {
     $code = get_query_var('dry65_kartica');
@@ -1552,6 +1553,85 @@ add_action('template_redirect', function () {
       else { enterScanner(WORKER_NAME); }
     })();
     </script>
+    <?php
+    get_footer();
+    exit;
+});
+
+/* ============================================================
+   JAVNA REGISTRACIJA — /registracija (pravi kupca, bez paketa)
+   Email OBAVEZAN (za razliku od dashboarda). Vlada posle dodeli paket.
+   ============================================================ */
+add_action('template_redirect', function () {
+    if (!get_query_var('dry65_registracija')) return;
+
+    $done = false; $errors = [];
+    $vals = ['name' => '', 'phone' => '', 'email' => ''];
+
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+        $ok_nonce = isset($_POST['dry65_reg_nonce']) && wp_verify_nonce($_POST['dry65_reg_nonce'], 'dry65_registracija');
+        $hp = trim((string) ($_POST['website'] ?? '')); // honeypot (bot popuni)
+        $vals['name']  = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
+        $vals['phone'] = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
+        $vals['email'] = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+        if (!$ok_nonce) {
+            $errors[] = 'Sesija je istekla, osveži stranu i pokušaj ponovo.';
+        } elseif ($hp !== '') {
+            $done = true; // bot — tiho „uspeh", ništa ne upisujemo
+        } else {
+            if ($vals['name'] === '')          $errors[] = 'Unesi ime i prezime.';
+            if ($vals['phone'] === '')         $errors[] = 'Unesi broj telefona.';
+            if (!is_email($vals['email']))     $errors[] = 'Unesi ispravan email.';
+            if (!$errors) {
+                dry65_pk_customer_get_or_create($vals['name'], $vals['phone'], $vals['email'], 'web');
+                $done = true;
+            }
+        }
+    }
+
+    status_header(200);
+    get_header();
+    ?>
+    <main class="page-enter">
+      <section class="section" style="min-height:56vh;">
+        <div class="wrap" style="max-width:520px;">
+          <?php if ($done): ?>
+            <p class="mono" style="color:var(--clay);margin:0;">Dry65</p>
+            <h1 class="display caps" style="font-size:clamp(28px,4vw,44px);margin-top:6px;">Hvala na registraciji</h1>
+            <p class="lead" style="margin-top:16px;">Uspešno smo te upisali. Kada sledeći put svratiš, vežemo ti paket za nalog i pratiš svoje stanje.</p>
+            <p class="muted" style="margin-top:20px;font-size:14px;">Dry65, West 65, Novi Beograd. Bez zakazivanja — samo svrati.</p>
+          <?php else: ?>
+            <p class="mono" style="color:var(--clay);margin:0;">Dry65</p>
+            <h1 class="display caps" style="font-size:clamp(28px,4vw,44px);margin-top:6px;">Registracija</h1>
+            <p class="lead" style="margin-top:14px;">Upiši se da bismo ti pratili pakete feniranja i tretmane.</p>
+
+            <?php if ($errors): ?>
+            <div style="background:#fff3f3;border:1px solid #e0b4b4;border-radius:12px;padding:12px 16px;margin:18px 0;">
+              <?php foreach ($errors as $e): ?><p style="margin:4px 0;color:#a00;"><?php echo esc_html($e); ?></p><?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <form method="post" style="margin-top:22px;display:grid;gap:14px;">
+              <label>Ime i prezime
+                <input type="text" name="name" required value="<?php echo esc_attr($vals['name']); ?>" style="width:100%;padding:12px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+              </label>
+              <label>Telefon
+                <input type="tel" name="phone" required value="<?php echo esc_attr($vals['phone']); ?>" style="width:100%;padding:12px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+              </label>
+              <label>Email
+                <input type="email" name="email" required value="<?php echo esc_attr($vals['email']); ?>" style="width:100%;padding:12px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+              </label>
+              <div style="position:absolute;left:-9999px;" aria-hidden="true">
+                <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+              </div>
+              <?php wp_nonce_field('dry65_registracija', 'dry65_reg_nonce'); ?>
+              <button type="submit" style="justify-self:start;cursor:pointer;border:0;border-radius:999px;padding:13px 32px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Registruj se</button>
+            </form>
+            <p class="muted" style="margin-top:16px;font-size:13px;">Podatke koristimo samo za evidenciju tvojih paketa u salonu.</p>
+          <?php endif; ?>
+        </div>
+      </section>
+    </main>
     <?php
     get_footer();
     exit;
