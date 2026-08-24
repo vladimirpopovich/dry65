@@ -86,6 +86,18 @@ function dry65_pk_install() {
 }
 add_action('init', 'dry65_pk_install');
 
+/* Jednokratno preimenovanje nagrade Signature plana (postojeći nalozi). */
+function dry65_pk_rename_rewards() {
+    if (get_option('dry65_pk_reward_rename_v1') === '1') return;
+    global $wpdb;
+    $wpdb->update(dry65_pk_table(),
+        ['reward' => 'Signature Hair Mask'],
+        ['reward' => 'Medium Hair Treatment Mask'],
+        ['%s'], ['%s']);
+    update_option('dry65_pk_reward_rename_v1', '1');
+}
+add_action('init', 'dry65_pk_rename_rewards');
+
 /* Jednokratno: poveži postojeće pakete sa kupcima po telefonu. Bezbedno, ništa se ne briše. */
 function dry65_pk_migrate_customers() {
     if (get_option('dry65_pk_cust_migrated') === '1') return;
@@ -113,7 +125,7 @@ function dry65_pk_now() {
 function dry65_pk_presets() {
     return [
         'essential' => ['name' => 'Essential Plan', 'sessions' => 4,  'reward' => 'Hair Infusion'],
-        'signature' => ['name' => 'Signature Plan', 'sessions' => 8,  'reward' => 'Medium Hair Treatment Mask'],
+        'signature' => ['name' => 'Signature Plan', 'sessions' => 8,  'reward' => 'Signature Hair Mask'],
         'premium'   => ['name' => 'Premium Plan',   'sessions' => 12, 'reward' => 'Hair Booster Premium Mask'],
     ];
 }
