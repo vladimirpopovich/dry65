@@ -1468,7 +1468,7 @@ add_action('template_redirect', function () {
           manualCode=document.getElementById('pk-manual-code'), manualGo=document.getElementById('pk-manual-go');
       var STAMP_URL=<?php echo wp_json_encode(dry65_pk_stamp_url()); ?>;
 
-      var stream=null, scanning=false, current=null, raf=null;
+      var stream=null, scanning=false, current=null, raf=null, hintTimer=null;
 
       function post(mode, code, act){
         var fd=new FormData();
@@ -1556,11 +1556,17 @@ add_action('template_redirect', function () {
       function tick(){
         if(!scanning) return;
         if(video.readyState===video.HAVE_ENOUGH_DATA){
-          canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-          ctx.drawImage(video,0,0,canvas.width,canvas.height);
-          var img=ctx.getImageData(0,0,canvas.width,canvas.height);
-          var code=jsQR(img.data, img.width, img.height, {inversionAttempts:'dontInvert'});
-          if(code && code.data){ scanning=false; lookup(code.data); return; }
+          var vw=video.videoWidth, vh=video.videoHeight;
+          if(vw && vh){
+            // Smanji na max 800px duže strane — brže i pouzdanije čitanje na telefonu.
+            var scale=Math.min(1, 800/Math.max(vw,vh));
+            var w=Math.max(1, Math.round(vw*scale)), h=Math.max(1, Math.round(vh*scale));
+            canvas.width=w; canvas.height=h;
+            ctx.drawImage(video,0,0,w,h);
+            var img=ctx.getImageData(0,0,w,h);
+            var code=jsQR(img.data, w, h, {inversionAttempts:'attemptBoth'});
+            if(code && code.data){ if(hintTimer)clearTimeout(hintTimer); scanning=false; lookup(code.data); return; }
+          }
         }
         raf=requestAnimationFrame(tick);
       }
@@ -1571,10 +1577,15 @@ add_action('template_redirect', function () {
         if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
           showStatus('Ovaj pregledač ne podržava kameru — koristi ručni unos.'); return;
         }
-        navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+        navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}})
           .then(function(s){ stream=s; video.srcObject=s; video.setAttribute('playsinline',true);
             return video.play(); })
-          .then(function(){ scanning=true; showStatus('Skeniram…'); tick(); })
+          .then(function(){
+            scanning=true; showStatus('Skeniram… uperi u QR');
+            if(hintTimer)clearTimeout(hintTimer);
+            hintTimer=setTimeout(function(){ if(scanning) showStatus('Ako ne čita: priđi bliže, dobro osvetli QR, ili koristi ručni unos ispod.'); },7000);
+            tick();
+          })
           .catch(function(err){
             var m='Nema pristupa kameri.';
             if(location.protocol!=='https:' && location.hostname!=='localhost') m='Kamera radi samo preko https:// — koristi ručni unos ovde na lokalu.';
@@ -1587,6 +1598,7 @@ add_action('template_redirect', function () {
       function stopCamera(){
         scanning=false;
         if(raf) cancelAnimationFrame(raf);
+        if(hintTimer) clearTimeout(hintTimer);
         if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream=null; }
       }
       function clearWorker(){
