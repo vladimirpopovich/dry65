@@ -16,7 +16,8 @@
 if (!defined('ABSPATH')) exit;
 
 if (!defined('DRY65_PK_CAP')) define('DRY65_PK_CAP', 'edit_posts'); // ko sme da vodi (isto kao /live)
-if (!defined('DRY65_PK_DB'))  define('DRY65_PK_DB', 5);             // verzija šeme
+if (!defined('DRY65_PK_DB'))  define('DRY65_PK_DB', 6);             // verzija šeme
+if (!defined('DRY65_PK_ADMIN_CAP')) define('DRY65_PK_ADMIN_CAP', 'manage_options'); // poništavanje = samo admin
 
 /* ---- Tabele ---- */
 function dry65_pk_table()     { global $wpdb; return $wpdb->prefix . 'dry65_accounts'; }
@@ -56,6 +57,7 @@ function dry65_pk_install() {
         note VARCHAR(190) NOT NULL DEFAULT '',
         staff_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
         staff_name VARCHAR(120) NOT NULL DEFAULT '',
+        reversed TINYINT(1) NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL,
         PRIMARY KEY (id),
         KEY account_id (account_id)
@@ -258,6 +260,42 @@ function dry65_pk_staff_delete($id) {
         return ($w['id'] ?? '') !== $id;
     }));
     update_option('dry65_pk_staff', $all);
+}
+
+/* Poništi jednu transakciju (greška osoblja). Vrati stanje, ostavi trag. Samo admin. */
+function dry65_pk_undo($txn_id) {
+    global $wpdb;
+    $tt = dry65_pk_txn_table();
+    $t  = $wpdb->get_row($wpdb->prepare("SELECT * FROM $tt WHERE id = %d", (int) $txn_id));
+    if (!$t || (int) $t->reversed === 1) return false;
+    $acc = dry65_pk_get($t->account_id);
+    if (!$acc) return false;
+    $now   = dry65_pk_now();
+    $delta = (int) $t->delta;
+    $is_treatment = (strpos((string) $t->note, 'Tretman iskorišćen') === 0);
+
+    // Vrati stanje: poništi efekat delte (klampuj na 0).
+    $new = max(0, (int) $acc->balance - $delta);
+    $wpdb->update(dry65_pk_table(), ['balance' => $new], ['id' => (int) $acc->id], ['%d'], ['%d']);
+    // Ako je bio tretman, vrati ga kao dostupan.
+    if ($is_treatment && !empty($acc->reward_used_at)) {
+        $wpdb->update(dry65_pk_table(), ['reward_used_at' => null], ['id' => (int) $acc->id], ['%s'], ['%d']);
+    }
+    // Kompenzaciona stavka (sama se ne poništava dalje).
+    $label = $is_treatment ? (string) $t->note : dry65_pk_txn_desc($acc->type, $t);
+    $wpdb->insert($tt, [
+        'account_id'    => (int) $acc->id,
+        'delta'         => -$delta,
+        'balance_after' => $new,
+        'note'          => 'Poništeno: ' . $label,
+        'staff_id'      => get_current_user_id(),
+        'staff_name'    => '',
+        'reversed'      => 1,
+        'created_at'    => $now,
+    ], ['%d','%d','%d','%s','%d','%s','%d','%s']);
+    // Označi original kao poništen.
+    $wpdb->update($tt, ['reversed' => 1], ['id' => (int) $t->id], ['%d'], ['%d']);
+    return true;
 }
 
 /* Naslov iznad broja: paket = „Iskorišćeno", vaučer = „Preostalo". */
@@ -646,18 +684,42 @@ function dry65_pk_admin_detail($id) {
 
       <!-- Istorija -->
       <h2 style="margin-top:28px;">Istorija</h2>
-      <table class="widefat striped" style="max-width:720px;">
-        <thead><tr><th>Datum</th><th>Promena</th><th>Radnica</th><th>Stanje posle</th></tr></thead>
+      <?php $is_admin = current_user_can(DRY65_PK_ADMIN_CAP); ?>
+      <table class="widefat striped" style="max-width:800px;">
+        <thead><tr><th>Datum</th><th>Promena</th><th>Radnica</th><th>Stanje posle</th><?php if ($is_admin): ?><th></th><?php endif; ?></tr></thead>
         <tbody>
           <?php foreach ($txns as $t):
             $actor = !empty($t->staff_name) ? $t->staff_name : '';
             if ($actor === '' && !empty($t->staff_id)) { $u = get_userdata((int) $t->staff_id); if ($u) $actor = $u->display_name; }
+            $note_str     = (string) $t->note;
+            $note_is_rev  = (strpos($note_str, 'Poništeno') === 0);
+            $note_is_trt  = (strpos($note_str, 'Tretman iskorišćen') === 0);
+            $desc         = ($note_is_rev || $note_is_trt) ? $note_str : dry65_pk_txn_desc($acc->type, $t);
+            $was_reversed = ((int) $t->reversed === 1 && !$note_is_rev);
+            $can_undo     = ((int) $t->reversed === 0 && ((int) $t->delta < 0 || $note_is_trt));
           ?>
-          <tr>
+          <tr<?php if ($was_reversed) echo ' style="opacity:0.6;"'; ?>>
             <td><?php echo esc_html(mysql2date('d.m.Y. H:i', $t->created_at)); ?></td>
-            <td><?php echo esc_html(dry65_pk_txn_desc($acc->type, $t)); ?><?php if ($t->note && $t->note !== 'Paket otvoren' && $t->note !== 'Vaučer otvoren') echo ' <span style="color:#888;">(' . esc_html($t->note) . ')</span>'; ?></td>
+            <td>
+              <?php echo esc_html($desc); ?>
+              <?php if (!$note_is_rev && !$note_is_trt && $note_str && $note_str !== 'Paket otvoren' && $note_str !== 'Vaučer otvoren') echo ' <span style="color:#888;">(' . esc_html($note_str) . ')</span>'; ?>
+              <?php if ($was_reversed) echo ' <span style="color:#a00;font-size:12px;">(poništeno)</span>'; ?>
+            </td>
             <td><?php echo $actor !== '' ? esc_html($actor) : '<span style="color:#bbb;">—</span>'; ?></td>
             <td><?php echo $acc->type === 'vaucer' ? esc_html(number_format((int) $t->balance_after, 0, ',', '.') . ' din') : (int) $t->balance_after; ?></td>
+            <?php if ($is_admin): ?>
+            <td style="text-align:right;">
+              <?php if ($can_undo): ?>
+              <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Poništiti ovu stavku i vratiti stanje?');" style="display:inline;">
+                <input type="hidden" name="action" value="dry65_pk_undo">
+                <input type="hidden" name="txn" value="<?php echo (int) $t->id; ?>">
+                <input type="hidden" name="id" value="<?php echo (int) $acc->id; ?>">
+                <?php wp_nonce_field('dry65_pk_undo'); ?>
+                <button type="submit" class="button button-small">Poništi</button>
+              </form>
+              <?php endif; ?>
+            </td>
+            <?php endif; ?>
           </tr>
           <?php endforeach; ?>
         </tbody>
@@ -725,6 +787,14 @@ add_action('admin_post_dry65_pk_sendlink', function () {
         $sent = dry65_pk_send_email($acc);
     }
     wp_redirect(admin_url('admin.php?page=dry65-paketi&account=' . $id . '&mail=' . ($sent ? '1' : '0')));
+    exit;
+});
+
+add_action('admin_post_dry65_pk_undo', function () {
+    if (!current_user_can(DRY65_PK_ADMIN_CAP)) wp_die('Samo administrator može da poništi.');
+    check_admin_referer('dry65_pk_undo');
+    dry65_pk_undo((int) ($_POST['txn'] ?? 0));
+    wp_redirect(admin_url('admin.php?page=dry65-paketi&account=' . (int) ($_POST['id'] ?? 0) . '&done=1'));
     exit;
 });
 
