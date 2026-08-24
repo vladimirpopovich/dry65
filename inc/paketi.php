@@ -1092,6 +1092,34 @@ add_action('init', function () {
 });
 add_filter('query_vars', function ($vars) { $vars[] = 'dry65_kartica'; $vars[] = 'dry65_skener'; $vars[] = 'dry65_registracija'; return $vars; });
 
+/* Boje kartice po planu (Essential/Signature/Premium). Premium = PRIVREMENO dok Vlada ne pošalje. */
+function dry65_pk_card_theme($acc) {
+    $init = (int) $acc->initial;
+    $plan = strtolower((string) $acc->plan);
+    if     (strpos($plan, 'essential') !== false || $init <= 4)  $tier = 'essential';
+    elseif (strpos($plan, 'premium')   !== false || $init >= 12) $tier = 'premium';
+    else                                                          $tier = 'signature';
+    $themes = [
+        'essential' => ['bg' => '#D8C2AA', 'ink' => '#241c15', 'sub' => '#5c4a39', 'ring' => '#9a8064'],
+        'signature' => ['bg' => '#6E4C43', 'ink' => '#EFE1D2', 'sub' => '#d3bcac', 'ring' => '#b89984'],
+        'premium'   => ['bg' => '#2b2521', 'ink' => '#EADAC7', 'sub' => '#c3ad98', 'ring' => '#8f7562'], // PRIVREMENO
+    ];
+    $t = $themes[$tier]; $t['tier'] = $tier;
+    return $t;
+}
+/* Ikonica bonusa — PRIVREMENA (bočica). Vlada šalje prave pa ćemo zameniti. */
+function dry65_pk_bonus_icon_svg($color) {
+    return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="' . esc_attr($color) . '" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4M10 2.2v2.8M14 2.2v2.8M9 5h6l1 3.2V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8.2z"/><path d="M8.4 11.2h7.2"/></svg>';
+}
+/* Kratka labela transakcije za istoriju na kartici. */
+function dry65_pk_card_txn_label($acc, $t) {
+    if (strpos((string) $t->note, 'Tretman iskorišćen') === 0) return 'Tretman';
+    $d = (int) $t->delta;
+    if ($acc->type === 'vaucer') return $d < 0 ? 'Potrošeno ' . number_format(-$d, 0, ',', '.') . ' din' : 'Uplata';
+    if ($d < 0) return 'Feniranje';
+    return 'Otvoren paket';
+}
+
 add_action('template_redirect', function () {
     $code = get_query_var('dry65_kartica');
     if (!$code) return;
@@ -1107,36 +1135,66 @@ add_action('template_redirect', function () {
             <h1 class="display caps" style="font-size:clamp(28px,4vw,44px);">Kartica nije pronađena</h1>
             <p class="lead" style="margin-top:16px;">Proveri link ili se obrati salonu.</p>
           <?php else:
-            $done = $acc->type === 'paket' && (int) $acc->balance === 0;
-            $exp  = dry65_pk_is_expired($acc);
-            $txns = dry65_pk_txns($acc->id);
-          ?>
-            <p class="mono" style="color:var(--clay);margin:0;"><?php echo esc_html($acc->type === 'vaucer' ? 'Vaučer' : ($acc->plan ?: 'Paket feniranja')); ?></p>
-            <h1 class="display caps" style="font-size:clamp(26px,3.6vw,40px);margin-top:6px;"><?php echo esc_html($acc->name); ?></h1>
-
-            <div style="background:var(--paper,#fff);border:1px solid var(--sage-line,#e5e5e0);border-radius:var(--radius-lg,18px);padding:clamp(22px,4vw,34px);margin-top:22px;text-align:center;">
-              <div class="mono" style="color:var(--muted);font-size:13px;letter-spacing:0.08em;text-transform:uppercase;"><?php echo esc_html(dry65_pk_status_label($acc)); ?></div>
-              <div class="display" style="font-size:clamp(34px,7vw,56px);margin-top:6px;line-height:1;"><?php echo esc_html(dry65_pk_balance_text($acc)); ?></div>
-              <?php if ($acc->type === 'paket' && $acc->reward): ?><p class="muted" style="margin:12px 0 0;font-size:14px;">Tretman (<strong><?php echo esc_html($acc->reward); ?></strong>): <?php echo empty($acc->reward_used_at) ? '<span style="color:var(--clay,#b07a5a);font-weight:600;">dostupan</span>' : 'iskorišćen ' . esc_html(date_i18n('d.m.Y.', strtotime($acc->reward_used_at))); ?></p><?php endif; ?>
-              <?php if ($done): ?><p class="muted" style="margin:8px 0 0;font-size:14px;">Sva feniranja iz paketa su iskorišćena.</p><?php endif; ?>
-              <?php if ($exp): ?><p style="color:#a00;margin:14px 0 0;">Kartica je istekla (<?php echo esc_html(date_i18n('d.m.Y.', strtotime($acc->expires_at))); ?>).</p>
-              <?php elseif (!empty($acc->expires_at)): ?><p class="muted" style="margin:14px 0 0;font-size:14px;">Važi do <?php echo esc_html(date_i18n('d.m.Y.', strtotime($acc->expires_at))); ?></p><?php endif; ?>
-            </div>
-
-            <?php
+            $done      = $acc->type === 'paket' && (int) $acc->balance === 0;
+            $exp       = dry65_pk_is_expired($acc);
+            $txns      = dry65_pk_txns($acc->id);
             $can_staff = current_user_can(DRY65_PK_CAP);
             $card_url  = dry65_pk_card_url($acc->code);
-            ?>
-            <?php if (isset($_GET['sk'])): ?>
-            <p style="margin:16px 0 0;text-align:center;color:var(--clay,#b07a5a);font-weight:600;">Skinuto 1 feniranje. Novo stanje je gore.</p>
-            <?php endif; ?>
+            $th        = dry65_pk_card_theme($acc);
+            $is_paket  = $acc->type === 'paket';
+            $used      = max(0, (int) $acc->initial - (int) $acc->balance);
+          ?>
+            <div style="max-width:400px;margin:6px auto 0;background:<?php echo $th['bg']; ?>;color:<?php echo $th['ink']; ?>;border-radius:26px;padding:clamp(26px,6vw,38px) clamp(20px,5vw,30px);text-align:center;box-shadow:0 18px 50px rgba(0,0,0,0.16);">
+              <div class="mono" style="letter-spacing:0.22em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;"><?php echo esc_html($is_paket ? ($acc->plan ?: 'Paket') : 'Vaučer'); ?></div>
+              <div style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-weight:600;font-size:clamp(30px,7.5vw,42px);line-height:1.04;margin-top:4px;"><?php echo esc_html($acc->name); ?></div>
 
-            <div style="text-align:center;margin-top:26px;">
-              <div style="width:190px;margin:0 auto;padding:14px;background:#fff;border:1px solid var(--sage-line,#e5e5e0);border-radius:var(--radius-lg,18px);">
+              <div style="width:clamp(150px,44vw,178px);aspect-ratio:1;margin:clamp(20px,5vw,28px) auto;background:#fff;border-radius:20px;padding:14px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;">
                 <?php echo dry65_pk_qr_html($card_url, 5); ?>
               </div>
-              <p class="muted" style="margin:10px 0 0;font-size:13px;">Pokaži ovaj kod osoblju u salonu.</p>
+
+              <?php if ($is_paket): ?>
+              <div class="mono" style="letter-spacing:0.1em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;margin-bottom:16px;"><?php echo (int) $acc->initial; ?> feniranja<?php if ($acc->reward) echo ' + ' . esc_html($acc->reward); ?></div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:11px;justify-content:center;align-items:center;">
+                <?php for ($i = 0; $i < (int) $acc->initial; $i++): $on = $i < $used; ?>
+                  <span style="width:40px;height:40px;border-radius:50%;border:1.6px solid <?php echo $th['ring']; ?>;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;<?php echo $on ? 'background:' . $th['ring'] . '33;' : ''; ?>">
+                    <?php if ($on): ?><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="<?php echo $th['ink']; ?>" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><?php endif; ?>
+                  </span>
+                <?php endfor; ?>
+                <?php if ($acc->reward): ?>
+                  <span style="font-size:22px;line-height:1;color:<?php echo $th['sub']; ?>;">+</span>
+                  <span style="width:44px;height:44px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;">
+                    <?php echo dry65_pk_bonus_icon_svg(empty($acc->reward_used_at) ? '#241c15' : '#9a8064'); ?>
+                    <?php if (!empty($acc->reward_used_at)): ?><span style="position:absolute;right:-4px;top:-4px;width:19px;height:19px;border-radius:50%;background:<?php echo $th['bg']; ?>;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="<?php echo $th['ink']; ?>" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><?php endif; ?>
+                  </span>
+                <?php endif; ?>
+              </div>
+              <?php else: ?>
+              <div class="mono" style="letter-spacing:0.1em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;">Preostalo</div>
+              <div style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-size:clamp(30px,8vw,46px);margin-top:2px;line-height:1;"><?php echo esc_html(number_format((int) $acc->balance, 0, ',', '.')); ?> din</div>
+              <?php endif; ?>
+
+              <?php if (isset($_GET['sk'])): ?><p style="margin:16px 0 0;font-weight:600;">Skinuto. Novo stanje je gore.</p><?php endif; ?>
+
+              <?php if ($txns): ?>
+              <div style="margin-top:clamp(22px,5vw,30px);text-align:left;">
+                <div class="mono" style="letter-spacing:0.16em;text-transform:uppercase;font-size:11.5px;color:<?php echo $th['sub']; ?>;">Istorija</div>
+                <div style="border-top:1px dashed <?php echo $th['ring']; ?>;margin-top:8px;">
+                  <?php foreach ($txns as $t): if ((int) $t->reversed === 1) continue; ?>
+                  <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed <?php echo $th['ring']; ?>66;">
+                    <span style="text-transform:uppercase;letter-spacing:0.05em;font-size:12px;"><?php echo esc_html(dry65_pk_card_txn_label($acc, $t)); ?></span>
+                    <span style="color:<?php echo $th['sub']; ?>;white-space:nowrap;font-size:12.5px;"><?php echo esc_html(mysql2date('d.m.Y.', $t->created_at)); ?></span>
+                  </div>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+              <?php endif; ?>
+
+              <?php if ($exp): ?><p style="margin:16px 0 0;color:#f0c4c4;font-size:13px;">Kartica je istekla (<?php echo esc_html(date_i18n('d.m.Y.', strtotime($acc->expires_at))); ?>).</p>
+              <?php elseif (!empty($acc->expires_at)): ?><p style="margin:16px 0 0;font-size:12.5px;color:<?php echo $th['sub']; ?>;">Važi do <?php echo esc_html(date_i18n('d.m.Y.', strtotime($acc->expires_at))); ?></p><?php endif; ?>
             </div>
+
+            <p class="muted" style="text-align:center;margin:14px 0 0;font-size:13px;">Pokaži ovu karticu osoblju u salonu.</p>
 
             <?php if ($can_staff): ?>
             <div style="margin-top:20px;padding:16px 18px;border:1px dashed var(--clay,#b07a5a);border-radius:var(--radius-lg,18px);text-align:center;">
@@ -1160,19 +1218,7 @@ add_action('template_redirect', function () {
             </div>
             <?php endif; ?>
 
-            <?php if ($txns): ?>
-            <h2 class="display" style="font-size:20px;margin:30px 0 12px;">Istorija</h2>
-            <div style="border:1px solid var(--sage-line,#e5e5e0);border-radius:var(--radius-lg,18px);overflow:hidden;">
-              <?php foreach ($txns as $i => $t): ?>
-              <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 16px;<?php echo $i ? 'border-top:1px solid var(--sage-line,#eee);' : ''; ?>">
-                <span><?php echo esc_html(dry65_pk_txn_desc($acc->type, $t)); ?></span>
-                <span class="muted" style="font-size:14px;white-space:nowrap;"><?php echo esc_html(mysql2date('d.m.Y.', $t->created_at)); ?></span>
-              </div>
-              <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-
-            <p class="muted" style="margin-top:24px;font-size:14px;">Dry65, West 65, Novi Beograd. Bez zakazivanja — samo svrati.</p>
+            <p class="muted" style="text-align:center;margin-top:22px;font-size:14px;">Dry65, West 65, Novi Beograd.</p>
           <?php endif; ?>
         </div>
       </section>
