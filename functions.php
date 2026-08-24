@@ -10,6 +10,7 @@ require_once get_template_directory() . '/inc/google-reviews.php';
 require_once get_template_directory() . '/inc/seo.php';
 require_once get_template_directory() . '/inc/live.php';
 require_once get_template_directory() . '/inc/menu-hub.php';
+require_once get_template_directory() . '/inc/paketi.php';
 require_once get_template_directory() . '/inc/seed-feniranje.php'; // jednokratni seed teksta (obrisati posle upotrebe)
 require_once get_template_directory() . '/inc/services-noindex.php'; // noindex + sitemap-exclude za nespremne kategorije (Stilizovanje/Nega)
 
