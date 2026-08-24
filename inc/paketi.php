@@ -1186,20 +1186,57 @@ add_action('template_redirect', function () {
               <?php if ($is_paket): ?>
               <div class="mono" style="letter-spacing:0.1em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;margin-bottom:16px;"><?php echo (int) $acc->initial; ?> feniranja<?php if ($reward) echo ' + ' . esc_html($reward); ?></div>
 
+              <?php
+              $can_fen   = (int) $acc->balance > 0 && !$exp;
+              $can_bonus = dry65_pk_reward_available($acc) && !$exp;
+              $stamp_url = dry65_pk_stamp_url();
+              $dot_empty = 'width:42px;height:42px;border-radius:50%;border:1.6px solid ' . $th['ring'] . ';background:transparent;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;padding:0;';
+              $dot_full  = 'width:42px;height:42px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;';
+              $bonus_style = 'width:46px;height:46px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;padding:9px;';
+              $bonus_img   = '<img src="' . esc_url(dry65_pk_bonus_icon_url($acc)) . '" alt="" style="max-width:100%;max-height:100%;' . (empty($acc->reward_used_at) ? '' : 'opacity:0.9;') . '">';
+              ?>
               <div style="display:flex;flex-wrap:wrap;gap:11px;justify-content:center;align-items:center;">
-                <?php for ($i = 0; $i < (int) $acc->initial; $i++): $on = $i < $used; ?>
-                  <span style="width:42px;height:42px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;<?php echo $on ? 'background:#fff;' : 'border:1.6px solid ' . $th['ring'] . ';'; ?>">
-                    <?php if ($on): ?><img src="<?php echo esc_url(dry65_pk_stamp_url()); ?>" alt="" style="width:26px;height:auto;"><?php endif; ?>
-                  </span>
-                <?php endfor; ?>
+                <?php if ($can_staff && $can_fen): ?>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:contents;">
+                  <input type="hidden" name="action" value="dry65_pk_spend">
+                  <input type="hidden" name="id" value="<?php echo (int) $acc->id; ?>">
+                  <input type="hidden" name="act" value="feniranje">
+                  <input type="hidden" name="return" value="<?php echo esc_url($card_url); ?>">
+                  <?php wp_nonce_field('dry65_pk_spend'); ?>
+                <?php endif; ?>
+                  <?php for ($i = 0; $i < (int) $acc->initial; $i++): $on = $i < $used; ?>
+                    <?php if ($on): ?>
+                      <span style="<?php echo $dot_full; ?>"><img src="<?php echo esc_url($stamp_url); ?>" alt="" style="width:26px;height:auto;"></span>
+                    <?php elseif ($can_staff && $can_fen): ?>
+                      <button type="submit" title="Skini feniranje" style="<?php echo $dot_empty; ?>cursor:pointer;"></button>
+                    <?php else: ?>
+                      <span style="<?php echo $dot_empty; ?>"></span>
+                    <?php endif; ?>
+                  <?php endfor; ?>
+                <?php if ($can_staff && $can_fen): ?>
+                </form>
+                <?php endif; ?>
+
                 <?php if ($reward): ?>
                   <span style="font-size:22px;line-height:1;color:<?php echo $th['sub']; ?>;">+</span>
-                  <span style="width:46px;height:46px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;padding:9px;">
-                    <img src="<?php echo esc_url(dry65_pk_bonus_icon_url($acc)); ?>" alt="" style="max-width:100%;max-height:100%;<?php echo empty($acc->reward_used_at) ? '' : 'opacity:0.9;'; ?>">
-                    <?php if (!empty($acc->reward_used_at)): ?><span style="position:absolute;right:-4px;top:-4px;width:19px;height:19px;border-radius:50%;background:<?php echo $th['bg']; ?>;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="<?php echo $th['ink']; ?>" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><?php endif; ?>
-                  </span>
+                  <?php if ($can_staff && $can_bonus): ?>
+                  <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:contents;">
+                    <input type="hidden" name="action" value="dry65_pk_spend">
+                    <input type="hidden" name="id" value="<?php echo (int) $acc->id; ?>">
+                    <input type="hidden" name="act" value="tretman">
+                    <input type="hidden" name="return" value="<?php echo esc_url($card_url); ?>">
+                    <?php wp_nonce_field('dry65_pk_spend'); ?>
+                    <button type="submit" title="Tretman: <?php echo esc_attr($reward); ?>" style="<?php echo $bonus_style; ?>cursor:pointer;"><?php echo $bonus_img; ?></button>
+                  </form>
+                  <?php else: ?>
+                    <span style="<?php echo $bonus_style; ?>">
+                      <?php echo $bonus_img; ?>
+                      <?php if (!empty($acc->reward_used_at)): ?><span style="position:absolute;right:-4px;top:-4px;width:19px;height:19px;border-radius:50%;background:<?php echo $th['bg']; ?>;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="<?php echo $th['ink']; ?>" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><?php endif; ?>
+                    </span>
+                  <?php endif; ?>
                 <?php endif; ?>
               </div>
+              <?php if ($can_staff && $is_paket): ?><p style="margin:12px 0 0;font-size:12px;color:<?php echo $th['sub']; ?>;">Tapni krug = feniranje (može i dva). Bočica/tegla = tretman.</p><?php endif; ?>
               <?php else: ?>
               <div class="mono" style="letter-spacing:0.1em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;">Preostalo</div>
               <div style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-size:clamp(30px,8vw,46px);margin-top:2px;line-height:1;"><?php echo esc_html(number_format((int) $acc->balance, 0, ',', '.')); ?> din</div>
@@ -1225,28 +1262,10 @@ add_action('template_redirect', function () {
               <?php elseif (!empty($acc->expires_at)): ?><p style="margin:16px 0 0;font-size:12.5px;color:<?php echo $th['sub']; ?>;">Važi do <?php echo esc_html(date_i18n('d.m.Y.', strtotime($acc->expires_at))); ?></p><?php endif; ?>
             </div>
 
+            <?php if (!$can_staff): ?>
             <p class="muted" style="text-align:center;margin:14px 0 0;font-size:13px;">Pokaži ovu karticu osoblju u salonu.</p>
-
-            <?php if ($can_staff): ?>
-            <div style="margin-top:20px;padding:16px 18px;border:1px dashed var(--clay,#b07a5a);border-radius:var(--radius-lg,18px);text-align:center;">
-              <p class="mono" style="margin:0 0 12px;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--clay,#b07a5a);">Osoblje</p>
-              <?php if ($acc->type === 'vaucer'): ?>
-                <p class="muted" style="margin:0 0 10px;font-size:13px;">Vaučer se skida u dashboardu (unosi se iznos usluge).</p>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=dry65-paketi&account=' . (int) $acc->id)); ?>" style="text-decoration:underline;">Otvori u dashboardu ↗</a>
-              <?php else:
-                $canFen   = (int) $acc->balance > 0 && !$exp;
-                $canBonus = dry65_pk_reward_available($acc) && !$exp;
-              ?>
-                <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
-                <?php
-                if ($canFen)              echo dry65_pk_action_form($acc, 'feniranje', 'Feniranje  (−1)', $card_url);
-                if ($canFen && $canBonus) echo dry65_pk_action_form($acc, 'feniranje_tretman', 'Feniranje + tretman', $card_url);
-                if ($canBonus)            echo dry65_pk_action_form($acc, 'tretman', 'Samo tretman' . ($acc->reward ? ' — ' . $acc->reward : ''), $card_url, '#6b5b95');
-                if (!$canFen && !$canBonus) echo '<p class="muted" style="margin:0;font-size:13px;">' . ($exp ? 'Kartica je istekla.' : 'Paket je završen (0 feniranja, tretman iskorišćen).') . '</p>';
-                ?>
-                </div>
-              <?php endif; ?>
-            </div>
+            <?php elseif ($acc->type === 'vaucer'): ?>
+            <p style="text-align:center;margin:14px 0 0;font-size:13px;"><a href="<?php echo esc_url(admin_url('admin.php?page=dry65-paketi&account=' . (int) $acc->id)); ?>" style="text-decoration:underline;">Vaučer se skida u dashboardu ↗</a></p>
             <?php endif; ?>
 
             <p class="muted" style="text-align:center;margin-top:22px;font-size:14px;">Dry65, West 65, Novi Beograd.</p>
