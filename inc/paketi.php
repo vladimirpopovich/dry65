@@ -16,7 +16,7 @@
 if (!defined('ABSPATH')) exit;
 
 if (!defined('DRY65_PK_CAP')) define('DRY65_PK_CAP', 'edit_posts'); // ko sme da vodi (isto kao /live)
-if (!defined('DRY65_PK_DB'))  define('DRY65_PK_DB', 4);             // verzija šeme
+if (!defined('DRY65_PK_DB'))  define('DRY65_PK_DB', 5);             // verzija šeme
 
 /* ---- Tabele ---- */
 function dry65_pk_table()     { global $wpdb; return $wpdb->prefix . 'dry65_accounts'; }
@@ -55,6 +55,7 @@ function dry65_pk_install() {
         balance_after INT NOT NULL DEFAULT 0,
         note VARCHAR(190) NOT NULL DEFAULT '',
         staff_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        staff_name VARCHAR(120) NOT NULL DEFAULT '',
         created_at DATETIME NOT NULL,
         PRIMARY KEY (id),
         KEY account_id (account_id)
@@ -166,7 +167,7 @@ function dry65_pk_extend($id, $new_date, $note = '') {
 }
 
 /* Primeni promenu (delta<0 = potrošnja). Klampuje na [0..]. Vrati novo stanje. */
-function dry65_pk_apply($id, $delta, $note = '') {
+function dry65_pk_apply($id, $delta, $note = '', $staff_name = '') {
     global $wpdb;
     $acc = dry65_pk_get($id);
     if (!$acc) return null;
@@ -181,8 +182,9 @@ function dry65_pk_apply($id, $delta, $note = '') {
         'balance_after' => $new,
         'note'          => $note,
         'staff_id'      => get_current_user_id(),
+        'staff_name'    => $staff_name,
         'created_at'    => $now,
-    ], ['%d','%d','%d','%s','%d','%s']);
+    ], ['%d','%d','%d','%s','%d','%s','%s']);
     return $new;
 }
 
@@ -192,7 +194,7 @@ function dry65_pk_reward_available($acc) {
 }
 
 /* Potroši jedini bonus: upiši datum + zabeleži u istoriju (ne dira broj feniranja). */
-function dry65_pk_use_reward($id) {
+function dry65_pk_use_reward($id, $staff_name = '') {
     global $wpdb;
     $acc = dry65_pk_get($id);
     if (!$acc || $acc->type !== 'paket' || !empty($acc->reward_used_at)) return false;
@@ -204,8 +206,9 @@ function dry65_pk_use_reward($id) {
         'balance_after' => (int) $acc->balance,
         'note'          => 'Tretman iskorišćen: ' . ($acc->reward ?: 'bonus'),
         'staff_id'      => get_current_user_id(),
+        'staff_name'    => $staff_name,
         'created_at'    => $now,
-    ], ['%d','%d','%d','%s','%d','%s']);
+    ], ['%d','%d','%d','%s','%d','%s','%s']);
     return true;
 }
 
@@ -223,6 +226,38 @@ function dry65_pk_action_form($acc, $act, $label, $return = '', $bg = '') {
       <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:12px 24px;font-size:15px;font-weight:600;color:#fff;min-width:230px;background:<?php echo esc_attr($bg); ?>;"><?php echo esc_html($label); ?></button>
     </form>
     <?php return ob_get_clean();
+}
+
+/* ---- Radnice: PIN identifikacija na skeneru (ne login, uređaj je već ulogovan) ----
+   Čuva se u opciji dry65_pk_staff: [ ['id'=>.., 'name'=>.., 'pin_hash'=>..], .. ]. */
+function dry65_pk_staff_all() {
+    $s = get_option('dry65_pk_staff', []);
+    return is_array($s) ? $s : [];
+}
+/* Vrati ime radnice čiji PIN odgovara, ili '' ako nema. */
+function dry65_pk_staff_verify($pin) {
+    $pin = preg_replace('/\D/', '', (string) $pin);
+    if ($pin === '') return '';
+    foreach (dry65_pk_staff_all() as $w) {
+        if (!empty($w['pin_hash']) && password_verify($pin, $w['pin_hash'])) return (string) $w['name'];
+    }
+    return '';
+}
+function dry65_pk_staff_add($name, $pin) {
+    $name = sanitize_text_field($name);
+    $pin  = preg_replace('/\D/', '', (string) $pin);
+    if ($name === '' || !preg_match('/^\d{4}$/', $pin)) return false;
+    if (dry65_pk_staff_verify($pin) !== '') return false; // PIN već zauzet
+    $all = dry65_pk_staff_all();
+    $all[] = ['id' => uniqid('r'), 'name' => $name, 'pin_hash' => password_hash($pin, PASSWORD_DEFAULT)];
+    update_option('dry65_pk_staff', $all);
+    return true;
+}
+function dry65_pk_staff_delete($id) {
+    $all = array_values(array_filter(dry65_pk_staff_all(), function ($w) use ($id) {
+        return ($w['id'] ?? '') !== $id;
+    }));
+    update_option('dry65_pk_staff', $all);
 }
 
 /* Naslov iznad broja: paket = „Iskorišćeno", vaučer = „Preostalo". */
@@ -339,6 +374,75 @@ add_action('admin_menu', function () {
         'dashicons-tickets-alt',
         4
     );
+    add_submenu_page('dry65-paketi', 'Radnice (PIN za skener)', 'Radnice', DRY65_PK_CAP, 'dry65-radnice', 'dry65_pk_staff_page');
+});
+
+/* Stranica „Radnice": dodaj ime + 4-cifreni PIN, obriši. PIN se čuva heširan. */
+function dry65_pk_staff_page() {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    $staff = dry65_pk_staff_all();
+    ?>
+    <div class="wrap">
+      <h1>Radnice</h1>
+      <p style="max-width:640px;color:#555;">Svaka radnica ima svoj 4-cifreni PIN. Na strani <code>/skener</code> unese PIN da se zna KO skida pečate; kad završi, klikne „Završi" pa sledeća unese svoj. PIN nije lozinka za sajt (telefon je već ulogovan) nego oznaka ko radi.</p>
+      <?php if (isset($_GET['added'])): ?><div class="notice notice-success is-dismissible"><p>Radnica dodata.</p></div><?php endif; ?>
+      <?php if (isset($_GET['err'])): ?><div class="notice notice-error is-dismissible"><p>Nije dodato — ime je obavezno, PIN mora biti tačno 4 cifre i ne sme se poklapati sa postojećim.</p></div><?php endif; ?>
+      <?php if (isset($_GET['deleted'])): ?><div class="notice notice-success is-dismissible"><p>Radnica obrisana.</p></div><?php endif; ?>
+
+      <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-top:12px;">
+        <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;max-width:320px;">
+          <h2 style="margin-top:0;">Dodaj radnicu</h2>
+          <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <input type="hidden" name="action" value="dry65_pk_staff_add">
+            <?php wp_nonce_field('dry65_pk_staff_add'); ?>
+            <p><label>Ime<br><input type="text" name="name" class="regular-text" required style="width:100%;"></label></p>
+            <p><label>PIN (4 cifre)<br><input type="text" name="pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required style="width:100%;letter-spacing:0.3em;font-size:18px;"></label></p>
+            <p><button type="submit" class="button button-primary">Dodaj</button></p>
+          </form>
+        </div>
+
+        <div style="flex:1;min-width:320px;">
+          <table class="widefat striped" style="max-width:520px;">
+            <thead><tr><th>Ime</th><th>PIN</th><th></th></tr></thead>
+            <tbody>
+              <?php if (!$staff): ?>
+                <tr><td colspan="3" style="color:#777;">Još nema radnica. Dodaj prvu levo.</td></tr>
+              <?php else: foreach ($staff as $w): ?>
+                <tr>
+                  <td><?php echo esc_html($w['name']); ?></td>
+                  <td style="color:#999;">•••• <span style="font-size:12px;">(skriven)</span></td>
+                  <td style="text-align:right;">
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Obrisati <?php echo esc_js($w['name']); ?>?');" style="display:inline;">
+                      <input type="hidden" name="action" value="dry65_pk_staff_delete">
+                      <input type="hidden" name="id" value="<?php echo esc_attr($w['id']); ?>">
+                      <?php wp_nonce_field('dry65_pk_staff_delete'); ?>
+                      <button type="submit" class="button button-small">Obriši</button>
+                    </form>
+                  </td>
+                </tr>
+              <?php endforeach; endif; ?>
+            </tbody>
+          </table>
+          <p style="color:#999;font-size:12px;max-width:520px;">PIN se ne prikazuje iz sigurnosti. Ako ga radnica zaboravi, obriši je i dodaj ponovo sa novim PIN-om.</p>
+        </div>
+      </div>
+    </div>
+    <?php
+}
+
+add_action('admin_post_dry65_pk_staff_add', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_pk_staff_add');
+    $ok = dry65_pk_staff_add($_POST['name'] ?? '', $_POST['pin'] ?? '');
+    wp_redirect(admin_url('admin.php?page=dry65-radnice&' . ($ok ? 'added=1' : 'err=1')));
+    exit;
+});
+add_action('admin_post_dry65_pk_staff_delete', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_pk_staff_delete');
+    dry65_pk_staff_delete(sanitize_text_field(wp_unslash($_POST['id'] ?? '')));
+    wp_redirect(admin_url('admin.php?page=dry65-radnice&deleted=1'));
+    exit;
 });
 
 function dry65_pk_admin_page() {
@@ -358,7 +462,7 @@ function dry65_pk_admin_page() {
     <div class="wrap">
       <h1>Paketi i vaučeri</h1>
       <?php if (isset($_GET['created'])): ?><div class="notice notice-success is-dismissible"><p>Nalog napravljen.</p></div><?php endif; ?>
-      <?php if (isset($_GET['err'])): ?><div class="notice notice-error is-dismissible"><p>Nalog nije napravljen — ime, telefon i ispravan email su obavezni.</p></div><?php endif; ?>
+      <?php if (isset($_GET['err'])): ?><div class="notice notice-error is-dismissible"><p>Nalog nije napravljen — ime i telefon su obavezni.</p></div><?php endif; ?>
 
       <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-top:12px;">
         <!-- Novi nalog -->
@@ -369,7 +473,7 @@ function dry65_pk_admin_page() {
             <?php wp_nonce_field('dry65_pk_create'); ?>
             <p><label>Ime i prezime<br><input type="text" name="name" class="regular-text" required style="width:100%;"></label></p>
             <p><label>Telefon <span style="color:#d63638;">*</span><br><input type="tel" name="phone" class="regular-text" required style="width:100%;"></label></p>
-            <p><label>Email <span style="color:#d63638;">*</span><br><input type="email" name="email" class="regular-text" required style="width:100%;"></label></p>
+            <p><label>Email (opciono, za slanje linka kartice)<br><input type="email" name="email" class="regular-text" style="width:100%;"></label></p>
             <p><label>Tip<br>
               <select name="type" id="dry65-pk-type" style="width:100%;">
                 <option value="paket">Paket (feniranja)</option>
@@ -542,13 +646,17 @@ function dry65_pk_admin_detail($id) {
 
       <!-- Istorija -->
       <h2 style="margin-top:28px;">Istorija</h2>
-      <table class="widefat striped" style="max-width:640px;">
-        <thead><tr><th>Datum</th><th>Promena</th><th>Stanje posle</th></tr></thead>
+      <table class="widefat striped" style="max-width:720px;">
+        <thead><tr><th>Datum</th><th>Promena</th><th>Radnica</th><th>Stanje posle</th></tr></thead>
         <tbody>
-          <?php foreach ($txns as $t): ?>
+          <?php foreach ($txns as $t):
+            $actor = !empty($t->staff_name) ? $t->staff_name : '';
+            if ($actor === '' && !empty($t->staff_id)) { $u = get_userdata((int) $t->staff_id); if ($u) $actor = $u->display_name; }
+          ?>
           <tr>
             <td><?php echo esc_html(mysql2date('d.m.Y. H:i', $t->created_at)); ?></td>
             <td><?php echo esc_html(dry65_pk_txn_desc($acc->type, $t)); ?><?php if ($t->note && $t->note !== 'Paket otvoren' && $t->note !== 'Vaučer otvoren') echo ' <span style="color:#888;">(' . esc_html($t->note) . ')</span>'; ?></td>
+            <td><?php echo $actor !== '' ? esc_html($actor) : '<span style="color:#bbb;">—</span>'; ?></td>
             <td><?php echo $acc->type === 'vaucer' ? esc_html(number_format((int) $t->balance_after, 0, ',', '.') . ' din') : (int) $t->balance_after; ?></td>
           </tr>
           <?php endforeach; ?>
@@ -565,8 +673,8 @@ add_action('admin_post_dry65_pk_create', function () {
     $name  = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
     $phone = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
     $email = sanitize_email(wp_unslash($_POST['email'] ?? ''));
-    // Telefon + email su obavezni (nalog = evidencija paketa gosta).
-    if ($name === '' || $phone === '' || !is_email($email)) {
+    // Telefon obavezan; email opcion (Vlada: izbaci email kao obavezan).
+    if ($name === '' || $phone === '') {
         wp_redirect(admin_url('admin.php?page=dry65-paketi&err=1')); exit;
     }
     $type = sanitize_key($_POST['type'] ?? 'paket');
@@ -808,23 +916,28 @@ add_action('wp_ajax_dry65_pk_scan', function () {
         if (dry65_pk_is_expired($acc)) {
             wp_send_json_error(['msg' => 'Kartica je istekla.', 'state' => dry65_pk_public_state($acc)], 400);
         }
+        // Ko radi (PIN). Ako još nema unetih radnica, ne blokiramo (dok Vlada ne podesi PIN-ove).
+        $worker = dry65_pk_staff_verify($_POST['pin'] ?? '');
+        if ($worker === '' && dry65_pk_staff_all()) {
+            wp_send_json_error(['msg' => 'Unesi PIN radnice.', 'need_pin' => true, 'state' => dry65_pk_public_state($acc)], 401);
+        }
         $act = sanitize_key($_POST['act'] ?? 'feniranje');
         if ($act === 'tretman') {
             if (!dry65_pk_reward_available($acc)) {
                 wp_send_json_error(['msg' => 'Tretman je već iskorišćen.', 'state' => dry65_pk_public_state($acc)], 400);
             }
-            dry65_pk_use_reward($acc->id);
+            dry65_pk_use_reward($acc->id, $worker);
         } elseif ($act === 'feniranje_tretman') {
             if ((int) $acc->balance <= 0 && !dry65_pk_reward_available($acc)) {
                 wp_send_json_error(['msg' => 'Nema šta da se skine.', 'state' => dry65_pk_public_state($acc)], 400);
             }
-            if ((int) $acc->balance > 0)          dry65_pk_apply($acc->id, -1, 'Feniranje (skener)');
-            if (dry65_pk_reward_available($acc))   dry65_pk_use_reward($acc->id);
+            if ((int) $acc->balance > 0)          dry65_pk_apply($acc->id, -1, 'Feniranje', $worker);
+            if (dry65_pk_reward_available($acc))   dry65_pk_use_reward($acc->id, $worker);
         } else { // feniranje
             if ((int) $acc->balance <= 0) {
                 wp_send_json_error(['msg' => 'Paket je već završen (0 feniranja).', 'state' => dry65_pk_public_state($acc)], 400);
             }
-            dry65_pk_apply($acc->id, -1, 'Feniranje (skener)');
+            dry65_pk_apply($acc->id, -1, 'Feniranje', $worker);
         }
         $acc = dry65_pk_get($acc->id);
     }
@@ -832,6 +945,18 @@ add_action('wp_ajax_dry65_pk_scan', function () {
 });
 // Neulogovani (npr. istekla sesija) — čist JSON umesto WP „0".
 add_action('wp_ajax_nopriv_dry65_pk_scan', function () {
+    wp_send_json_error(['msg' => 'Sesija je istekla — prijavi se ponovo na sajt.'], 403);
+});
+
+// Prijava radnice PIN-om (vrati ime ako PIN odgovara).
+add_action('wp_ajax_dry65_pk_pin', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_send_json_error(['msg' => 'Nemate dozvolu.'], 403);
+    check_ajax_referer('dry65_pk_scan', 'nonce');
+    $name = dry65_pk_staff_verify($_POST['pin'] ?? '');
+    if ($name === '') wp_send_json_error(['msg' => 'Pogrešan PIN.'], 400);
+    wp_send_json_success(['name' => $name]);
+});
+add_action('wp_ajax_nopriv_dry65_pk_pin', function () {
     wp_send_json_error(['msg' => 'Sesija je istekla — prijavi se ponovo na sajt.'], 403);
 });
 
@@ -853,6 +978,21 @@ add_action('template_redirect', function () {
           <p class="mono" style="color:var(--clay);margin:0;">Osoblje</p>
           <h1 class="display caps" style="font-size:clamp(26px,3.6vw,40px);margin:6px 0 4px;">Skener paketa</h1>
           <p class="muted" style="margin:0 0 18px;font-size:14px;">Uperi kameru u gostov QR. Kad pročita, potvrdi „Skini 1 feniranje".</p>
+
+          <!-- Prijava radnice PIN-om -->
+          <div id="pk-pin-gate" style="display:none;background:var(--paper,#fff);border:1px solid var(--sage-line,#e5e5e0);border-radius:var(--radius-lg,18px);padding:24px;text-align:center;max-width:320px;margin:0 auto;">
+            <p class="mono" style="margin:0 0 6px;color:var(--clay);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;">Ko radi?</p>
+            <p class="muted" style="margin:0 0 14px;font-size:14px;">Unesi svoj PIN.</p>
+            <input id="pk-pin-input" type="password" inputmode="numeric" pattern="\d*" maxlength="4" autocomplete="off" style="width:170px;text-align:center;font-size:28px;letter-spacing:0.4em;padding:10px;border:1px solid var(--sage-line,#ccc);border-radius:12px;">
+            <p id="pk-pin-status" class="muted" style="min-height:18px;margin:10px 0;font-size:13px;"></p>
+            <button id="pk-pin-go" style="cursor:pointer;border:0;border-radius:999px;padding:12px 30px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Prijavi se</button>
+          </div>
+
+          <!-- Traka: ko je prijavljen -->
+          <div id="pk-worker-bar" style="display:none;justify-content:center;align-items:center;gap:12px;margin:0 auto 14px;font-size:14px;">
+            <span>Radnica: <strong id="pk-worker-name"></strong></span>
+            <button id="pk-worker-end" class="button" style="cursor:pointer;">Završi</button>
+          </div>
 
           <div id="pk-scan-box" style="position:relative;background:#000;border-radius:var(--radius-lg,18px);overflow:hidden;aspect-ratio:1/1;max-width:360px;margin:0 auto;">
             <video id="pk-scan-video" playsinline muted style="width:100%;height:100%;object-fit:cover;display:block;"></video>
@@ -882,7 +1022,7 @@ add_action('template_redirect', function () {
           </div>
 
           <!-- Ručni unos (rezerva / test bez kamere) -->
-          <details style="margin-top:22px;">
+          <details id="pk-manual-wrap" style="margin-top:22px;">
             <summary style="cursor:pointer;color:var(--muted);font-size:14px;">Ručni unos koda (ako kamera zakoči)</summary>
             <div style="display:flex;gap:8px;margin-top:10px;">
               <input id="pk-manual-code" type="text" placeholder="npr. testqr123" style="flex:1;padding:10px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;">
@@ -897,6 +1037,12 @@ add_action('template_redirect', function () {
     <script>
     (function(){
       var AJAX=<?php echo wp_json_encode($ajax); ?>, NONCE=<?php echo wp_json_encode($nonce); ?>;
+      var HAS_STAFF=<?php echo count(dry65_pk_staff_all()) ? 'true' : 'false'; ?>;
+      var pinGate=document.getElementById('pk-pin-gate'), pinInput=document.getElementById('pk-pin-input'),
+          pinStatus=document.getElementById('pk-pin-status'), pinGo=document.getElementById('pk-pin-go'),
+          workerBar=document.getElementById('pk-worker-bar'), workerName=document.getElementById('pk-worker-name'),
+          workerEnd=document.getElementById('pk-worker-end'), manualWrap=document.getElementById('pk-manual-wrap');
+      var WORKER_PIN=localStorage.getItem('dry65_pk_worker_pin')||'', WORKER_NAME=localStorage.getItem('dry65_pk_worker_name')||'';
       var video=document.getElementById('pk-scan-video'),
           canvas=document.getElementById('pk-scan-canvas'), ctx=canvas.getContext('2d', {willReadFrequently:true}),
           statusEl=document.getElementById('pk-scan-status'),
@@ -918,6 +1064,7 @@ add_action('template_redirect', function () {
         fd.append('action','dry65_pk_scan'); fd.append('nonce',NONCE);
         fd.append('mode',mode); fd.append('code',code);
         if(act) fd.append('act',act);
+        if(WORKER_PIN) fd.append('pin',WORKER_PIN);
         return fetch(AJAX,{method:'POST',body:fd,credentials:'same-origin'})
           .then(function(r){return r.json().then(function(j){return {ok:r.ok, j:j};});});
       }
@@ -995,6 +1142,7 @@ add_action('template_redirect', function () {
         post('spend', current.code, act).then(function(res){
           btn.disabled=false; btn.textContent=old;
           if(res.j && res.j.success){ afterSpend(res.j.data); }
+          else if(res.j && res.j.data && res.j.data.need_pin){ clearWorker(); alert('Prijavi se PIN-om.'); showGate(); }
           else { alert((res.j && res.j.data && res.j.data.msg) || 'Nije uspelo.'); if(res.j&&res.j.data&&res.j.data.state) showResult(res.j.data.state); }
         }).catch(function(){ btn.disabled=false; btn.textContent=old; alert('Greška u vezi.'); });
       }
@@ -1045,7 +1193,55 @@ add_action('template_redirect', function () {
           });
       }
       startBtn.addEventListener('click', startCamera);
-      startCamera();
+
+      function stopCamera(){
+        scanning=false;
+        if(raf) cancelAnimationFrame(raf);
+        if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream=null; }
+      }
+      function clearWorker(){
+        WORKER_PIN=''; WORKER_NAME='';
+        localStorage.removeItem('dry65_pk_worker_pin'); localStorage.removeItem('dry65_pk_worker_name');
+      }
+      function showGate(){
+        pinGate.style.display='';
+        workerBar.style.display='none';
+        box.style.display='none'; statusEl.style.display='none'; startBtn.style.display='none';
+        result.style.display='none';
+        if(manualWrap) manualWrap.style.display='none';
+        stopCamera();
+        setTimeout(function(){ pinInput.value=''; try{ pinInput.focus(); }catch(e){} }, 50);
+      }
+      function enterScanner(name){
+        pinGate.style.display='none';
+        if(name){ workerBar.style.display='flex'; workerName.textContent=name; } else { workerBar.style.display='none'; }
+        statusEl.style.display=''; box.style.display='';
+        if(manualWrap) manualWrap.style.display='';
+        startCamera();
+      }
+      function pinSubmit(){
+        var p=(pinInput.value||'').replace(/\D/g,'');
+        if(p.length<4){ pinStatus.textContent='Unesi 4 cifre.'; return; }
+        pinGo.disabled=true; pinStatus.textContent='Proveravam…';
+        var fd=new FormData(); fd.append('action','dry65_pk_pin'); fd.append('nonce',NONCE); fd.append('pin',p);
+        fetch(AJAX,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+          pinGo.disabled=false;
+          if(j && j.success){
+            WORKER_PIN=p; WORKER_NAME=j.data.name;
+            localStorage.setItem('dry65_pk_worker_pin',p); localStorage.setItem('dry65_pk_worker_name',WORKER_NAME);
+            pinStatus.textContent=''; enterScanner(WORKER_NAME);
+          } else {
+            pinStatus.textContent=(j&&j.data&&j.data.msg)||'Pogrešan PIN.'; pinInput.value=''; try{ pinInput.focus(); }catch(e){}
+          }
+        }).catch(function(){ pinGo.disabled=false; pinStatus.textContent='Greška u vezi.'; });
+      }
+      pinGo.addEventListener('click', pinSubmit);
+      pinInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); pinSubmit(); } });
+      workerEnd.addEventListener('click', function(){ clearWorker(); showGate(); });
+
+      // Init: ima radnica a niko nije prijavljen -> PIN kapija; inače uđi u skener.
+      if(HAS_STAFF && !WORKER_PIN){ showGate(); }
+      else { enterScanner(WORKER_NAME); }
     })();
     </script>
     <?php
