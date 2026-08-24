@@ -16,21 +16,37 @@
 if (!defined('ABSPATH')) exit;
 
 if (!defined('DRY65_PK_CAP')) define('DRY65_PK_CAP', 'edit_posts'); // ko sme da vodi (isto kao /live)
-if (!defined('DRY65_PK_DB'))  define('DRY65_PK_DB', 6);             // verzija šeme
+if (!defined('DRY65_PK_DB'))  define('DRY65_PK_DB', 7);             // verzija šeme
 if (!defined('DRY65_PK_ADMIN_CAP')) define('DRY65_PK_ADMIN_CAP', 'manage_options'); // poništavanje = samo admin
 
 /* ---- Tabele ---- */
 function dry65_pk_table()     { global $wpdb; return $wpdb->prefix . 'dry65_accounts'; }
 function dry65_pk_txn_table() { global $wpdb; return $wpdb->prefix . 'dry65_account_txns'; }
+function dry65_pk_cust_table(){ global $wpdb; return $wpdb->prefix . 'dry65_customers'; }
 
 function dry65_pk_install() {
     if ((int) get_option('dry65_pk_db', 0) === DRY65_PK_DB) return;
     global $wpdb;
     $charset = $wpdb->get_charset_collate();
-    $acc = dry65_pk_table();
-    $txn = dry65_pk_txn_table();
-    $sql = "CREATE TABLE $acc (
+    $acc  = dry65_pk_table();
+    $txn  = dry65_pk_txn_table();
+    $cust = dry65_pk_cust_table();
+    $sql = "CREATE TABLE $cust (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        name VARCHAR(190) NOT NULL DEFAULT '',
+        phone VARCHAR(40) NOT NULL DEFAULT '',
+        email VARCHAR(190) NOT NULL DEFAULT '',
+        source VARCHAR(20) NOT NULL DEFAULT 'salon',
+        note TEXT NULL,
+        created_at DATETIME NOT NULL,
+        created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        PRIMARY KEY (id),
+        UNIQUE KEY phone (phone),
+        KEY name (name)
+    ) $charset;
+    CREATE TABLE $acc (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        customer_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
         code VARCHAR(20) NOT NULL,
         name VARCHAR(190) NOT NULL DEFAULT '',
         phone VARCHAR(40) NOT NULL DEFAULT '',
@@ -47,7 +63,8 @@ function dry65_pk_install() {
         created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
         PRIMARY KEY (id),
         UNIQUE KEY code (code),
-        KEY name (name)
+        KEY name (name),
+        KEY customer_id (customer_id)
     ) $charset;
     CREATE TABLE $txn (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -65,8 +82,25 @@ function dry65_pk_install() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
     update_option('dry65_pk_db', DRY65_PK_DB);
+    dry65_pk_migrate_customers();
 }
 add_action('init', 'dry65_pk_install');
+
+/* Jednokratno: poveži postojeće pakete sa kupcima po telefonu. Bezbedno, ništa se ne briše. */
+function dry65_pk_migrate_customers() {
+    if (get_option('dry65_pk_cust_migrated') === '1') return;
+    global $wpdb;
+    $acc  = dry65_pk_table();
+    $rows = $wpdb->get_results("SELECT id, name, phone, email FROM $acc WHERE customer_id = 0");
+    if ($rows) {
+        foreach ($rows as $r) {
+            if (trim((string) $r->phone) === '') continue; // bez telefona ne vežemo (retko/nikad)
+            $cid = dry65_pk_customer_get_or_create($r->name, $r->phone, $r->email, 'salon');
+            if ($cid) $wpdb->update($acc, ['customer_id' => $cid], ['id' => (int) $r->id], ['%d'], ['%d']);
+        }
+    }
+    update_option('dry65_pk_cust_migrated', '1');
+}
 
 /* ---- Pomoćne ---- */
 
@@ -117,14 +151,75 @@ function dry65_pk_txns($account_id) {
     ));
 }
 
+/* ---- Kupci (osoba iznad paketa; ključ = telefon) ---- */
+function dry65_pk_customer_get($id) {
+    global $wpdb;
+    return $wpdb->get_row($wpdb->prepare("SELECT * FROM " . dry65_pk_cust_table() . " WHERE id = %d", (int) $id));
+}
+function dry65_pk_customer_by_phone($phone) {
+    global $wpdb;
+    $phone = trim((string) $phone);
+    if ($phone === '') return null;
+    return $wpdb->get_row($wpdb->prepare("SELECT * FROM " . dry65_pk_cust_table() . " WHERE phone = %s", $phone));
+}
+/* Nađi kupca po telefonu ili napravi novog. Dopuni prazna polja. Vrati id (0 ako ne može). */
+function dry65_pk_customer_get_or_create($name, $phone, $email = '', $source = 'salon') {
+    global $wpdb;
+    $ct    = dry65_pk_cust_table();
+    $phone = trim((string) $phone);
+    $name  = sanitize_text_field($name);
+    $email = $email ? sanitize_email($email) : '';
+    if ($phone === '' && $name === '') return 0;
+    if ($phone !== '') {
+        $existing = dry65_pk_customer_by_phone($phone);
+        if ($existing) {
+            $upd = []; $fmt = [];
+            if ($existing->name === '' && $name !== '')   { $upd['name']  = $name;  $fmt[] = '%s'; }
+            if ($existing->email === '' && $email !== '') { $upd['email'] = $email; $fmt[] = '%s'; }
+            if ($upd) $wpdb->update($ct, $upd, ['id' => (int) $existing->id], $fmt, ['%d']);
+            return (int) $existing->id;
+        }
+    }
+    $wpdb->insert($ct, [
+        'name' => $name, 'phone' => $phone, 'email' => $email,
+        'source' => $source, 'created_at' => dry65_pk_now(), 'created_by' => get_current_user_id(),
+    ], ['%s','%s','%s','%s','%s','%d']);
+    return (int) $wpdb->insert_id;
+}
+/* Svi paketi/vaučeri jednog kupca (najnoviji prvo). */
+function dry65_pk_customer_accounts($customer_id) {
+    global $wpdb;
+    return $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM " . dry65_pk_table() . " WHERE customer_id = %d ORDER BY id DESC", (int) $customer_id
+    ));
+}
+/* Zbirovi za profil kupca. */
+function dry65_pk_customer_stats($customer_id) {
+    $accs = dry65_pk_customer_accounts($customer_id);
+    $s = ['paketa' => 0, 'vaucera' => 0, 'fen_ukupno' => 0, 'fen_iskorisceno' => 0,
+          'tretmani' => 0, 'aktivnih' => 0];
+    foreach ($accs as $a) {
+        if ($a->type === 'vaucer') { $s['vaucera']++; }
+        else {
+            $s['paketa']++;
+            $s['fen_ukupno']      += (int) $a->initial;
+            $s['fen_iskorisceno'] += max(0, (int) $a->initial - (int) $a->balance);
+            if (!empty($a->reward_used_at)) $s['tretmani']++;
+        }
+        if (!dry65_pk_is_expired($a) && (int) $a->balance > 0) $s['aktivnih']++;
+    }
+    return $s;
+}
+
 /* Kreiraj nalog + početnu transakciju. Vrati id ili 0. */
-function dry65_pk_create($name, $phone, $type, $initial, $expires_at = '', $note = '', $plan = '', $reward = '', $email = '') {
+function dry65_pk_create($name, $phone, $type, $initial, $expires_at = '', $note = '', $plan = '', $reward = '', $email = '', $customer_id = 0) {
     global $wpdb;
     $type    = ($type === 'vaucer') ? 'vaucer' : 'paket';
     $initial = max(0, (int) $initial);
     $code    = dry65_pk_gen_code();
     $now     = dry65_pk_now();
     $ok = $wpdb->insert(dry65_pk_table(), [
+        'customer_id'=> (int) $customer_id,
         'code'       => $code,
         'name'       => $name,
         'phone'      => $phone,
@@ -138,7 +233,7 @@ function dry65_pk_create($name, $phone, $type, $initial, $expires_at = '', $note
         'note'       => $note,
         'created_at' => $now,
         'created_by' => get_current_user_id(),
-    ], ['%s','%s','%s','%s','%s','%s','%s','%d','%d','%s','%s','%s','%d']);
+    ], ['%d','%s','%s','%s','%s','%s','%s','%s','%d','%d','%s','%s','%s','%d']);
     if (!$ok) return 0;
     $id = (int) $wpdb->insert_id;
     $wpdb->insert(dry65_pk_txn_table(), [
@@ -412,6 +507,7 @@ add_action('admin_menu', function () {
         'dashicons-tickets-alt',
         4
     );
+    add_submenu_page('dry65-paketi', 'Kupci', 'Kupci', DRY65_PK_CAP, 'dry65-kupci', 'dry65_pk_customers_page');
     add_submenu_page('dry65-paketi', 'Radnice (PIN za skener)', 'Radnice', DRY65_PK_CAP, 'dry65-radnice', 'dry65_pk_staff_page');
 });
 
@@ -488,6 +584,8 @@ function dry65_pk_admin_page() {
     global $wpdb;
     $acc_id = isset($_GET['account']) ? (int) $_GET['account'] : 0;
     if ($acc_id) { dry65_pk_admin_detail($acc_id); return; }
+    $cust_id = isset($_GET['customer']) ? (int) $_GET['customer'] : 0;
+    if ($cust_id) { dry65_pk_customer_detail($cust_id); return; }
 
     $s = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
     $where = '';
@@ -592,6 +690,9 @@ function dry65_pk_admin_detail($id) {
     <div class="wrap">
       <p><a href="<?php echo esc_url(admin_url('admin.php?page=dry65-paketi')); ?>">&larr; Svi nalozi</a></p>
       <h1><?php echo esc_html($acc->name); ?> <span style="font-size:14px;color:#666;font-weight:400;">(<?php echo esc_html($acc->type === 'vaucer' ? 'Vaučer' : ($acc->plan ?: 'Paket')); ?>)</span></h1>
+      <?php if (!empty($acc->customer_id) && ($cust = dry65_pk_customer_get($acc->customer_id))): ?>
+      <p style="margin:-6px 0 10px;">Kupac: <a href="<?php echo esc_url(admin_url('admin.php?page=dry65-paketi&customer=' . (int) $acc->customer_id)); ?>"><strong><?php echo esc_html($cust->name ?: $cust->phone); ?></strong></a> &middot; ceo profil i istorija</p>
+      <?php endif; ?>
       <?php if (isset($_GET['done'])): ?><div class="notice notice-success is-dismissible"><p>Sačuvano.</p></div><?php endif; ?>
       <?php if (isset($_GET['mail'])): ?><div class="notice notice-<?php echo $_GET['mail'] === '1' ? 'success' : 'error'; ?> is-dismissible"><p><?php echo $_GET['mail'] === '1' ? 'Link poslat na email.' : 'Slanje nije uspelo — proveri email adresu / mail podešavanja servera.'; ?></p></div><?php endif; ?>
 
@@ -728,6 +829,136 @@ function dry65_pk_admin_detail($id) {
     <?php
 }
 
+/* Lista kupaca (pretraga po imenu/telefonu/emailu). */
+function dry65_pk_customers_page() {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    global $wpdb;
+    $ct = dry65_pk_cust_table();
+    $s  = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+    $where = '';
+    if ($s !== '') {
+        $like = '%' . $wpdb->esc_like($s) . '%';
+        $where = $wpdb->prepare(" WHERE name LIKE %s OR phone LIKE %s OR email LIKE %s", $like, $like, $like);
+    }
+    $rows = $wpdb->get_results("SELECT * FROM $ct$where ORDER BY id DESC LIMIT 300");
+    ?>
+    <div class="wrap">
+      <h1>Kupci</h1>
+      <p style="color:#555;max-width:640px;">Osoba iznad paketa. Jedan kupac može kroz vreme imati više paketa; ovde vidiš njegovu istoriju i zbirove. Kupac se prepoznaje po telefonu.</p>
+      <form method="get" style="margin:12px 0;">
+        <input type="hidden" name="page" value="dry65-kupci">
+        <input type="search" name="s" value="<?php echo esc_attr($s); ?>" placeholder="Ime, telefon ili email" style="width:280px;">
+        <button class="button">Traži</button>
+      </form>
+      <table class="widefat striped" style="max-width:860px;">
+        <thead><tr><th>Ime</th><th>Telefon</th><th>Email</th><th>Paketa</th><th>Aktivno</th><th>Član od</th></tr></thead>
+        <tbody>
+          <?php if (!$rows): ?><tr><td colspan="6" style="color:#777;">Nema kupaca<?php echo $s !== '' ? ' za tu pretragu' : ''; ?>.</td></tr>
+          <?php else: foreach ($rows as $c): $st = dry65_pk_customer_stats($c->id); ?>
+          <tr>
+            <td><a href="<?php echo esc_url(admin_url('admin.php?page=dry65-paketi&customer=' . (int) $c->id)); ?>"><strong><?php echo esc_html($c->name ?: '(bez imena)'); ?></strong></a></td>
+            <td><?php echo esc_html($c->phone); ?></td>
+            <td><?php echo esc_html($c->email); ?></td>
+            <td><?php echo (int) $st['paketa'] + (int) $st['vaucera']; ?></td>
+            <td><?php echo (int) $st['aktivnih']; ?></td>
+            <td><?php echo esc_html(mysql2date('d.m.Y.', $c->created_at)); ?></td>
+          </tr>
+          <?php endforeach; endif; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php
+}
+
+/* Profil kupca: zbirovi + svi paketi + „novi paket za kupca". */
+function dry65_pk_customer_detail($id) {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    $c = dry65_pk_customer_get($id);
+    if (!$c) { echo '<div class="wrap"><h1>Kupac ne postoji.</h1></div>'; return; }
+    $accs = dry65_pk_customer_accounts($id);
+    $st   = dry65_pk_customer_stats($id);
+    ?>
+    <div class="wrap">
+      <p><a href="<?php echo esc_url(admin_url('admin.php?page=dry65-kupci')); ?>">&larr; Svi kupci</a></p>
+      <h1><?php echo esc_html($c->name ?: '(bez imena)'); ?></h1>
+      <p style="color:#555;margin-top:0;">
+        <?php echo esc_html($c->phone); ?><?php if ($c->email) echo ' &middot; ' . esc_html($c->email); ?>
+        &middot; Član od <?php echo esc_html(mysql2date('d.m.Y.', $c->created_at)); ?>
+        <?php if ($c->source === 'web') echo ' &middot; <span style="color:#2271b1;">registrovao se online</span>'; ?>
+      </p>
+
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin:16px 0 24px;">
+        <?php
+        $cards = [
+          ['Paketa', (int) $st['paketa']],
+          ['Feniranja', (int) $st['fen_iskorisceno'] . ' / ' . (int) $st['fen_ukupno']],
+          ['Tretmana', (int) $st['tretmani']],
+          ['Aktivno sada', (int) $st['aktivnih']],
+        ];
+        if ((int) $st['vaucera']) $cards[] = ['Vaučera', (int) $st['vaucera']];
+        foreach ($cards as $cd): ?>
+          <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:14px 18px;min-width:120px;">
+            <div style="font-size:12px;color:#666;"><?php echo esc_html($cd[0]); ?></div>
+            <div style="font-size:24px;font-weight:700;"><?php echo esc_html($cd[1]); ?></div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+
+      <h2>Paketi i vaučeri</h2>
+      <table class="widefat striped" style="max-width:860px;">
+        <thead><tr><th>Plan</th><th>Stanje</th><th>Tretman</th><th>Rok</th><th>Napravljen</th><th></th></tr></thead>
+        <tbody>
+          <?php if (!$accs): ?><tr><td colspan="6" style="color:#777;">Još nema paketa. Dodaj ispod.</td></tr>
+          <?php else: foreach ($accs as $a):
+            $exp = dry65_pk_is_expired($a); $done = $a->type === 'paket' && (int) $a->balance === 0;
+          ?>
+          <tr>
+            <td><?php echo esc_html($a->type === 'vaucer' ? 'Vaučer' : ($a->plan ?: 'Paket')); ?></td>
+            <td><?php echo esc_html(dry65_pk_balance_text($a)); ?><?php if ($done) echo ' ✓'; ?></td>
+            <td><?php echo $a->type === 'paket' ? ($a->reward_used_at ? 'iskorišćen' : ($a->reward ? 'dostupan' : '—')) : '—'; ?></td>
+            <td><?php echo $a->expires_at ? esc_html(mysql2date('d.m.Y.', $a->expires_at)) . ($exp ? ' (istekao)' : '') : '—'; ?></td>
+            <td><?php echo esc_html(mysql2date('d.m.Y.', $a->created_at)); ?></td>
+            <td><a class="button button-small" href="<?php echo esc_url(admin_url('admin.php?page=dry65-paketi&account=' . (int) $a->id)); ?>">Otvori</a></td>
+          </tr>
+          <?php endforeach; endif; ?>
+        </tbody>
+      </table>
+
+      <h2 style="margin-top:28px;">Novi paket za kupca</h2>
+      <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;max-width:340px;">
+        <input type="hidden" name="action" value="dry65_pk_create">
+        <input type="hidden" name="customer_id" value="<?php echo (int) $c->id; ?>">
+        <input type="hidden" name="name" value="<?php echo esc_attr($c->name); ?>">
+        <input type="hidden" name="phone" value="<?php echo esc_attr($c->phone); ?>">
+        <input type="hidden" name="email" value="<?php echo esc_attr($c->email); ?>">
+        <?php wp_nonce_field('dry65_pk_create'); ?>
+        <p><label>Tip<br>
+          <select name="type" id="dry65-cust-type" style="width:100%;">
+            <option value="paket">Paket (feniranja)</option>
+            <option value="vaucer">Vaučer (dinari)</option>
+          </select></label></p>
+        <div id="dry65-cust-paket">
+          <p><label>Plan<br><select name="preset" style="width:100%;">
+            <?php foreach (dry65_pk_presets() as $k => $p): ?>
+            <option value="<?php echo esc_attr($k); ?>"><?php echo esc_html($p['name'] . ' — ' . $p['sessions'] . ' (' . $p['reward'] . ')'); ?></option>
+            <?php endforeach; ?>
+          </select></label></p>
+        </div>
+        <div id="dry65-cust-vaucer" style="display:none;">
+          <p><label>Iznos (din)<br><input type="number" name="amount" min="0" step="1" value="12000" style="width:100%;"></label></p>
+        </div>
+        <p><label>Ističe<br><input type="date" name="expires_at" value="<?php echo esc_attr(dry65_pk_default_expiry()); ?>" style="width:100%;"></label></p>
+        <p><button type="submit" class="button button-primary">Napravi paket</button></p>
+      </form>
+      <script>
+        (function(){var t=document.getElementById('dry65-cust-type'),pk=document.getElementById('dry65-cust-paket'),vc=document.getElementById('dry65-cust-vaucer');
+        function u(){var v=t.value==='vaucer';pk.style.display=v?'none':'';vc.style.display=v?'':'none';}
+        if(t){t.addEventListener('change',u);u();}})();
+      </script>
+    </div>
+    <?php
+}
+
 /* ---- Admin akcije ---- */
 add_action('admin_post_dry65_pk_create', function () {
     if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
@@ -756,6 +987,12 @@ add_action('admin_post_dry65_pk_create', function () {
 
     $expiry = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_POST['expires_at'] ?? '') ? $_POST['expires_at'] : dry65_pk_default_expiry();
 
+    // Kupac: iz profila (posted customer_id) ili nađi/napravi po telefonu.
+    $customer_id = (int) ($_POST['customer_id'] ?? 0);
+    if (!$customer_id || !dry65_pk_customer_get($customer_id)) {
+        $customer_id = dry65_pk_customer_get_or_create($name, $phone, $email, 'salon');
+    }
+
     $id = dry65_pk_create(
         $name,
         $phone,
@@ -765,7 +1002,8 @@ add_action('admin_post_dry65_pk_create', function () {
         sanitize_text_field(wp_unslash($_POST['note'] ?? '')),
         $plan,
         $reward,
-        $email
+        $email,
+        $customer_id
     );
     wp_redirect(admin_url('admin.php?page=dry65-paketi&account=' . $id . '&created=1'));
     exit;
