@@ -287,7 +287,7 @@ function dry65_pk_apply($id, $delta, $note = '', $staff_name = '') {
 
 /* Da li paket ima bonus (tretman) koji još stoji — 1 po paketu, iskoristiv bilo kad. */
 function dry65_pk_reward_available($acc) {
-    return $acc->type === 'paket' && !empty($acc->reward) && empty($acc->reward_used_at);
+    return $acc->type === 'paket' && dry65_pk_effective_reward($acc) !== '' && empty($acc->reward_used_at);
 }
 
 /* Potroši jedini bonus: upiši datum + zabeleži u istoriju (ne dira broj feniranja). */
@@ -301,7 +301,7 @@ function dry65_pk_use_reward($id, $staff_name = '') {
         'account_id'    => (int) $id,
         'delta'         => 0,
         'balance_after' => (int) $acc->balance,
-        'note'          => 'Tretman iskorišćen: ' . ($acc->reward ?: 'bonus'),
+        'note'          => 'Tretman iskorišćen: ' . (dry65_pk_effective_reward($acc) ?: 'bonus'),
         'staff_id'      => get_current_user_id(),
         'staff_name'    => $staff_name,
         'created_at'    => $now,
@@ -1100,12 +1100,20 @@ function dry65_pk_card_theme($acc) {
     elseif (strpos($plan, 'premium')   !== false || $init >= 12) $tier = 'premium';
     else                                                          $tier = 'signature';
     $themes = [
-        'essential' => ['bg' => '#D8C2AA', 'ink' => '#241c15', 'sub' => '#5c4a39', 'ring' => '#9a8064'],
-        'signature' => ['bg' => '#6E4C43', 'ink' => '#EFE1D2', 'sub' => '#d3bcac', 'ring' => '#b89984'],
-        'premium'   => ['bg' => '#2b2521', 'ink' => '#EADAC7', 'sub' => '#c3ad98', 'ring' => '#8f7562'], // PRIVREMENO
+        'essential' => ['bg' => '#EADAC9', 'ink' => '#2a201a', 'sub' => '#7a6553', 'ring' => '#b89a86'],
+        'signature' => ['bg' => '#783332', 'ink' => '#EFE1D2', 'sub' => '#d8b3ac', 'ring' => '#c39089'],
+        'premium'   => ['bg' => '#2b2521', 'ink' => '#EADAC7', 'sub' => '#c3ad98', 'ring' => '#8f7562'], // PRIVREMENO (čeka Vladinu boju)
     ];
     $t = $themes[$tier]; $t['tier'] = $tier;
     return $t;
+}
+/* Asseti kartice (žig + ikonice bonusa). */
+function dry65_pk_asset_url($file) { return get_template_directory_uri() . '/assets/packages/' . $file; }
+function dry65_pk_stamp_url()       { return dry65_pk_asset_url('dry-stamp.svg'); }
+function dry65_pk_bonus_icon_url($acc) {
+    $tier = dry65_pk_card_theme($acc)['tier'];
+    if ($tier === 'essential') return dry65_pk_asset_url('infusion.svg');
+    return dry65_pk_asset_url('mask.svg'); // signature = maska; premium privremeno maska (booster ikonica nije stigla)
 }
 /* Bonus (nagrada) za prikaz: iz naloga, a ako je prazno — po planu/broju feniranja. */
 function dry65_pk_effective_reward($acc) {
@@ -1168,14 +1176,14 @@ add_action('template_redirect', function () {
 
               <div style="display:flex;flex-wrap:wrap;gap:11px;justify-content:center;align-items:center;">
                 <?php for ($i = 0; $i < (int) $acc->initial; $i++): $on = $i < $used; ?>
-                  <span style="width:40px;height:40px;border-radius:50%;border:1.6px solid <?php echo $th['ring']; ?>;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;<?php echo $on ? 'background:' . $th['ring'] . '33;' : ''; ?>">
-                    <?php if ($on): ?><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="<?php echo $th['ink']; ?>" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><?php endif; ?>
+                  <span style="width:42px;height:42px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;<?php echo $on ? 'background:#fff;' : 'border:1.6px solid ' . $th['ring'] . ';'; ?>">
+                    <?php if ($on): ?><img src="<?php echo esc_url(dry65_pk_stamp_url()); ?>" alt="" style="width:26px;height:auto;"><?php endif; ?>
                   </span>
                 <?php endfor; ?>
                 <?php if ($reward): ?>
                   <span style="font-size:22px;line-height:1;color:<?php echo $th['sub']; ?>;">+</span>
-                  <span style="width:44px;height:44px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;">
-                    <?php echo dry65_pk_bonus_icon_svg(empty($acc->reward_used_at) ? '#241c15' : '#9a8064'); ?>
+                  <span style="width:46px;height:46px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;padding:9px;">
+                    <img src="<?php echo esc_url(dry65_pk_bonus_icon_url($acc)); ?>" alt="" style="max-width:100%;max-height:100%;<?php echo empty($acc->reward_used_at) ? '' : 'opacity:0.9;'; ?>">
                     <?php if (!empty($acc->reward_used_at)): ?><span style="position:absolute;right:-4px;top:-4px;width:19px;height:19px;border-radius:50%;background:<?php echo $th['bg']; ?>;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="<?php echo $th['ink']; ?>" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><?php endif; ?>
                   </span>
                 <?php endif; ?>
@@ -1253,7 +1261,8 @@ function dry65_pk_public_state($acc) {
         'balance' => (int) $acc->balance,
         'initial' => (int) $acc->initial,
         'used'    => max(0, (int) $acc->initial - (int) $acc->balance),
-        'reward'  => $acc->reward,
+        'reward'  => dry65_pk_effective_reward($acc),
+        'bonus_icon' => dry65_pk_bonus_icon_url($acc),
         'reward_available' => dry65_pk_reward_available($acc),
         'reward_used'      => !empty($acc->reward_used_at),
         'expired' => dry65_pk_is_expired($acc),
@@ -1371,19 +1380,26 @@ add_action('template_redirect', function () {
             <button id="pk-scan-start" class="button" style="display:none;cursor:pointer;">Uključi kameru</button>
           </p>
 
-          <!-- Rezultat / potvrda -->
+          <!-- Rezultat: punch-kartica (tap krug = pečat) -->
+          <style>
+            #pk-res-punch{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center;}
+            .pk-dot{width:48px;height:48px;border-radius:50%;border:1.8px solid #b89984;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:transform .08s,border-color .12s;-webkit-tap-highlight-color:transparent;}
+            .pk-dot:not(.on):not([disabled]):hover{border-color:var(--clay,#b07a5a);}
+            .pk-dot:not(.on):not([disabled]):active{transform:scale(.9);}
+            .pk-dot.on{cursor:default;border-color:#6E3130;}
+            .pk-dot[disabled]{cursor:default;}
+            .pk-dot img{width:30px;height:30px;object-fit:contain;pointer-events:none;}
+            .pk-dot svg{pointer-events:none;}
+            .pk-plus{font-size:22px;color:var(--muted);}
+          </style>
           <div id="pk-scan-result" style="display:none;background:var(--paper,#fff);border:1px solid var(--sage-line,#e5e5e0);border-radius:var(--radius-lg,18px);padding:22px;text-align:center;">
-            <div id="pk-res-plan" class="mono" style="color:var(--clay);font-size:13px;"></div>
-            <h2 id="pk-res-name" class="display" style="font-size:24px;margin:4px 0 10px;"></h2>
-            <div class="mono" style="color:var(--muted);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;" id="pk-res-label"></div>
-            <div class="display" id="pk-res-balance" style="font-size:clamp(28px,6vw,44px);line-height:1;margin:4px 0 12px;"></div>
-            <p id="pk-res-note" style="margin:0 0 14px;font-size:14px;color:var(--muted);"></p>
-            <div id="pk-res-actions">
-              <div id="pk-res-buttons" style="display:flex;flex-direction:column;gap:10px;align-items:center;"></div>
-              <p style="margin:14px 0 0;"><button id="pk-cancel" class="button" style="cursor:pointer;">Otkaži</button></p>
-            </div>
-            <div id="pk-res-next" style="display:none;">
-              <button id="pk-next" style="cursor:pointer;border:0;border-radius:999px;padding:13px 30px;font-size:16px;font-weight:600;background:#1f7a4d;color:#fff;">Sledeći gost →</button>
+            <div id="pk-res-plan" class="mono" style="color:var(--clay);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;"></div>
+            <h2 id="pk-res-name" class="display" style="font-size:24px;margin:4px 0 16px;"></h2>
+            <div id="pk-res-punch"></div>
+            <p id="pk-res-hint" style="margin:14px 0 0;font-size:13px;color:var(--muted);"></p>
+            <div style="margin-top:16px;">
+              <button id="pk-cancel" class="button" style="cursor:pointer;">Otkaži</button>
+              <button id="pk-next" style="cursor:pointer;border:0;border-radius:999px;padding:11px 26px;font-size:15px;font-weight:600;background:#1f7a4d;color:#fff;margin-left:8px;">Sledeći gost →</button>
             </div>
           </div>
 
@@ -1416,12 +1432,10 @@ add_action('template_redirect', function () {
           box=document.getElementById('pk-scan-box'),
           result=document.getElementById('pk-scan-result'),
           resPlan=document.getElementById('pk-res-plan'), resName=document.getElementById('pk-res-name'),
-          resLabel=document.getElementById('pk-res-label'), resBal=document.getElementById('pk-res-balance'),
-          resNote=document.getElementById('pk-res-note'),
-          resActions=document.getElementById('pk-res-actions'), resNext=document.getElementById('pk-res-next'),
-          resButtons=document.getElementById('pk-res-buttons'), cancelBtn=document.getElementById('pk-cancel'),
-          nextBtn=document.getElementById('pk-next'),
+          resPunch=document.getElementById('pk-res-punch'), resHint=document.getElementById('pk-res-hint'),
+          cancelBtn=document.getElementById('pk-cancel'), nextBtn=document.getElementById('pk-next'),
           manualCode=document.getElementById('pk-manual-code'), manualGo=document.getElementById('pk-manual-go');
+      var STAMP_URL=<?php echo wp_json_encode(dry65_pk_stamp_url()); ?>;
 
       var stream=null, scanning=false, current=null, raf=null;
 
@@ -1435,83 +1449,62 @@ add_action('template_redirect', function () {
           .then(function(r){return r.json().then(function(j){return {ok:r.ok, j:j};});});
       }
 
-      function mkBtn(label, act, bg){
-        var b=document.createElement('button');
-        b.type='button'; b.textContent=label;
-        b.style.cssText='cursor:pointer;border:0;border-radius:999px;padding:13px 26px;font-size:16px;font-weight:600;color:#fff;min-width:230px;background:'+bg+';';
-        b.addEventListener('click', function(){ doSpend(act, b); });
-        return b;
-      }
+      function escapeHtml(s){ var d=document.createElement('div'); d.textContent=(s==null?'':s); return d.innerHTML; }
+      function stampImg(){ return '<img src="'+STAMP_URL+'" alt="">'; }
 
       function showStatus(t){ statusEl.textContent=t; }
 
-      function showResult(state){
+      function renderPunch(state){
         current=state;
         box.style.display='none';
         result.style.display='';
-        resActions.style.display=''; resNext.style.display='none';
         resPlan.textContent=state.plan;
         resName.textContent=state.name;
-        resLabel.textContent=state.label;
-        resBal.textContent=state.text;
-        // Status bonusa (tretman) — 1 po paketu.
-        var note='';
-        if(state.type==='paket' && state.reward){
-          note = state.reward_used ? ('Tretman ('+state.reward+') već iskorišćen') : ('Tretman: '+state.reward+' — dostupan');
+        if(state.type!=='paket'){
+          resPunch.innerHTML='<p class="muted" style="margin:0;">Vaučer '+escapeHtml(state.text)+' — skida se u dashboardu (unosi se iznos).</p>';
+          resHint.textContent=''; return;
         }
-        if(state.expired) note='⚠ Kartica je istekla.';
-        resNote.textContent=note;
-        // Dugmad prema stanju.
-        resButtons.innerHTML='';
-        if(state.expired){ return; }
-        if(state.type==='vaucer'){
-          var v=document.createElement('p'); v.className='muted'; v.style.margin='0';
-          v.textContent='Vaučer se skida u dashboardu (unosi se iznos).'; resButtons.appendChild(v); return;
+        var lock=!!state.expired, h='';
+        for(var i=0;i<state.initial;i++){
+          var on=i<state.used, dis=on||lock;
+          h+='<button type="button" class="pk-dot'+(on?' on':'')+'" data-act="feniranje"'+(dis?' disabled':'')+'>'+(on?stampImg():'')+'</button>';
         }
-        var canFen=state.balance>0, canBonus=state.reward_available;
-        if(canFen)            resButtons.appendChild(mkBtn('Feniranje  (−1)','feniranje','var(--clay,#b07a5a)'));
-        if(canFen && canBonus)resButtons.appendChild(mkBtn('Feniranje + tretman','feniranje_tretman','var(--clay,#b07a5a)'));
-        if(canBonus)          resButtons.appendChild(mkBtn('Samo tretman'+(state.reward?' — '+state.reward:''),'tretman','#6b5b95'));
-        if(!canFen && !canBonus){
-          var d=document.createElement('p'); d.className='muted'; d.style.margin='0';
-          d.textContent='Nema šta da se skine (paket završen).'; resButtons.appendChild(d);
+        if(state.reward){
+          var bon=!!state.reward_used, dib=bon||lock;
+          h+='<span class="pk-plus">+</span>';
+          h+='<button type="button" class="pk-dot pk-bonus'+(bon?' on':'')+'" data-act="tretman"'+(dib?' disabled':'')+' title="'+escapeHtml(state.reward)+'"><img src="'+state.bonus_icon+'" alt="" style="max-width:64%;max-height:64%;'+(bon?'opacity:.5;':'')+'"></button>';
         }
+        resPunch.innerHTML=h;
+        if(lock) resHint.textContent='Kartica je istekla — skidanje onemogućeno.';
+        else if(state.balance<=0 && (!state.reward||state.reward_used)) resHint.textContent='Sve iskorišćeno. Klikni „Sledeći gost →".';
+        else resHint.textContent='Tapni krug = feniranje (možeš i dva). Bočica/tegla = tretman.';
       }
 
-      function afterSpend(state){
-        current=state;
-        resPlan.textContent=state.plan;
-        resName.textContent=state.name;
-        resLabel.textContent=state.label;
-        resBal.textContent=state.text;
-        var parts=[state.text];
-        if(state.type==='paket' && state.reward) parts.push('Tretman: '+(state.reward_used?'iskorišćen':'dostupan'));
-        resNote.textContent='✓ Sačuvano · '+parts.join(' · ');
-        resActions.style.display='none';
-        resNext.style.display='';
+      function stamp(dot, act){
+        if(!current) return;
+        dot.setAttribute('disabled','');
+        post('spend', current.code, act).then(function(res){
+          if(res.j && res.j.success){ renderPunch(res.j.data); }
+          else if(res.j && res.j.data && res.j.data.need_pin){ clearWorker(); alert('Prijavi se PIN-om.'); showGate(); }
+          else { dot.removeAttribute('disabled'); alert((res.j && res.j.data && res.j.data.msg) || 'Nije uspelo.'); if(res.j&&res.j.data&&res.j.data.state) renderPunch(res.j.data.state); }
+        }).catch(function(){ dot.removeAttribute('disabled'); alert('Greška u vezi.'); });
       }
+      resPunch.addEventListener('click', function(e){
+        var dot=e.target && e.target.closest ? e.target.closest('.pk-dot') : null;
+        if(!dot || dot.classList.contains('on') || dot.hasAttribute('disabled')) return;
+        stamp(dot, dot.getAttribute('data-act'));
+      });
 
       function lookup(code){
         showStatus('Tražim…');
         post('lookup', code).then(function(res){
-          if(res.j && res.j.success){ showResult(res.j.data); }
+          if(res.j && res.j.success){ renderPunch(res.j.data); }
           else { flash((res.j && res.j.data && res.j.data.msg) || 'Greška.'); resume(); }
         }).catch(function(){ flash('Greška u vezi.'); resume(); });
       }
 
       var flashTimer=null;
       function flash(msg){ showStatus(msg); if(flashTimer)clearTimeout(flashTimer); flashTimer=setTimeout(function(){ if(scanning)showStatus('Skeniram…'); },2500); }
-
-      function doSpend(act, btn){
-        if(!current) return;
-        var old=btn.textContent; btn.disabled=true; btn.textContent='…';
-        post('spend', current.code, act).then(function(res){
-          btn.disabled=false; btn.textContent=old;
-          if(res.j && res.j.success){ afterSpend(res.j.data); }
-          else if(res.j && res.j.data && res.j.data.need_pin){ clearWorker(); alert('Prijavi se PIN-om.'); showGate(); }
-          else { alert((res.j && res.j.data && res.j.data.msg) || 'Nije uspelo.'); if(res.j&&res.j.data&&res.j.data.state) showResult(res.j.data.state); }
-        }).catch(function(){ btn.disabled=false; btn.textContent=old; alert('Greška u vezi.'); });
-      }
 
       function resume(){
         current=null;
