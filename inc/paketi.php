@@ -1184,6 +1184,8 @@ add_action('template_redirect', function () {
     if (!$code) return;
     $acc = dry65_pk_get_by_code($code);
     status_header($acc ? 200 : 404);
+    nocache_headers();
+    do_action('litespeed_control_set_nocache', 'dry65 privatna kartica');
     add_filter('wp_robots', 'wp_robots_no_robots'); // privatna kartica — ne indeksiraj
     add_filter('show_admin_bar', '__return_false');
     dry65_pk_bare_head();
@@ -1463,6 +1465,8 @@ add_action('template_redirect', function () {
     $nonce = wp_create_nonce('dry65_pk_scan');
     $ajax  = admin_url('admin-ajax.php');
     status_header(200);
+    nocache_headers();
+    do_action('litespeed_control_set_nocache', 'dry65 skener');
     add_filter('wp_robots', 'wp_robots_no_robots'); // interni alat osoblja — ne indeksiraj
     add_filter('show_admin_bar', '__return_false');
     dry65_pk_bare_head();
