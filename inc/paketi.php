@@ -1304,9 +1304,12 @@ add_action('template_redirect', function () {
                 <div class="mono" style="letter-spacing:0.16em;text-transform:uppercase;font-size:11.5px;color:<?php echo $th['sub']; ?>;">Istorija</div>
                 <div style="border-top:1px dashed <?php echo $th['ring']; ?>;margin-top:8px;">
                   <?php foreach ($txns as $t): if ((int) $t->reversed === 1) continue; ?>
-                  <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed <?php echo $th['ring']; ?>66;">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px dashed <?php echo $th['ring']; ?>66;">
                     <span style="text-transform:uppercase;letter-spacing:0.05em;font-size:12px;"><?php echo esc_html(dry65_pk_card_txn_label($acc, $t)); ?></span>
-                    <span style="color:<?php echo $th['sub']; ?>;white-space:nowrap;font-size:12.5px;"><?php echo esc_html(mysql2date('d.m.Y.', $t->created_at)); ?></span>
+                    <span style="color:<?php echo $th['sub']; ?>;white-space:nowrap;font-size:12.5px;text-align:right;line-height:1.25;">
+                      <?php echo esc_html(mysql2date('d.m.Y.', $t->created_at)); ?><br>
+                      <span style="font-size:11px;opacity:0.85;"><?php echo esc_html(mysql2date('H:i', $t->created_at)); ?></span>
+                    </span>
                   </div>
                   <?php endforeach; ?>
                 </div>
