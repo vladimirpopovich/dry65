@@ -1216,9 +1216,9 @@ add_action('template_redirect', function () {
               <?php if (isset($_GET['pinreq'])): ?>
               <p style="max-width:400px;margin:0 auto 10px;text-align:center;color:#a00;font-weight:600;">Unesi PIN radnice pre skidanja.</p>
               <?php endif; ?>
-              <div id="pk-card-worker" style="display:none;max-width:400px;margin:0 auto 12px;text-align:center;font-size:14px;color:var(--ink);">
-                Radnica: <strong id="pk-card-worker-name"></strong>
-                <button type="button" id="pk-card-change" style="margin-left:8px;cursor:pointer;background:none;border:0;text-decoration:underline;color:var(--muted);font-size:13px;">promeni</button>
+              <div id="pk-card-worker" style="display:none;max-width:400px;margin:0 auto 16px;text-align:center;">
+                <div style="font-size:14px;color:var(--ink);margin-bottom:10px;">Radnica: <strong id="pk-card-worker-name"></strong></div>
+                <button type="button" id="pk-card-change" style="cursor:pointer;border:0;border-radius:999px;padding:12px 34px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Odjavi se</button>
               </div>
               <div id="pk-card-gate" style="display:none;max-width:340px;margin:0 auto 16px;background:#fff;border:1px solid var(--sage-line,#e5e5e0);border-radius:16px;padding:18px;text-align:center;">
                 <div class="mono" style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--clay);">Osoblje — ko radi?</div>
@@ -1546,7 +1546,7 @@ add_action('template_redirect', function () {
           pinStatus=document.getElementById('pk-pin-status'), pinGo=document.getElementById('pk-pin-go'),
           workerBar=document.getElementById('pk-worker-bar'), workerName=document.getElementById('pk-worker-name'),
           workerEnd=document.getElementById('pk-worker-end'), manualWrap=document.getElementById('pk-manual-wrap');
-      var WORKER_PIN=localStorage.getItem('dry65_pk_worker_pin')||'', WORKER_NAME=localStorage.getItem('dry65_pk_worker_name')||'';
+      var WORKER_PIN='', WORKER_NAME=''; // skener: uvek sveža prijava pri ulasku (ne pamti prethodnog)
       var statusEl=document.getElementById('pk-scan-status'),
           startBtn=document.getElementById('pk-scan-start'),
           box=document.getElementById('pk-scan-box'),
@@ -1697,10 +1697,7 @@ add_action('template_redirect', function () {
           } catch(e){}
         }
       }
-      function clearWorker(){
-        WORKER_PIN=''; WORKER_NAME='';
-        localStorage.removeItem('dry65_pk_worker_pin'); localStorage.removeItem('dry65_pk_worker_name');
-      }
+      function clearWorker(){ WORKER_PIN=''; WORKER_NAME=''; }
       function showGate(){
         pinGate.style.display='';
         workerBar.style.display='none';
@@ -1735,7 +1732,6 @@ add_action('template_redirect', function () {
           pinGo.disabled=false;
           if(j && j.success){
             WORKER_PIN=p; WORKER_NAME=j.data.name;
-            localStorage.setItem('dry65_pk_worker_pin',p); localStorage.setItem('dry65_pk_worker_name',WORKER_NAME);
             pinStatus.textContent=''; workerBar.style.display='flex'; workerName.textContent=WORKER_NAME;
           } else {
             stopCamera();
@@ -1749,8 +1745,8 @@ add_action('template_redirect', function () {
       workerEnd.addEventListener('click', function(){ clearWorker(); showGate(); });
 
       // Init: ima radnica a niko nije prijavljen -> PIN kapija; inače uđi u skener.
-      if(HAS_STAFF && !WORKER_PIN){ showGate(); }
-      else { enterScanner(WORKER_NAME); }
+      if(HAS_STAFF){ showGate(); }
+      else { enterScanner(''); }
     })();
     </script>
     <?php
