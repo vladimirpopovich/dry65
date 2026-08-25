@@ -1150,17 +1150,40 @@ function dry65_pk_card_txn_label($acc, $t) {
     return 'Otvoren paket';
 }
 
+/* „Gola" strana bez header/footer sajta (zadržava CSS+fontove preko wp_head). */
+function dry65_pk_bare_head() {
+    ?><!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+  <meta charset="<?php bloginfo('charset'); ?>">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <?php wp_head(); ?>
+</head>
+<body <?php body_class('dry65-bare'); ?>><?php wp_body_open(); ?>
+<?php
+}
+function dry65_pk_bare_foot() {
+    wp_footer();
+    ?>
+</body>
+</html>
+<?php
+}
+
 add_action('template_redirect', function () {
     $code = get_query_var('dry65_kartica');
     if (!$code) return;
     $acc = dry65_pk_get_by_code($code);
     status_header($acc ? 200 : 404);
     add_filter('wp_robots', 'wp_robots_no_robots'); // privatna kartica — ne indeksiraj
-    get_header();
+    dry65_pk_bare_head();
     ?>
-    <main class="page-enter">
-      <section class="section" style="min-height:50vh;">
-        <div class="wrap" style="max-width:560px;">
+    <main class="page-enter" style="min-height:100vh;padding:26px 16px calc(40px + env(safe-area-inset-bottom));">
+      <div style="text-align:center;margin-bottom:20px;">
+        <img src="<?php echo esc_url(get_template_directory_uri() . '/assets/logo.svg'); ?>" alt="Dry65" style="height:30px;width:auto;">
+      </div>
+      <section>
+        <div class="wrap" style="max-width:560px;margin:0 auto;">
           <?php if (!$acc): ?>
             <h1 class="display caps" style="font-size:clamp(28px,4vw,44px);">Kartica nije pronađena</h1>
             <p class="lead" style="margin-top:16px;">Proveri link ili se obrati salonu.</p>
@@ -1274,7 +1297,7 @@ add_action('template_redirect', function () {
       </section>
     </main>
     <?php
-    get_footer();
+    dry65_pk_bare_foot();
     exit;
 });
 
@@ -1376,14 +1399,11 @@ add_action('template_redirect', function () {
     $ajax  = admin_url('admin-ajax.php');
     status_header(200);
     add_filter('wp_robots', 'wp_robots_no_robots'); // interni alat osoblja — ne indeksiraj
-    get_header();
+    dry65_pk_bare_head();
     ?>
-    <main class="page-enter">
-      <section class="section" style="min-height:60vh;">
-        <div class="wrap" style="max-width:460px;">
-          <p class="mono" style="color:var(--clay);margin:0;">Osoblje</p>
-          <h1 class="display caps" style="font-size:clamp(26px,3.6vw,40px);margin:6px 0 4px;">Skener paketa</h1>
-          <p class="muted" style="margin:0 0 18px;font-size:14px;">Uperi kameru u gostov QR. Kad pročita, potvrdi „Skini 1 feniranje".</p>
+    <main class="page-enter" style="min-height:100vh;padding:18px 14px calc(24px + env(safe-area-inset-bottom));">
+      <section>
+        <div class="wrap" style="max-width:460px;margin:0 auto;">
 
           <!-- Prijava radnice PIN-om -->
           <div id="pk-pin-gate" style="display:none;background:var(--paper,#fff);border:1px solid var(--sage-line,#e5e5e0);border-radius:var(--radius-lg,18px);padding:24px;text-align:center;max-width:320px;margin:0 auto;">
@@ -1564,7 +1584,8 @@ add_action('template_redirect', function () {
         starting=true;
         showStatus('Pokrećem kameru…');
         if(!html5qr){ try { html5qr=new Html5Qrcode('pk-reader', {verbose:false}); } catch(e){ starting=false; showStatus('Greška pri pokretanju kamere — koristi ručni unos.'); return; } }
-        var cfg={ fps:10, qrbox:260 };
+        // Bez fiksnog qrbox-a: skeniraj veliki centralni deo kadra (bez aspectRatio da ne treperi).
+        var cfg={ fps:10, qrbox:function(vw,vh){ var m=Math.floor(Math.min(vw,vh)*0.92); return {width:m,height:m}; } };
         var watchdog=setTimeout(function(){
           if(!starting) return;
           starting=false;
@@ -1660,7 +1681,7 @@ add_action('template_redirect', function () {
     })();
     </script>
     <?php
-    get_footer();
+    dry65_pk_bare_foot();
     exit;
 });
 
