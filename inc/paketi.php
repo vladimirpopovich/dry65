@@ -1400,11 +1400,9 @@ add_action('template_redirect', function () {
             <button id="pk-worker-end" class="button" style="cursor:pointer;">Završi</button>
           </div>
 
-          <div id="pk-scan-box" style="position:relative;background:#000;border-radius:var(--radius-lg,18px);overflow:hidden;aspect-ratio:1/1;max-width:360px;margin:0 auto;">
-            <video id="pk-scan-video" playsinline muted style="width:100%;height:100%;object-fit:cover;display:block;"></video>
-            <div id="pk-scan-reticle" style="position:absolute;inset:16%;border:3px solid rgba(255,255,255,0.85);border-radius:16px;pointer-events:none;"></div>
+          <div id="pk-scan-box" style="max-width:360px;margin:0 auto;">
+            <div id="pk-reader" style="width:100%;border-radius:var(--radius-lg,18px);overflow:hidden;background:#000;"></div>
           </div>
-          <canvas id="pk-scan-canvas" style="display:none;"></canvas>
 
           <p id="pk-scan-status" class="muted" style="text-align:center;margin:14px 0;font-size:14px;">Pokrećem kameru…</p>
           <p style="text-align:center;margin:0 0 18px;">
@@ -1446,7 +1444,7 @@ add_action('template_redirect', function () {
       </section>
     </main>
 
-    <script src="<?php echo esc_url(get_template_directory_uri() . '/assets/js/jsqr.min.js'); ?>"></script>
+    <script src="<?php echo esc_url(get_template_directory_uri() . '/assets/js/html5-qrcode.min.js'); ?>"></script>
     <script>
     (function(){
       var AJAX=<?php echo wp_json_encode($ajax); ?>, NONCE=<?php echo wp_json_encode($nonce); ?>;
@@ -1456,9 +1454,7 @@ add_action('template_redirect', function () {
           workerBar=document.getElementById('pk-worker-bar'), workerName=document.getElementById('pk-worker-name'),
           workerEnd=document.getElementById('pk-worker-end'), manualWrap=document.getElementById('pk-manual-wrap');
       var WORKER_PIN=localStorage.getItem('dry65_pk_worker_pin')||'', WORKER_NAME=localStorage.getItem('dry65_pk_worker_name')||'';
-      var video=document.getElementById('pk-scan-video'),
-          canvas=document.getElementById('pk-scan-canvas'), ctx=canvas.getContext('2d', {willReadFrequently:true}),
-          statusEl=document.getElementById('pk-scan-status'),
+      var statusEl=document.getElementById('pk-scan-status'),
           startBtn=document.getElementById('pk-scan-start'),
           box=document.getElementById('pk-scan-box'),
           result=document.getElementById('pk-scan-result'),
@@ -1468,7 +1464,7 @@ add_action('template_redirect', function () {
           manualCode=document.getElementById('pk-manual-code'), manualGo=document.getElementById('pk-manual-go');
       var STAMP_URL=<?php echo wp_json_encode(dry65_pk_stamp_url()); ?>;
 
-      var stream=null, scanning=false, current=null, raf=null, hintTimer=null;
+      var scanning=false, current=null, hintTimer=null, html5qr=null, starting=false;
 
       function post(mode, code, act){
         var fd=new FormData();
@@ -1541,65 +1537,60 @@ add_action('template_redirect', function () {
         current=null;
         result.style.display='none';
         box.style.display='';
-        if(stream){ scanning=true; showStatus('Skeniram…'); tick(); }
-        else { showStatus('Kamera nije aktivna — koristi ručni unos.'); }
+        statusEl.style.display='';
+        startCamera();
       }
       cancelBtn.addEventListener('click', resume);
       nextBtn.addEventListener('click', resume);
 
       manualGo.addEventListener('click', function(){
         var c=(manualCode.value||'').trim(); if(!c) return;
-        scanning=false; lookup(c);
+        scanning=false; stopCamera(); lookup(c);
       });
       manualCode.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); manualGo.click(); } });
 
-      function tick(){
+      function found(data){
         if(!scanning) return;
-        if(video.readyState===video.HAVE_ENOUGH_DATA){
-          var vw=video.videoWidth, vh=video.videoHeight;
-          if(vw && vh){
-            // Smanji na max 800px duže strane — brže i pouzdanije čitanje na telefonu.
-            var scale=Math.min(1, 800/Math.max(vw,vh));
-            var w=Math.max(1, Math.round(vw*scale)), h=Math.max(1, Math.round(vh*scale));
-            canvas.width=w; canvas.height=h;
-            ctx.drawImage(video,0,0,w,h);
-            var img=ctx.getImageData(0,0,w,h);
-            var code=jsQR(img.data, w, h, {inversionAttempts:'attemptBoth'});
-            if(code && code.data){ if(hintTimer)clearTimeout(hintTimer); scanning=false; lookup(code.data); return; }
-          }
-        }
-        raf=requestAnimationFrame(tick);
+        scanning=false;
+        if(hintTimer)clearTimeout(hintTimer);
+        stopCamera();
+        lookup(data);
       }
 
       function startCamera(){
         startBtn.style.display='none';
+        if(!window.Html5Qrcode){ showStatus('Čitač nije učitan — koristi ručni unos.'); startBtn.style.display=''; return; }
+        if(scanning || starting) return;
+        starting=true;
         showStatus('Pokrećem kameru…');
-        if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-          showStatus('Ovaj pregledač ne podržava kameru — koristi ručni unos.'); return;
-        }
-        navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}})
-          .then(function(s){ stream=s; video.srcObject=s; video.setAttribute('playsinline',true);
-            return video.play(); })
-          .then(function(){
-            scanning=true; showStatus('Skeniram… uperi u QR');
-            if(hintTimer)clearTimeout(hintTimer);
-            hintTimer=setTimeout(function(){ if(scanning) showStatus('Ako ne čita: priđi bliže, dobro osvetli QR, ili koristi ručni unos ispod.'); },7000);
-            tick();
-          })
-          .catch(function(err){
-            var m='Nema pristupa kameri.';
-            if(location.protocol!=='https:' && location.hostname!=='localhost') m='Kamera radi samo preko https:// — koristi ručni unos ovde na lokalu.';
-            else if(err && err.name==='NotAllowedError') m='Dozvola za kameru odbijena. Uključi je pa klikni „Uključi kameru".';
-            showStatus(m); startBtn.style.display='';
-          });
+        if(!html5qr){ try { html5qr=new Html5Qrcode('pk-reader', {verbose:false}); } catch(e){ starting=false; showStatus('Greška pri pokretanju kamere — koristi ručni unos.'); return; } }
+        var cfg={ fps:10, qrbox:function(vw,vh){ var m=Math.round(Math.min(vw,vh)*0.72); return {width:m,height:m}; }, aspectRatio:1.0 };
+        html5qr.start({facingMode:{ideal:'environment'}}, cfg,
+          function(text){ found(text); },
+          function(){ /* nema QR u frejmu — normalno, ignoriši */ }
+        ).then(function(){
+          starting=false; scanning=true; showStatus('Skeniram… uperi u QR');
+          if(hintTimer)clearTimeout(hintTimer);
+          hintTimer=setTimeout(function(){ if(scanning) showStatus('Ako ne čita: priđi bliže, dobro osvetli QR, ili koristi ručni unos ispod.'); },8000);
+        }).catch(function(err){
+          starting=false;
+          var s=''+err, m='Nema pristupa kameri.';
+          if(location.protocol!=='https:' && location.hostname!=='localhost') m='Kamera radi samo preko https:// — koristi ručni unos ovde na lokalu.';
+          else if(s.indexOf('NotAllowed')>=0 || s.indexOf('Permission')>=0) m='Dozvola za kameru odbijena. Uključi je pa klikni „Uključi kameru".';
+          showStatus(m); startBtn.style.display='';
+        });
       }
       startBtn.addEventListener('click', startCamera);
 
       function stopCamera(){
-        scanning=false;
-        if(raf) cancelAnimationFrame(raf);
         if(hintTimer) clearTimeout(hintTimer);
-        if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream=null; }
+        if(html5qr){
+          try {
+            if(typeof html5qr.getState==='function' && html5qr.getState()===2){ // 2 = SCANNING
+              html5qr.stop().then(function(){ try{html5qr.clear();}catch(e){} }).catch(function(){});
+            }
+          } catch(e){}
+        }
       }
       function clearWorker(){
         WORKER_PIN=''; WORKER_NAME='';
