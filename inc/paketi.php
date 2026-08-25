@@ -1291,7 +1291,7 @@ add_action('template_redirect', function () {
                   <?php endif; ?>
                 <?php endif; ?>
               </div>
-              <?php if ($can_staff && $is_paket): ?><p style="margin:12px 0 0;font-size:12px;color:<?php echo $th['sub']; ?>;">Tapni krug = feniranje (može i dva). Bočica/tegla = tretman.</p><?php endif; ?>
+              <?php if ($can_staff && $is_paket): ?><p style="margin:12px 0 0;font-size:12px;color:<?php echo $th['sub']; ?>;">Klik na krug će poništiti jedno feniranje, klik na tretman će poništiti tretman.</p><?php endif; ?>
               <?php else: ?>
               <div class="mono" style="letter-spacing:0.1em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;">Preostalo</div>
               <div style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-size:clamp(30px,8vw,46px);margin-top:2px;line-height:1;"><?php echo esc_html(number_format((int) $acc->balance, 0, ',', '.')); ?> din</div>
@@ -1597,7 +1597,7 @@ add_action('template_redirect', function () {
         resPunch.innerHTML=h;
         if(lock) resHint.textContent='Kartica je istekla — skidanje onemogućeno.';
         else if(state.balance<=0 && (!state.reward||state.reward_used)) resHint.textContent='Sve iskorišćeno. Klikni „Sledeći gost →".';
-        else resHint.textContent='Tapni krug = feniranje (možeš i dva). Bočica/tegla = tretman.';
+        else resHint.textContent='Klik na krug će poništiti jedno feniranje, klik na tretman će poništiti tretman.';
       }
 
       function stamp(dot, act){
