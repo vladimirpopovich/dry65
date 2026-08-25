@@ -19,6 +19,11 @@ if (!defined('DRY65_PK_CAP')) define('DRY65_PK_CAP', 'edit_posts'); // ko sme da
 if (!defined('DRY65_PK_DB'))  define('DRY65_PK_DB', 7);             // verzija šeme
 if (!defined('DRY65_PK_ADMIN_CAP')) define('DRY65_PK_ADMIN_CAP', 'manage_options'); // poništavanje = samo admin
 
+// Salonski telefon: login sa „Remember Me" traje godinu dana (da osoblje ostaje ulogovano).
+add_filter('auth_cookie_expiration', function ($length, $user_id, $remember) {
+    return $remember ? YEAR_IN_SECONDS : $length;
+}, 10, 3);
+
 /* ---- Tabele ---- */
 function dry65_pk_table()     { global $wpdb; return $wpdb->prefix . 'dry65_accounts'; }
 function dry65_pk_txn_table() { global $wpdb; return $wpdb->prefix . 'dry65_account_txns'; }
@@ -1060,31 +1065,35 @@ add_action('admin_post_dry65_pk_extend', function () {
 add_action('admin_post_dry65_pk_spend', function () {
     if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
     check_admin_referer('dry65_pk_spend');
-    $id  = (int) ($_POST['id'] ?? 0);
-    $acc = dry65_pk_get($id);
+    $id     = (int) ($_POST['id'] ?? 0);
+    $acc    = dry65_pk_get($id);
+    $return = isset($_POST['return']) ? wp_unslash($_POST['return']) : '';
+    // Ko radi (PIN). Na kartici (return != '') je obavezan ako su radnice podešene; u dashboardu nije (admin).
+    $worker  = dry65_pk_staff_verify($_POST['pin'] ?? '');
+    $is_card = ($return !== '');
+    if ($is_card && $worker === '' && dry65_pk_staff_all()) {
+        wp_safe_redirect(add_query_arg('pinreq', '1', $return)); exit;
+    }
     if ($acc) {
         if ($acc->type === 'vaucer') {
             $amount = max(1, (int) ($_POST['amount'] ?? 0));
             $note   = sanitize_text_field(wp_unslash($_POST['note'] ?? ''));
-            dry65_pk_apply($id, -$amount, $note !== '' ? $note : 'Potrošnja');
+            dry65_pk_apply($id, -$amount, $note !== '' ? $note : 'Potrošnja', $worker);
         } else {
             // Paket: act = feniranje | feniranje_tretman | tretman
             $act = sanitize_key($_POST['act'] ?? 'feniranje');
             if ($act === 'tretman') {
-                dry65_pk_use_reward($id);                                  // samo bonus, ne dira feniranja
+                dry65_pk_use_reward($id, $worker);                          // samo bonus, ne dira feniranja
             } elseif ($act === 'feniranje_tretman') {
-                if ((int) $acc->balance > 0) dry65_pk_apply($id, -1, 'Feniranje');
-                dry65_pk_use_reward($id);
+                if ((int) $acc->balance > 0) dry65_pk_apply($id, -1, 'Feniranje', $worker);
+                dry65_pk_use_reward($id, $worker);
             } else {
-                dry65_pk_apply($id, -1, 'Feniranje');                      // jedan dolazak
+                dry65_pk_apply($id, -1, 'Feniranje', $worker);              // jedan dolazak
             }
         }
     }
-    // Skidanje sa /kartica/{kod} (QR flow) -> vrati na karticu; inače u dashboard.
-    $return = isset($_POST['return']) ? wp_unslash($_POST['return']) : '';
     if ($return !== '') {
-        $return = add_query_arg('sk', '1', $return);
-        wp_safe_redirect($return); exit;
+        wp_safe_redirect(add_query_arg('sk', '1', $return)); exit;
     }
     wp_redirect(admin_url('admin.php?page=dry65-paketi&account=' . $id . '&done=1'));
     exit;
@@ -1198,7 +1207,25 @@ add_action('template_redirect', function () {
             $is_paket  = $acc->type === 'paket';
             $used      = max(0, (int) $acc->initial - (int) $acc->balance);
             $reward    = dry65_pk_effective_reward($acc);
+            $has_staff = count(dry65_pk_staff_all()) > 0;
+            $pin_nonce = $can_staff ? wp_create_nonce('dry65_pk_scan') : '';
           ?>
+            <?php if ($can_staff): ?>
+              <?php if (isset($_GET['pinreq'])): ?>
+              <p style="max-width:400px;margin:0 auto 10px;text-align:center;color:#a00;font-weight:600;">Unesi PIN radnice pre skidanja.</p>
+              <?php endif; ?>
+              <div id="pk-card-worker" style="display:none;max-width:400px;margin:0 auto 12px;text-align:center;font-size:14px;color:var(--ink);">
+                Radnica: <strong id="pk-card-worker-name"></strong>
+                <button type="button" id="pk-card-change" style="margin-left:8px;cursor:pointer;background:none;border:0;text-decoration:underline;color:var(--muted);font-size:13px;">promeni</button>
+              </div>
+              <div id="pk-card-gate" style="display:none;max-width:340px;margin:0 auto 16px;background:#fff;border:1px solid var(--sage-line,#e5e5e0);border-radius:16px;padding:18px;text-align:center;">
+                <div class="mono" style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--clay);">Osoblje — ko radi?</div>
+                <p class="muted" style="margin:4px 0 12px;font-size:13px;">Unesi svoj PIN da bi skidao.</p>
+                <input id="pk-card-pin-input" type="password" inputmode="numeric" pattern="\d*" maxlength="4" autocomplete="off" style="width:150px;text-align:center;font-size:24px;letter-spacing:0.35em;padding:8px;border:1px solid var(--sage-line,#ccc);border-radius:10px;">
+                <p id="pk-card-pin-status" class="muted" style="min-height:16px;margin:8px 0;font-size:13px;"></p>
+                <button type="button" id="pk-card-pin-go" style="cursor:pointer;border:0;border-radius:999px;padding:10px 26px;font-size:15px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Prijavi se</button>
+              </div>
+            <?php endif; ?>
             <div style="max-width:400px;margin:6px auto 0;background:<?php echo $th['bg']; ?>;color:<?php echo $th['ink']; ?>;border-radius:26px;padding:clamp(26px,6vw,38px) clamp(20px,5vw,30px);text-align:center;box-shadow:0 18px 50px rgba(0,0,0,0.16);">
               <div class="mono" style="letter-spacing:0.22em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;"><?php echo esc_html($is_paket ? ($acc->plan ?: 'Paket') : 'Vaučer'); ?></div>
               <div style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-weight:600;font-size:clamp(30px,7.5vw,42px);line-height:1.04;margin-top:4px;"><?php echo esc_html($acc->name); ?></div>
@@ -1226,6 +1253,7 @@ add_action('template_redirect', function () {
                   <input type="hidden" name="id" value="<?php echo (int) $acc->id; ?>">
                   <input type="hidden" name="act" value="feniranje">
                   <input type="hidden" name="return" value="<?php echo esc_url($card_url); ?>">
+                  <input type="hidden" name="pin" class="pk-card-pin" value="">
                   <?php wp_nonce_field('dry65_pk_spend'); ?>
                 <?php endif; ?>
                   <?php for ($i = 0; $i < (int) $acc->initial; $i++): $on = $i < $used; ?>
@@ -1249,6 +1277,7 @@ add_action('template_redirect', function () {
                     <input type="hidden" name="id" value="<?php echo (int) $acc->id; ?>">
                     <input type="hidden" name="act" value="tretman">
                     <input type="hidden" name="return" value="<?php echo esc_url($card_url); ?>">
+                    <input type="hidden" name="pin" class="pk-card-pin" value="">
                     <?php wp_nonce_field('dry65_pk_spend'); ?>
                     <button type="submit" title="Tretman: <?php echo esc_attr($reward); ?>" style="<?php echo $bonus_style; ?>cursor:pointer;"><?php echo $bonus_img; ?></button>
                   </form>
@@ -1297,6 +1326,36 @@ add_action('template_redirect', function () {
         </div>
       </section>
     </main>
+    <?php if ($acc && current_user_can(DRY65_PK_CAP)): ?>
+    <script>
+    (function(){
+      var HAS_STAFF=<?php echo $has_staff ? 'true' : 'false'; ?>;
+      var AJAX=<?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>, NONCE=<?php echo wp_json_encode($pin_nonce); ?>;
+      var gate=document.getElementById('pk-card-gate'), bar=document.getElementById('pk-card-worker'),
+          barName=document.getElementById('pk-card-worker-name'),
+          pinInput=document.getElementById('pk-card-pin-input'), pinGo=document.getElementById('pk-card-pin-go'),
+          pinStatus=document.getElementById('pk-card-pin-status'), changeBtn=document.getElementById('pk-card-change');
+      var pins=document.querySelectorAll('input.pk-card-pin');
+      var WORKER_PIN=localStorage.getItem('dry65_pk_worker_pin')||'', WORKER_NAME=localStorage.getItem('dry65_pk_worker_name')||'';
+      function fill(){ for(var i=0;i<pins.length;i++) pins[i].value=WORKER_PIN; }
+      function showWorker(){ fill(); if(bar){ bar.style.display=''; barName.textContent=WORKER_NAME; } if(gate) gate.style.display='none'; }
+      function showGate(){ if(gate) gate.style.display=''; if(bar) bar.style.display='none'; setTimeout(function(){ try{ pinInput.focus(); }catch(e){} },60); }
+      function submit(){
+        var p=(pinInput.value||'').replace(/\D/g,''); if(p.length<4){ pinStatus.textContent='Unesi 4 cifre.'; return; }
+        pinGo.disabled=true; pinStatus.textContent='Proveravam…';
+        var fd=new FormData(); fd.append('action','dry65_pk_pin'); fd.append('nonce',NONCE); fd.append('pin',p);
+        fetch(AJAX,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+          pinGo.disabled=false;
+          if(j&&j.success){ WORKER_PIN=p; WORKER_NAME=j.data.name; localStorage.setItem('dry65_pk_worker_pin',p); localStorage.setItem('dry65_pk_worker_name',WORKER_NAME); pinStatus.textContent=''; showWorker(); }
+          else { pinStatus.textContent=(j&&j.data&&j.data.msg)||'Pogrešan PIN.'; pinInput.value=''; }
+        }).catch(function(){ pinGo.disabled=false; pinStatus.textContent='Greška u vezi.'; });
+      }
+      if(pinGo){ pinGo.addEventListener('click',submit); pinInput.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } }); }
+      if(changeBtn){ changeBtn.addEventListener('click',function(){ WORKER_PIN=''; WORKER_NAME=''; localStorage.removeItem('dry65_pk_worker_pin'); localStorage.removeItem('dry65_pk_worker_name'); fill(); showGate(); }); }
+      if(HAS_STAFF && !WORKER_PIN){ showGate(); } else { showWorker(); }
+    })();
+    </script>
+    <?php endif; ?>
     <?php
     dry65_pk_bare_foot();
     exit;
