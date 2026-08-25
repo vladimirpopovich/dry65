@@ -1564,7 +1564,7 @@ add_action('template_redirect', function () {
         starting=true;
         showStatus('Pokrećem kameru…');
         if(!html5qr){ try { html5qr=new Html5Qrcode('pk-reader', {verbose:false}); } catch(e){ starting=false; showStatus('Greška pri pokretanju kamere — koristi ručni unos.'); return; } }
-        var cfg={ fps:10, qrbox:function(vw,vh){ var m=Math.round(Math.min(vw,vh)*0.72); return {width:m,height:m}; }, aspectRatio:1.0 };
+        var cfg={ fps:10, qrbox:260 };
         var watchdog=setTimeout(function(){
           if(!starting) return;
           starting=false;
