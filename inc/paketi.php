@@ -1180,7 +1180,7 @@ add_action('template_redirect', function () {
     ?>
     <main class="page-enter" style="min-height:100vh;padding:26px 16px calc(40px + env(safe-area-inset-bottom));">
       <div style="text-align:center;margin-bottom:20px;">
-        <img src="<?php echo esc_url(get_template_directory_uri() . '/assets/logo.svg'); ?>" alt="Dry65" style="height:30px;width:auto;">
+        <img src="<?php echo esc_url(get_template_directory_uri() . '/assets/logo.svg'); ?>" alt="Dry65" style="display:block;height:30px;width:auto;margin:0 auto;">
       </div>
       <section>
         <div class="wrap" style="max-width:560px;margin:0 auto;">
