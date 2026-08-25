@@ -1565,18 +1565,29 @@ add_action('template_redirect', function () {
         showStatus('Pokrećem kameru…');
         if(!html5qr){ try { html5qr=new Html5Qrcode('pk-reader', {verbose:false}); } catch(e){ starting=false; showStatus('Greška pri pokretanju kamere — koristi ručni unos.'); return; } }
         var cfg={ fps:10, qrbox:function(vw,vh){ var m=Math.round(Math.min(vw,vh)*0.72); return {width:m,height:m}; }, aspectRatio:1.0 };
-        html5qr.start({facingMode:{ideal:'environment'}}, cfg,
+        var watchdog=setTimeout(function(){
+          if(!starting) return;
+          starting=false;
+          showStatus('Kamera ne odgovara na ovom pregledaču. Otvori /skener u Safari-ju, ili koristi ručni unos.');
+          startBtn.style.display='';
+          try { if(html5qr && typeof html5qr.stop==='function') html5qr.stop().catch(function(){}); } catch(e){}
+        }, 9000);
+        html5qr.start({facingMode:'environment'}, cfg,
           function(text){ found(text); },
           function(){ /* nema QR u frejmu — normalno, ignoriši */ }
         ).then(function(){
+          clearTimeout(watchdog);
           starting=false; scanning=true; showStatus('Skeniram… uperi u QR');
           if(hintTimer)clearTimeout(hintTimer);
           hintTimer=setTimeout(function(){ if(scanning) showStatus('Ako ne čita: priđi bliže, dobro osvetli QR, ili koristi ručni unos ispod.'); },8000);
         }).catch(function(err){
+          clearTimeout(watchdog);
           starting=false;
-          var s=''+err, m='Nema pristupa kameri.';
-          if(location.protocol!=='https:' && location.hostname!=='localhost') m='Kamera radi samo preko https:// — koristi ručni unos ovde na lokalu.';
-          else if(s.indexOf('NotAllowed')>=0 || s.indexOf('Permission')>=0) m='Dozvola za kameru odbijena. Uključi je pa klikni „Uključi kameru".';
+          var name=(err && (err.name||err.message)) ? (err.name||err.message) : (''+err), m;
+          if(location.protocol!=='https:' && location.hostname!=='localhost') m='Kamera radi samo preko https://.';
+          else if(/NotAllowed|Permission|Denied/i.test(name)) m='Nema dozvole za kameru. Uključi je za ovaj sajt u podešavanjima pregledača, pa tapni „Uključi kameru".';
+          else if(/NotFound|Overconstrained|NotReadable|Track|Starting/i.test(name)) m='Kamera zauzeta/nedostupna ('+name+'). Zatvori druge aplikacije sa kamerom pa probaj.';
+          else m='Kamera greška: '+name+'. Koristi ručni unos.';
           showStatus(m); startBtn.style.display='';
         });
       }
@@ -1610,23 +1621,34 @@ add_action('template_redirect', function () {
         if(name){ workerBar.style.display='flex'; workerName.textContent=name; } else { workerBar.style.display='none'; }
         statusEl.style.display=''; box.style.display='';
         if(manualWrap) manualWrap.style.display='';
-        startCamera();
+        promptCamera();
+      }
+      function promptCamera(){
+        showStatus('Tapni „Uključi kameru" pa uperi u QR gosta.');
+        startBtn.style.display='';
       }
       function pinSubmit(){
         var p=(pinInput.value||'').replace(/\D/g,'');
         if(p.length<4){ pinStatus.textContent='Unesi 4 cifre.'; return; }
-        pinGo.disabled=true; pinStatus.textContent='Proveravam…';
+        pinGo.disabled=true; pinStatus.textContent='Palim kameru…';
+        // Kameru palimo ODMAH u okviru ovog tapa (iPhone traži gesture). PIN proveravamo u pozadini.
+        pinGate.style.display='none'; workerBar.style.display='none';
+        box.style.display=''; statusEl.style.display='';
+        if(manualWrap) manualWrap.style.display='';
+        startCamera();
         var fd=new FormData(); fd.append('action','dry65_pk_pin'); fd.append('nonce',NONCE); fd.append('pin',p);
         fetch(AJAX,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
           pinGo.disabled=false;
           if(j && j.success){
             WORKER_PIN=p; WORKER_NAME=j.data.name;
             localStorage.setItem('dry65_pk_worker_pin',p); localStorage.setItem('dry65_pk_worker_name',WORKER_NAME);
-            pinStatus.textContent=''; enterScanner(WORKER_NAME);
+            pinStatus.textContent=''; workerBar.style.display='flex'; workerName.textContent=WORKER_NAME;
           } else {
-            pinStatus.textContent=(j&&j.data&&j.data.msg)||'Pogrešan PIN.'; pinInput.value=''; try{ pinInput.focus(); }catch(e){}
+            stopCamera();
+            pinStatus.textContent=(j&&j.data&&j.data.msg)||'Pogrešan PIN.'; pinInput.value='';
+            showGate();
           }
-        }).catch(function(){ pinGo.disabled=false; pinStatus.textContent='Greška u vezi.'; });
+        }).catch(function(){ pinGo.disabled=false; stopCamera(); pinStatus.textContent='Greška u vezi.'; showGate(); });
       }
       pinGo.addEventListener('click', pinSubmit);
       pinInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); pinSubmit(); } });
