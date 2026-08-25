@@ -1176,6 +1176,7 @@ add_action('template_redirect', function () {
     $acc = dry65_pk_get_by_code($code);
     status_header($acc ? 200 : 404);
     add_filter('wp_robots', 'wp_robots_no_robots'); // privatna kartica — ne indeksiraj
+    add_filter('show_admin_bar', '__return_false');
     dry65_pk_bare_head();
     ?>
     <main class="page-enter" style="min-height:100vh;padding:26px 16px calc(40px + env(safe-area-inset-bottom));">
@@ -1399,6 +1400,7 @@ add_action('template_redirect', function () {
     $ajax  = admin_url('admin-ajax.php');
     status_header(200);
     add_filter('wp_robots', 'wp_robots_no_robots'); // interni alat osoblja — ne indeksiraj
+    add_filter('show_admin_bar', '__return_false');
     dry65_pk_bare_head();
     ?>
     <main class="page-enter" style="min-height:100vh;padding:18px 14px calc(24px + env(safe-area-inset-bottom));">
@@ -1593,7 +1595,7 @@ add_action('template_redirect', function () {
           startBtn.style.display='';
           try { if(html5qr && typeof html5qr.stop==='function') html5qr.stop().catch(function(){}); } catch(e){}
         }, 9000);
-        html5qr.start({facingMode:'environment'}, cfg,
+        html5qr.start({facingMode:'environment', width:{ideal:1920}, height:{ideal:1080}}, cfg,
           function(text){ found(text); },
           function(){ /* nema QR u frejmu — normalno, ignoriši */ }
         ).then(function(){
