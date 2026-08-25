@@ -1343,12 +1343,17 @@ add_action('template_redirect', function () {
       function submit(){
         var p=(pinInput.value||'').replace(/\D/g,''); if(p.length<4){ pinStatus.textContent='Unesi 4 cifre.'; return; }
         pinGo.disabled=true; pinStatus.textContent='Proveravam…';
+        var done=false;
+        function proceed(nm){ if(done) return; done=true; pinGo.disabled=false; WORKER_PIN=p; WORKER_NAME=nm||'Radnica'; localStorage.setItem('dry65_pk_worker_pin',p); localStorage.setItem('dry65_pk_worker_name',WORKER_NAME); pinStatus.textContent=''; showWorker(); }
+        // Ako server ne odgovori za 5s, ipak nastavi — skidanje proverava PIN na serveru.
+        var to=setTimeout(function(){ proceed(''); }, 5000);
         var fd=new FormData(); fd.append('action','dry65_pk_pin'); fd.append('nonce',NONCE); fd.append('pin',p);
         fetch(AJAX,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
-          pinGo.disabled=false;
-          if(j&&j.success){ WORKER_PIN=p; WORKER_NAME=j.data.name; localStorage.setItem('dry65_pk_worker_pin',p); localStorage.setItem('dry65_pk_worker_name',WORKER_NAME); pinStatus.textContent=''; showWorker(); }
-          else { pinStatus.textContent=(j&&j.data&&j.data.msg)||'Pogrešan PIN.'; pinInput.value=''; }
-        }).catch(function(){ pinGo.disabled=false; pinStatus.textContent='Greška u vezi.'; });
+          clearTimeout(to);
+          if(j&&j.success){ proceed(j.data.name); }
+          else if(j&&j.data&&j.data.msg && /pogre|PIN/i.test(j.data.msg)){ done=true; pinGo.disabled=false; pinStatus.textContent=j.data.msg; pinInput.value=''; }
+          else { proceed(''); }
+        }).catch(function(){ clearTimeout(to); proceed(''); });
       }
       if(pinGo){ pinGo.addEventListener('click',submit); pinInput.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } }); }
       if(changeBtn){ changeBtn.addEventListener('click',function(){ WORKER_PIN=''; WORKER_NAME=''; localStorage.removeItem('dry65_pk_worker_pin'); localStorage.removeItem('dry65_pk_worker_name'); fill(); showGate(); }); }
