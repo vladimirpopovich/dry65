@@ -16,7 +16,7 @@
 if (!defined('ABSPATH')) exit;
 
 if (!defined('DRY65_PK_CAP')) define('DRY65_PK_CAP', 'edit_posts'); // ko sme da vodi (isto kao /live)
-if (!defined('DRY65_PK_DB'))  define('DRY65_PK_DB', 7);             // verzija šeme
+if (!defined('DRY65_PK_DB'))  define('DRY65_PK_DB', 8);             // verzija šeme
 if (!defined('DRY65_PK_ADMIN_CAP')) define('DRY65_PK_ADMIN_CAP', 'manage_options'); // poništavanje = samo admin
 
 // Salonski telefon: login sa „Remember Me" traje godinu dana (da osoblje ostaje ulogovano).
@@ -40,14 +40,18 @@ function dry65_pk_install() {
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         name VARCHAR(190) NOT NULL DEFAULT '',
         phone VARCHAR(40) NOT NULL DEFAULT '',
+        phone_norm VARCHAR(24) NOT NULL DEFAULT '',
         email VARCHAR(190) NOT NULL DEFAULT '',
         source VARCHAR(20) NOT NULL DEFAULT 'salon',
+        wp_user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
         note TEXT NULL,
         created_at DATETIME NOT NULL,
         created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
         PRIMARY KEY (id),
         UNIQUE KEY phone (phone),
-        KEY name (name)
+        KEY name (name),
+        KEY phone_norm (phone_norm),
+        KEY wp_user_id (wp_user_id)
     ) $charset;
     CREATE TABLE $acc (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -88,8 +92,24 @@ function dry65_pk_install() {
     dbDelta($sql);
     update_option('dry65_pk_db', DRY65_PK_DB);
     dry65_pk_migrate_customers();
+    dry65_pk_migrate_phone_norm();
 }
 add_action('init', 'dry65_pk_install');
+
+/* Jednokratno: popuni phone_norm (E.164) za postojeće kupce. */
+function dry65_pk_migrate_phone_norm() {
+    if (get_option('dry65_pk_phonenorm_v') === '1') return;
+    global $wpdb;
+    $ct = dry65_pk_cust_table();
+    $rows = $wpdb->get_results("SELECT id, phone FROM $ct WHERE phone_norm = '' AND phone <> ''");
+    if ($rows) {
+        foreach ($rows as $r) {
+            $n = dry65_pk_normalize_phone($r->phone);
+            if ($n !== '') $wpdb->update($ct, ['phone_norm' => $n], ['id' => (int) $r->id], ['%s'], ['%d']);
+        }
+    }
+    update_option('dry65_pk_phonenorm_v', '1');
+}
 
 /* Jednokratno preimenovanje nagrade Signature plana (postojeći nalozi). */
 function dry65_pk_rename_rewards() {
@@ -169,15 +189,51 @@ function dry65_pk_txns($account_id) {
 }
 
 /* ---- Kupci (osoba iznad paketa; ključ = telefon) ---- */
+
+/* Normalizuj telefon u E.164 (+381…), Srbija podrazumevano. Vrati '' ako ne može. */
+function dry65_pk_normalize_phone($raw) {
+    $s = trim((string) $raw);
+    if ($s === '') return '';
+    $plus   = (strpos($s, '+') === 0);
+    $digits = preg_replace('/\D/', '', $s);
+    if ($digits === '') return '';
+    if (strpos($digits, '00') === 0) { $digits = substr($digits, 2); $plus = true; } // 00381… -> 381…
+    if (strpos($digits, '381') === 0) return '+' . $digits;                 // 381… / +381…
+    if (strpos($digits, '0') === 0)   return '+381' . substr($digits, 1);   // 06X… lokalno
+    if ($plus)                        return '+' . $digits;                 // strani broj sa +
+    if (strlen($digits) >= 8 && strlen($digits) <= 9) return '+381' . $digits; // 6X… bez 0
+    return '+' . $digits;
+}
+
+/* Prikaz telefona u lokalnom obliku (06X…) iz E.164. */
+function dry65_pk_display_phone($e164) {
+    $e = trim((string) $e164);
+    if (strpos($e, '+381') === 0) return '0' . substr($e, 4);
+    return $e;
+}
+
 function dry65_pk_customer_get($id) {
     global $wpdb;
     return $wpdb->get_row($wpdb->prepare("SELECT * FROM " . dry65_pk_cust_table() . " WHERE id = %d", (int) $id));
 }
+/* Nađi kupca po telefonu (poklapa se bez obzira na format: 06X…/+3816…). */
 function dry65_pk_customer_by_phone($phone) {
     global $wpdb;
-    $phone = trim((string) $phone);
-    if ($phone === '') return null;
-    return $wpdb->get_row($wpdb->prepare("SELECT * FROM " . dry65_pk_cust_table() . " WHERE phone = %s", $phone));
+    $ct   = dry65_pk_cust_table();
+    $norm = dry65_pk_normalize_phone($phone);
+    if ($norm !== '') {
+        $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM $ct WHERE phone_norm = %s", $norm));
+        if ($row) return $row;
+    }
+    $raw = trim((string) $phone);
+    if ($raw === '') return null;
+    return $wpdb->get_row($wpdb->prepare("SELECT * FROM $ct WHERE phone = %s", $raw)); // fallback za nemigrirane
+}
+function dry65_pk_customer_by_wp_user($uid) {
+    global $wpdb;
+    $uid = (int) $uid;
+    if (!$uid) return null;
+    return $wpdb->get_row($wpdb->prepare("SELECT * FROM " . dry65_pk_cust_table() . " WHERE wp_user_id = %d", $uid));
 }
 /* Nađi kupca po telefonu ili napravi novog. Dopuni prazna polja. Vrati id (0 ako ne može). */
 function dry65_pk_customer_get_or_create($name, $phone, $email = '', $source = 'salon') {
@@ -193,14 +249,15 @@ function dry65_pk_customer_get_or_create($name, $phone, $email = '', $source = '
             $upd = []; $fmt = [];
             if ($existing->name === '' && $name !== '')   { $upd['name']  = $name;  $fmt[] = '%s'; }
             if ($existing->email === '' && $email !== '') { $upd['email'] = $email; $fmt[] = '%s'; }
+            if (empty($existing->phone_norm)) { $upd['phone_norm'] = dry65_pk_normalize_phone($existing->phone ?: $phone); $fmt[] = '%s'; }
             if ($upd) $wpdb->update($ct, $upd, ['id' => (int) $existing->id], $fmt, ['%d']);
             return (int) $existing->id;
         }
     }
     $wpdb->insert($ct, [
-        'name' => $name, 'phone' => $phone, 'email' => $email,
+        'name' => $name, 'phone' => $phone, 'phone_norm' => dry65_pk_normalize_phone($phone), 'email' => $email,
         'source' => $source, 'created_at' => dry65_pk_now(), 'created_by' => get_current_user_id(),
-    ], ['%s','%s','%s','%s','%s','%d']);
+    ], ['%s','%s','%s','%s','%s','%s','%d']);
     return (int) $wpdb->insert_id;
 }
 /* Svi paketi/vaučeri jednog kupca (najnoviji prvo). */
