@@ -234,16 +234,21 @@ function dry65_pk_google_btn($redirect = '') {
 /* Polje „Datum rođenja" (dan number . mesec select . godina number), za forme. */
 function dry65_pk_dob_field_html($day = '', $month = '', $year = '') {
     ob_start(); ?>
-    <label style="font-size:14px;">Datum rođenja <span class="muted" style="font-weight:400;">(opciono)</span>
+    <style>
+      .pk-dob input[type=number]{-moz-appearance:textfield;}
+      .pk-dob input[type=number]::-webkit-outer-spin-button,.pk-dob input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+      .pk-dob select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;background-size:12px;padding-right:42px;}
+    </style>
+    <label class="pk-dob" style="font-size:14px;display:block;">Datum rođenja <span class="muted" style="font-weight:400;">(opciono)</span>
       <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-        <input type="number" name="dob_day" min="1" max="31" inputmode="numeric" placeholder="Dan" value="<?php echo esc_attr($day); ?>" style="width:78px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
-        <select name="dob_month" style="flex:1;box-sizing:border-box;padding:12px 10px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;background:#fff;">
+        <input type="number" name="dob_day" min="1" max="31" inputmode="numeric" placeholder="Dan" value="<?php echo esc_attr($day); ?>" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2); if(+this.value>31)this.value=31;" style="width:74px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+        <select name="dob_month" style="flex:1;box-sizing:border-box;padding:12px 12px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;background-color:#fff;">
           <option value="">Mesec</option>
           <?php foreach (dry65_pk_dob_months() as $i => $m): ?>
           <option value="<?php echo $i + 1; ?>"<?php selected((int) $month, $i + 1); ?>><?php echo esc_html($m); ?></option>
           <?php endforeach; ?>
         </select>
-        <input type="text" name="dob_year" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="Godina" value="<?php echo esc_attr($year); ?>" style="width:98px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+        <input type="number" name="dob_year" min="1900" max="<?php echo (int) date('Y'); ?>" inputmode="numeric" placeholder="Godina" value="<?php echo esc_attr($year); ?>" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4); if(this.value.length===4 && +this.value><?php echo (int) date('Y'); ?>)this.value=<?php echo (int) date('Y'); ?>;" style="width:94px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
       </div>
     </label>
     <?php return ob_get_clean();
@@ -2108,7 +2113,7 @@ add_action('template_redirect', function () {
     <main class="page-enter" style="min-height:100vh;padding:44px 16px;">
       <div style="max-width:400px;margin:0 auto;text-align:center;">
         <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 26px;display:block;">
-        <h1 class="display caps" style="font-size:clamp(26px,4vw,38px);">Prijava</h1>
+        <h1 class="display caps" style="font-size:clamp(26px,4vw,38px);">Login</h1>
         <p class="lead" style="margin:10px 0 22px;">Uđi u <strong>Dry65 Club</strong> — tvoja kartica i pečati.</p>
 
         <?php echo dry65_pk_google_btn(home_url('/moja-kartica/')); ?>
