@@ -220,7 +220,7 @@ function dry65_pk_dob_months() {
 /* Dan+mesec -> '2000-MM-DD' (ili '' ako nije ispravno/nije uneto). */
 function dry65_pk_dob_from_parts($day, $month, $year) {
     $d = (int) $day; $m = (int) $month; $y = (int) $year; $ny = (int) date('Y');
-    if ($d < 1 || $m < 1 || $m > 12 || $y < 1900 || $y > $ny || !checkdate($m, $d, $y)) return '';
+    if ($d < 1 || $m < 1 || $m > 12 || $y < 1926 || $y > $ny || !checkdate($m, $d, $y)) return '';
     return sprintf('%04d-%02d-%02d', $y, $m, $d);
 }
 /* „Nastavi sa Google-om" dugme (Nextend OAuth) — bez oslanjanja na shortcode. */
@@ -241,14 +241,14 @@ function dry65_pk_dob_field_html($day = '', $month = '', $year = '') {
     </style>
     <label class="pk-dob" style="font-size:14px;display:block;">Datum rođenja <span class="muted" style="font-weight:400;">(opciono)</span>
       <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-        <input type="number" name="dob_day" min="1" max="31" inputmode="numeric" placeholder="Dan" value="<?php echo esc_attr($day); ?>" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2); if(+this.value>31)this.value=31;" style="width:74px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+        <input type="number" name="dob_day" min="1" max="31" inputmode="numeric" placeholder="Dan" value="<?php echo esc_attr($day); ?>" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2); if(+this.value>31)this.value=31; if(this.value!=='' && +this.value<1)this.value='';" style="width:74px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
         <select name="dob_month" style="flex:1;box-sizing:border-box;padding:12px 12px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;background-color:#fff;">
           <option value="">Mesec</option>
           <?php foreach (dry65_pk_dob_months() as $i => $m): ?>
           <option value="<?php echo $i + 1; ?>"<?php selected((int) $month, $i + 1); ?>><?php echo esc_html($m); ?></option>
           <?php endforeach; ?>
         </select>
-        <input type="number" name="dob_year" min="1900" max="<?php echo (int) date('Y'); ?>" inputmode="numeric" placeholder="Godina" value="<?php echo esc_attr($year); ?>" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4); if(this.value.length===4 && +this.value><?php echo (int) date('Y'); ?>)this.value=<?php echo (int) date('Y'); ?>;" style="width:94px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+        <input type="number" name="dob_year" min="1926" max="<?php echo (int) date('Y'); ?>" inputmode="numeric" placeholder="Godina" value="<?php echo esc_attr($year); ?>" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4); if(this.value.length===4){ if(+this.value><?php echo (int) date('Y'); ?>)this.value=<?php echo (int) date('Y'); ?>; if(+this.value<1926)this.value=1926; }" style="width:94px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
       </div>
     </label>
     <?php return ob_get_clean();
