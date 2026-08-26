@@ -223,6 +223,11 @@ function dry65_pk_dob_from_parts($day, $month, $year) {
     if ($d < 1 || $m < 1 || $m > 12 || $y < 1926 || $y > $ny || !checkdate($m, $d, $y)) return '';
     return sprintf('%04d-%02d-%02d', $y, $m, $d);
 }
+/* „MEMBERSHIP" kicker (isti na svim Club stranama). */
+function dry65_pk_membership_kicker() {
+    return '<p class="mono" style="text-align:center;letter-spacing:0.3em;text-transform:uppercase;color:var(--clay);font-size:12px;font-weight:400;margin:0 0 2px;">Membership</p>';
+}
+
 /* „Nastavi sa Google-om" dugme (Nextend OAuth) — bez oslanjanja na shortcode. */
 function dry65_pk_google_btn($redirect = '') {
     $url = add_query_arg('loginSocial', 'google', wp_login_url());
