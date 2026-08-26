@@ -1926,7 +1926,7 @@ add_action('template_redirect', function () {
     <main class="page-enter" style="min-height:100vh;padding:44px 16px;">
       <div style="max-width:420px;margin:0 auto;">
         <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 22px;display:block;">
-        <p class="mono" style="text-align:center;letter-spacing:0.3em;text-transform:uppercase;color:var(--clay);font-size:clamp(14px,3.4vw,17px);font-weight:700;margin:0 0 2px;">Membership</p>
+        <p class="mono" style="text-align:center;letter-spacing:0.3em;text-transform:uppercase;color:var(--clay);font-size:12px;font-weight:400;margin:0 0 2px;">Membership</p>
         <h1 class="display" style="text-align:center;text-transform:none;font-size:clamp(28px,5vw,40px);margin:0 0 20px;">Dry65 Club</h1>
 
         <div style="text-align:center;"><?php echo dry65_pk_google_btn(home_url('/moja-kartica/')); ?></div>
