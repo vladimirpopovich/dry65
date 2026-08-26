@@ -213,6 +213,42 @@ function dry65_pk_display_phone($e164) {
     return $e;
 }
 
+/* ---- Datum rođenja: samo dan + mesec (bez godine). Čuva se kao 2000-MM-DD. ---- */
+function dry65_pk_dob_months() {
+    return ['Januar','Februar','Mart','April','Maj','Jun','Jul','Avgust','Septembar','Oktobar','Novembar','Decembar'];
+}
+/* Dan+mesec -> '2000-MM-DD' (ili '' ako nije ispravno/nije uneto). */
+function dry65_pk_dob_from_parts($day, $month, $year) {
+    $d = (int) $day; $m = (int) $month; $y = (int) $year; $ny = (int) date('Y');
+    if ($d < 1 || $m < 1 || $m > 12 || $y < 1900 || $y > $ny || !checkdate($m, $d, $y)) return '';
+    return sprintf('%04d-%02d-%02d', $y, $m, $d);
+}
+/* „Nastavi sa Google-om" dugme (Nextend OAuth) — bez oslanjanja na shortcode. */
+function dry65_pk_google_btn($redirect = '') {
+    $url = add_query_arg('loginSocial', 'google', wp_login_url());
+    if ($redirect) $url = add_query_arg('redirect', rawurlencode($redirect), $url);
+    $g = '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.5-2.1 14.3-5.6l-6.6-5.6C29.7 34.6 27 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.6 5.6C41.4 36.9 44 31 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>';
+    return '<a href="' . esc_url($url) . '" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;box-sizing:border-box;background:#fff;border:1px solid #dadce0;border-radius:12px;padding:13px 16px;font-size:15px;font-weight:600;color:#3c4043;text-decoration:none;">' . $g . 'Nastavi sa Google-om</a>';
+}
+
+/* Polje „Datum rođenja" (dan number . mesec select . godina number), za forme. */
+function dry65_pk_dob_field_html($day = '', $month = '', $year = '') {
+    ob_start(); ?>
+    <label style="font-size:14px;">Datum rođenja <span class="muted" style="font-weight:400;">(opciono)</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+        <input type="number" name="dob_day" min="1" max="31" inputmode="numeric" placeholder="Dan" value="<?php echo esc_attr($day); ?>" style="width:78px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+        <select name="dob_month" style="flex:1;box-sizing:border-box;padding:12px 10px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;background:#fff;">
+          <option value="">Mesec</option>
+          <?php foreach (dry65_pk_dob_months() as $i => $m): ?>
+          <option value="<?php echo $i + 1; ?>"<?php selected((int) $month, $i + 1); ?>><?php echo esc_html($m); ?></option>
+          <?php endforeach; ?>
+        </select>
+        <input type="text" name="dob_year" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="Godina" value="<?php echo esc_attr($year); ?>" style="width:98px;box-sizing:border-box;padding:12px 8px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+      </div>
+    </label>
+    <?php return ob_get_clean();
+}
+
 function dry65_pk_customer_get($id) {
     global $wpdb;
     return $wpdb->get_row($wpdb->prepare("SELECT * FROM " . dry65_pk_cust_table() . " WHERE id = %d", (int) $id));
@@ -1166,12 +1202,16 @@ add_action('init', function () {
     add_rewrite_rule('^registracija/?$', 'index.php?dry65_registracija=1', 'top');
     add_rewrite_rule('^moja-kartica/?$', 'index.php?dry65_moja=1', 'top');
     add_rewrite_rule('^login/?$', 'index.php?dry65_login=1', 'top');
-    if (get_option('dry65_pk_rewrite_v') !== '5') {
+    add_rewrite_rule('^privacy/?$', 'index.php?dry65_privacy=1', 'top');
+    add_rewrite_rule('^terms/?$', 'index.php?dry65_terms=1', 'top');
+    add_rewrite_rule('^zaboravljena-lozinka/?$', 'index.php?dry65_forgot=1', 'top');
+    add_rewrite_rule('^reset/?$', 'index.php?dry65_reset=1', 'top');
+    if (get_option('dry65_pk_rewrite_v') !== '7') {
         flush_rewrite_rules(false);
-        update_option('dry65_pk_rewrite_v', '5');
+        update_option('dry65_pk_rewrite_v', '7');
     }
 });
-add_filter('query_vars', function ($vars) { $vars[] = 'dry65_kartica'; $vars[] = 'dry65_skener'; $vars[] = 'dry65_registracija'; $vars[] = 'dry65_moja'; $vars[] = 'dry65_login'; return $vars; });
+add_filter('query_vars', function ($vars) { $vars[] = 'dry65_kartica'; $vars[] = 'dry65_skener'; $vars[] = 'dry65_registracija'; $vars[] = 'dry65_moja'; $vars[] = 'dry65_login'; $vars[] = 'dry65_privacy'; $vars[] = 'dry65_terms'; $vars[] = 'dry65_forgot'; $vars[] = 'dry65_reset'; return $vars; });
 
 /* Boje kartice po planu (Essential/Signature/Premium). Premium = PRIVREMENO dok Vlada ne pošalje. */
 function dry65_pk_card_theme($acc) {
@@ -1830,20 +1870,22 @@ add_action('template_redirect', function () {
     if (is_user_logged_in()) { wp_safe_redirect(home_url('/moja-kartica/')); exit; }
 
     $errors = [];
-    $vals = ['name' => '', 'phone' => '', 'email' => '', 'dob' => ''];
+    $vals = ['name' => '', 'phone' => '', 'email' => '', 'dob' => '', 'dob_day' => '', 'dob_month' => '', 'dob_year' => ''];
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['dry65_reg_nonce']) && wp_verify_nonce($_POST['dry65_reg_nonce'], 'dry65_registracija')) {
         $hp = trim((string) ($_POST['website'] ?? ''));
         $vals['name']  = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
         $vals['phone'] = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
         $vals['email'] = sanitize_email(wp_unslash($_POST['email'] ?? ''));
-        $vals['dob']   = sanitize_text_field(wp_unslash($_POST['dob'] ?? ''));
+        $dd = (int) ($_POST['dob_day'] ?? 0); $dm = (int) ($_POST['dob_month'] ?? 0); $dy = (int) ($_POST['dob_year'] ?? 0);
+        $vals['dob_day'] = $dd ?: ''; $vals['dob_month'] = $dm ?: ''; $vals['dob_year'] = $dy ?: '';
+        $vals['dob'] = dry65_pk_dob_from_parts($dd, $dm, $dy);
         $pass          = (string) ($_POST['pwd'] ?? '');
         if ($hp === '') {
             if ($vals['name'] === '')      $errors[] = 'Unesi ime i prezime.';
             if ($vals['phone'] === '')     $errors[] = 'Unesi broj telefona.';
             if (!is_email($vals['email'])) $errors[] = 'Unesi ispravan email.';
             if (strlen($pass) < 6)         $errors[] = 'Lozinka mora imati bar 6 karaktera.';
-            if ($vals['dob'] !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $vals['dob'])) $errors[] = 'Datum rođenja nije ispravan.';
+            if (($dd || $dm || $dy) && $vals['dob'] === '') $errors[] = 'Datum rođenja: proveri dan, mesec i godinu.';
             if (!$errors && email_exists($vals['email'])) $errors[] = 'Nalog sa tim emailom već postoji — <a href="' . esc_url(home_url('/login/')) . '">prijavi se</a>.';
             if (!$errors) {
                 $uid = wp_insert_user([
@@ -1879,10 +1921,10 @@ add_action('template_redirect', function () {
     <main class="page-enter" style="min-height:100vh;padding:44px 16px;">
       <div style="max-width:420px;margin:0 auto;">
         <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 22px;display:block;">
-        <h1 class="display caps" style="text-align:center;font-size:clamp(26px,4vw,38px);">Registracija</h1>
-        <p class="lead" style="text-align:center;margin:10px 0 20px;">Napravi nalog i prati svoje pečate.</p>
+        <p class="mono" style="text-align:center;letter-spacing:0.3em;text-transform:uppercase;color:var(--clay);font-size:clamp(14px,3.4vw,17px);font-weight:700;margin:0 0 2px;">Membership</p>
+        <h1 class="display" style="text-align:center;text-transform:none;font-size:clamp(28px,5vw,40px);margin:0 0 20px;">Dry65 Club</h1>
 
-        <div style="text-align:center;"><?php echo function_exists('do_shortcode') ? do_shortcode('[nextend_social_login]') : ''; ?></div>
+        <div style="text-align:center;"><?php echo dry65_pk_google_btn(home_url('/moja-kartica/')); ?></div>
         <div style="display:flex;align-items:center;gap:10px;color:var(--muted);margin:18px 0;font-size:13px;">
           <span style="flex:1;height:1px;background:var(--sage-line,#ddd);"></span> ili <span style="flex:1;height:1px;background:var(--sage-line,#ddd);"></span>
         </div>
@@ -1906,9 +1948,7 @@ add_action('template_redirect', function () {
           <label style="font-size:14px;">Lozinka
             <input type="password" name="pwd" required minlength="6" autocomplete="new-password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
           </label>
-          <label style="font-size:14px;">Datum rođenja <span class="muted" style="font-weight:400;">(opciono — poklon feniranje za rođendan 🎂)</span>
-            <input type="date" name="dob" value="<?php echo esc_attr($vals['dob']); ?>" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
-          </label>
+          <?php echo dry65_pk_dob_field_html($vals['dob_day'], $vals['dob_month'], $vals['dob_year']); ?>
           <div style="position:absolute;left:-9999px;" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
           <?php wp_nonce_field('dry65_registracija', 'dry65_reg_nonce'); ?>
           <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:13px 30px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Registruj se</button>
@@ -1986,7 +2026,7 @@ add_action('template_redirect', function () {
     $err = '';
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['dry65_moja_nonce']) && wp_verify_nonce($_POST['dry65_moja_nonce'], 'dry65_moja')) {
         $phone = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
-        $dob   = sanitize_text_field(wp_unslash($_POST['dob'] ?? ''));
+        $dob   = dry65_pk_dob_from_parts($_POST['dob_day'] ?? 0, $_POST['dob_month'] ?? 0, $_POST['dob_year'] ?? 0);
         $found = dry65_pk_customer_by_phone($phone);
         if ($found) {
             if (dry65_pk_link_wp_user($found->id, $uid)) $cust = dry65_pk_customer_get($found->id);
@@ -1995,7 +2035,7 @@ add_action('template_redirect', function () {
             $cid = dry65_pk_customer_get_or_create($u->display_name ?: '', $phone, $u->user_email ?? '', 'web');
             if ($cid && dry65_pk_link_wp_user($cid, $uid)) $cust = dry65_pk_customer_get($cid);
         }
-        if ($cust && $dob !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dob) && empty($cust->dob)) {
+        if ($cust && $dob !== '' && empty($cust->dob)) {
             $wpdb->update(dry65_pk_cust_table(), ['dob' => $dob], ['id' => (int) $cust->id], ['%s'], ['%d']);
         }
     }
@@ -2017,11 +2057,9 @@ add_action('template_redirect', function () {
           <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Ćao<?php echo $u->display_name ? ', ' . esc_html($u->display_name) : ''; ?>!</h1>
           <p class="lead" style="margin:12px 0 18px;">Unesi broj telefona da nađemo tvoju karticu.</p>
           <?php if ($err): ?><p style="color:#a00;margin:0 0 12px;"><?php echo esc_html($err); ?></p><?php endif; ?>
-          <form method="post" style="display:grid;gap:12px;max-width:300px;margin:0 auto;">
+          <form method="post" style="display:grid;gap:12px;max-width:320px;margin:0 auto;text-align:left;">
             <input type="tel" name="phone" required placeholder="06X XXX XXXX" style="padding:12px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;text-align:center;">
-            <label style="font-size:13px;color:var(--muted);text-align:left;">Datum rođenja (opciono — poklon za rođendan 🎂)
-              <input type="date" name="dob" style="width:100%;box-sizing:border-box;padding:11px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;margin-top:4px;">
-            </label>
+            <?php echo dry65_pk_dob_field_html(); ?>
             <?php wp_nonce_field('dry65_moja', 'dry65_moja_nonce'); ?>
             <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:12px 28px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Pronađi karticu</button>
           </form>
@@ -2071,9 +2109,9 @@ add_action('template_redirect', function () {
       <div style="max-width:400px;margin:0 auto;text-align:center;">
         <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 26px;display:block;">
         <h1 class="display caps" style="font-size:clamp(26px,4vw,38px);">Prijava</h1>
-        <p class="lead" style="margin:10px 0 22px;">Uđi da vidiš svoju karticu i pečate.</p>
+        <p class="lead" style="margin:10px 0 22px;">Uđi u <strong>Dry65 Club</strong> — tvoja kartica i pečati.</p>
 
-        <?php echo function_exists('do_shortcode') ? do_shortcode('[nextend_social_login]') : ''; ?>
+        <?php echo dry65_pk_google_btn(home_url('/moja-kartica/')); ?>
 
         <div style="display:flex;align-items:center;gap:10px;color:var(--muted);margin:20px 0;font-size:13px;">
           <span style="flex:1;height:1px;background:var(--sage-line,#ddd);"></span> ili <span style="flex:1;height:1px;background:var(--sage-line,#ddd);"></span>
@@ -2091,7 +2129,7 @@ add_action('template_redirect', function () {
           <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:13px 30px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Prijavi se</button>
         </form>
         <p style="margin-top:16px;font-size:14px;">Nemaš nalog? <a href="<?php echo esc_url(home_url('/registracija/')); ?>"><strong>Registruj se</strong></a></p>
-        <p style="margin-top:8px;font-size:13px;"><a href="<?php echo esc_url(wp_lostpassword_url(home_url('/login/'))); ?>">Zaboravljena lozinka?</a></p>
+        <p style="margin-top:8px;font-size:13px;"><a href="<?php echo esc_url(home_url('/zaboravljena-lozinka/')); ?>">Zaboravljena lozinka?</a></p>
       </div>
     </main>
     <?php
@@ -2107,5 +2145,185 @@ add_action('login_init', function () {
     if (!empty($_GET['action']) && $_GET['action'] !== 'login') return; // logout/lostpassword/rp/register…
     if (is_user_logged_in())                              return;
     wp_safe_redirect(home_url('/login/'));
+    exit;
+});
+
+/* ============================================================
+   PRAVNE STRANE — /privacy i /terms (za Dry65 Club / Google prijavu)
+   ============================================================ */
+function dry65_pk_legal_page($title, $body_html) {
+    status_header(200);
+    add_filter('show_admin_bar', '__return_false');
+    dry65_pk_bare_head();
+    $logo = get_template_directory_uri() . '/assets/logo.svg';
+    ?>
+    <main class="page-enter" style="min-height:100vh;padding:40px 18px calc(50px + env(safe-area-inset-bottom));">
+      <div style="max-width:680px;margin:0 auto;">
+        <a href="<?php echo esc_url(home_url('/')); ?>"><img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:28px;width:auto;display:block;margin:0 auto 26px;"></a>
+        <h1 class="display caps" style="font-size:clamp(28px,4vw,40px);"><?php echo esc_html($title); ?></h1>
+        <p class="muted" style="font-size:13px;margin:6px 0 22px;">Poslednje ažuriranje: <?php echo esc_html(date_i18n('d.m.Y.')); ?></p>
+        <div style="font-size:15.5px;line-height:1.7;">
+          <?php echo $body_html; /* interni, bezbedan HTML */ ?>
+        </div>
+        <p class="muted" style="margin-top:30px;font-size:13px;">Dry65, West 65, Novi Beograd · <a href="mailto:office@dry65.com">office@dry65.com</a></p>
+      </div>
+    </main>
+    <?php
+    dry65_pk_bare_foot();
+    exit;
+}
+
+add_action('template_redirect', function () {
+    if (!get_query_var('dry65_privacy')) return;
+    $b = '';
+    $b .= '<p>Ova politika objašnjava koje podatke Dry65 („mi") prikuplja u okviru <strong>Dry65 Club</strong> programa i kako ih koristimo. Ukratko: podatke koristimo <strong>isključivo za potrebe salona</strong> — vođenje tvojih paketa i pečata, obaveštenja i nagrade. Ne prodajemo ih i ne delimo trećim stranama u marketinške svrhe.</p>';
+    $b .= '<h2>Koje podatke prikupljamo</h2><ul><li>Ime i prezime</li><li>Broj telefona</li><li>Email adresa</li><li>Datum rođenja (opciono — za poklon feniranje za rođendan)</li><li>Evidencija tvojih paketa, pečata (feniranja) i tretmana u salonu</li></ul>';
+    $b .= '<p>Ako se prijaviš preko Google naloga, od Google-a preuzimamo samo <strong>ime i email</strong>, i to samo radi prijave.</p>';
+    $b .= '<h2>Zašto ih koristimo</h2><ul><li>Da vodimo evidenciju tvojih paketa i pečata i da ih vidiš na svom nalogu</li><li>Da te obavestimo o stanju, isteku ili nagradama</li><li>Da ti damo nagrade (npr. poklon feniranje za rođendan)</li></ul>';
+    $b .= '<h2>Deljenje podataka</h2><p>Ne prodajemo tvoje podatke i ne delimo ih trećim stranama radi marketinga. Koristimo pouzdane servise (npr. hosting i Google prijava) samo koliko je neophodno da usluga radi.</p>';
+    $b .= '<h2>Obaveštenja</h2><p>Ako ti šaljemo obaveštenja, <strong>možeš da se odjaviš u svakom trenutku</strong> — putem linka za odjavu u poruci ili javljanjem na office@dry65.com.</p>';
+    $b .= '<h2>Čuvanje i brisanje</h2><p>Podatke čuvamo dok si član kluba. U svakom trenutku možeš tražiti uvid, ispravku ili brisanje svojih podataka na <a href="mailto:office@dry65.com">office@dry65.com</a>.</p>';
+    $b .= '<h2>Kolačići</h2><p>Koristimo neophodne kolačiće da bi prijava i nalog radili. Ne koristimo ih za profilisanje ni oglašavanje.</p>';
+    $b .= '<h2>Izmene</h2><p>Politiku možemo povremeno ažurirati; važeća verzija je uvek na ovoj strani, sa datumom ažuriranja.</p>';
+    $b .= '<h2>Kontakt</h2><p>Za sva pitanja o podacima: <a href="mailto:office@dry65.com">office@dry65.com</a>.</p>';
+    dry65_pk_legal_page('Politika privatnosti', $b);
+});
+
+add_action('template_redirect', function () {
+    if (!get_query_var('dry65_terms')) return;
+    $b = '';
+    $b .= '<p>Korišćenjem <strong>Dry65 Club</strong> naloga prihvataš ove uslove. Dry65 Club je program lojalnosti salona Dry65 (West 65, Novi Beograd).</p>';
+    $b .= '<h2>Nalog</h2><p>Nalog praviš imenom, telefonom i emailom (ili preko Google-a). Odgovoran si za tačnost podataka i za čuvanje svoje lozinke. Jedan nalog je za jednu osobu.</p>';
+    $b .= '<h2>Paketi i pečati</h2><p>Paketi, pečati (feniranja) i tretmani su <strong>evidencija usluga plaćenih u salonu</strong>. Nisu prenosivi, nemaju novčanu vrednost i ne mogu se zameniti za novac. Važe do roka naznačenog uz paket.</p>';
+    $b .= '<h2>Nagrade</h2><p>Nagrade (npr. poklon feniranje za rođendan) dajemo na osnovu podataka koje uneseš i po pravilima salona. Salon zadržava pravo da menja ili ukine nagrade.</p>';
+    $b .= '<h2>Povezivanje kartice</h2><p>Karticu povezujemo sa tvojim nalogom preko broja telefona koji uneseš. Unosi <strong>svoj</strong> broj — broj koji je već povezan sa drugim nalogom ne može se preuzeti.</p>';
+    $b .= '<h2>Zloupotreba</h2><p>U slučaju zloupotrebe naloga ili pokušaja prevare, zadržavamo pravo da ukinemo nalog i pripadajuće pogodnosti.</p>';
+    $b .= '<h2>Izmene uslova</h2><p>Uslove možemo menjati; nastavak korišćenja naloga znači prihvatanje izmena. Važeća verzija je na ovoj strani.</p>';
+    $b .= '<h2>Kontakt</h2><p><a href="mailto:office@dry65.com">office@dry65.com</a></p>';
+    dry65_pk_legal_page('Uslovi korišćenja', $b);
+});
+
+/* ============================================================
+   ZABORAVLJENA LOZINKA — /zaboravljena-lozinka (zahtev) + /reset (nova)
+   ============================================================ */
+add_action('template_redirect', function () {
+    if (!get_query_var('dry65_forgot')) return;
+    nocache_headers();
+    add_filter('wp_robots', 'wp_robots_no_robots');
+    add_filter('show_admin_bar', '__return_false');
+    if (is_user_logged_in()) { wp_safe_redirect(home_url('/moja-kartica/')); exit; }
+    $logo = get_template_directory_uri() . '/assets/logo.svg';
+
+    $sent = false; $err = '';
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['dry65_forgot_nonce']) && wp_verify_nonce($_POST['dry65_forgot_nonce'], 'dry65_forgot')) {
+        $email = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+        if (!is_email($email)) {
+            $err = 'Unesi ispravan email.';
+        } else {
+            $user = get_user_by('email', $email);
+            if ($user) {
+                $key = get_password_reset_key($user);
+                if (!is_wp_error($key)) {
+                    $link = home_url('/reset/?key=' . rawurlencode($key) . '&login=' . rawurlencode($user->user_login));
+                    $from = 'office@dry65.com';
+                    $set_from = function () use ($from) { return $from; };
+                    $set_name = function () { return 'Dry65'; };
+                    add_filter('wp_mail_from', $set_from);
+                    add_filter('wp_mail_from_name', $set_name);
+                    wp_mail($email, 'Dry65 — promena lozinke', implode("\n", [
+                        'Poštovani,', '',
+                        'Zatražena je promena lozinke za tvoj Dry65 Club nalog.',
+                        'Klikni na link da postaviš novu lozinku:', $link, '',
+                        'Ako nisi ti tražio/la ovo, samo ignoriši poruku.', '',
+                        'Dry65, West 65, Novi Beograd.',
+                    ]));
+                    remove_filter('wp_mail_from', $set_from);
+                    remove_filter('wp_mail_from_name', $set_name);
+                }
+            }
+            $sent = true; // uvek isto (ne otkrivamo da li email postoji)
+        }
+    }
+
+    status_header(200);
+    dry65_pk_bare_head();
+    ?>
+    <main class="page-enter" style="min-height:100vh;padding:44px 16px;">
+      <div style="max-width:400px;margin:0 auto;text-align:center;">
+        <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 26px;display:block;">
+        <?php if ($sent): ?>
+          <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Proveri email</h1>
+          <p class="lead" style="margin:12px 0 8px;">Ako postoji nalog sa tim emailom, poslali smo link za promenu lozinke.</p>
+          <p class="muted" style="font-size:13px;">Ne vidiš poruku? Pogledaj i „Spam". <a href="<?php echo esc_url(home_url('/login/')); ?>">Nazad na prijavu</a></p>
+        <?php else: ?>
+          <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Zaboravljena lozinka</h1>
+          <p class="lead" style="margin:10px 0 20px;">Unesi email pa ti šaljemo link za novu lozinku.</p>
+          <?php if ($err): ?><p style="color:#a00;margin:0 0 12px;"><?php echo esc_html($err); ?></p><?php endif; ?>
+          <form method="post" style="display:grid;gap:12px;text-align:left;">
+            <label style="font-size:14px;">Email
+              <input type="email" name="email" required autocomplete="username" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+            </label>
+            <?php wp_nonce_field('dry65_forgot', 'dry65_forgot_nonce'); ?>
+            <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:13px 30px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Pošalji link</button>
+          </form>
+          <p style="margin-top:16px;font-size:13px;"><a href="<?php echo esc_url(home_url('/login/')); ?>">Nazad na prijavu</a></p>
+        <?php endif; ?>
+      </div>
+    </main>
+    <?php
+    dry65_pk_bare_foot();
+    exit;
+});
+
+add_action('template_redirect', function () {
+    if (!get_query_var('dry65_reset')) return;
+    nocache_headers();
+    add_filter('wp_robots', 'wp_robots_no_robots');
+    add_filter('show_admin_bar', '__return_false');
+    $logo = get_template_directory_uri() . '/assets/logo.svg';
+
+    $key   = sanitize_text_field(wp_unslash($_REQUEST['key'] ?? ''));
+    $login = sanitize_text_field(wp_unslash($_REQUEST['login'] ?? ''));
+    $user  = check_password_reset_key($key, $login);
+    $err = ''; $done = false;
+
+    if (!is_wp_error($user) && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['dry65_reset_nonce']) && wp_verify_nonce($_POST['dry65_reset_nonce'], 'dry65_reset')) {
+        $p1 = (string) ($_POST['pwd'] ?? '');
+        if (strlen($p1) < 6) $err = 'Lozinka mora imati bar 6 karaktera.';
+        else { reset_password($user, $p1); $done = true; }
+    }
+
+    status_header(200);
+    dry65_pk_bare_head();
+    ?>
+    <main class="page-enter" style="min-height:100vh;padding:44px 16px;">
+      <div style="max-width:400px;margin:0 auto;text-align:center;">
+        <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 26px;display:block;">
+        <?php if ($done): ?>
+          <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Lozinka promenjena</h1>
+          <p class="lead" style="margin:12px 0 18px;">Sad se možeš prijaviti novom lozinkom.</p>
+          <a href="<?php echo esc_url(home_url('/login/')); ?>" style="display:inline-block;cursor:pointer;border-radius:999px;padding:12px 30px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;text-decoration:none;">Prijavi se</a>
+        <?php elseif (is_wp_error($user)): ?>
+          <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Link ne važi</h1>
+          <p class="lead" style="margin:12px 0 18px;">Link za promenu lozinke je istekao ili je već iskorišćen.</p>
+          <a href="<?php echo esc_url(home_url('/zaboravljena-lozinka/')); ?>" style="text-decoration:underline;">Zatraži novi link</a>
+        <?php else: ?>
+          <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Nova lozinka</h1>
+          <p class="lead" style="margin:10px 0 20px;">Postavi novu lozinku za svoj nalog.</p>
+          <?php if ($err): ?><p style="color:#a00;margin:0 0 12px;"><?php echo esc_html($err); ?></p><?php endif; ?>
+          <form method="post" style="display:grid;gap:12px;text-align:left;">
+            <label style="font-size:14px;">Nova lozinka
+              <input type="password" name="pwd" required minlength="6" autocomplete="new-password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;">
+            </label>
+            <input type="hidden" name="key" value="<?php echo esc_attr($key); ?>">
+            <input type="hidden" name="login" value="<?php echo esc_attr($login); ?>">
+            <?php wp_nonce_field('dry65_reset', 'dry65_reset_nonce'); ?>
+            <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:13px 30px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Sačuvaj lozinku</button>
+          </form>
+        <?php endif; ?>
+      </div>
+    </main>
+    <?php
+    dry65_pk_bare_foot();
     exit;
 });
