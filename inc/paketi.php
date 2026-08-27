@@ -1931,7 +1931,7 @@ add_action('template_redirect', function () {
     <main class="page-enter" style="min-height:100vh;padding:44px 16px;">
       <div style="max-width:420px;margin:0 auto;">
         <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 22px;display:block;">
-        <p class="mono" style="text-align:center;letter-spacing:0.3em;text-transform:uppercase;color:var(--clay);font-size:12px;font-weight:400;margin:0 0 2px;">Membership</p>
+        <?php echo dry65_pk_membership_kicker(); ?>
         <h1 class="display" style="text-align:center;text-transform:none;font-size:clamp(28px,5vw,40px);margin:0 0 20px;">Dry65 Club</h1>
 
         <div style="text-align:center;"><?php echo dry65_pk_google_btn(home_url('/moja-kartica/')); ?></div>
@@ -2118,8 +2118,8 @@ add_action('template_redirect', function () {
     <main class="page-enter" style="min-height:100vh;padding:44px 16px;">
       <div style="max-width:400px;margin:0 auto;text-align:center;">
         <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 26px;display:block;">
-        <h1 class="display caps" style="font-size:clamp(26px,4vw,38px);">Login</h1>
-        <p class="lead" style="margin:10px 0 22px;">Uđi u <strong>Dry65 Club</strong> — tvoja kartica i pečati.</p>
+        <?php echo dry65_pk_membership_kicker(); ?>
+        <h1 class="display caps" style="font-size:clamp(26px,4vw,38px);margin:2px 0 22px;">Login</h1>
 
         <?php echo dry65_pk_google_btn(home_url('/moja-kartica/')); ?>
 
@@ -2260,7 +2260,8 @@ add_action('template_redirect', function () {
     ?>
     <main class="page-enter" style="min-height:100vh;padding:44px 16px;">
       <div style="max-width:400px;margin:0 auto;text-align:center;">
-        <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 26px;display:block;">
+        <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 20px;display:block;">
+        <?php echo dry65_pk_membership_kicker(); ?>
         <?php if ($sent): ?>
           <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Proveri email</h1>
           <p class="lead" style="margin:12px 0 8px;">Ako postoji nalog sa tim emailom, poslali smo link za promenu lozinke.</p>
