@@ -1502,3 +1502,46 @@ add_action('admin_init', function() {
     update_option('dry65_live_pages_v', '1');
     flush_rewrite_rules(false);
 });
+
+/* ============================================================
+   Jutarnji auto-reset na „Slobodno" (08:00 Beograd, svaki dan)
+   ------------------------------------------------------------
+   Ako uveče ostane „Za danas popunjeni" (ili bilo šta od juče —
+   čekanje/zatvoreno/custom poruka), ujutru u 8h WP-Cron vraća
+   status na Slobodno, da nova dnevna gužva kreće od nule i da
+   mušterije mogu opet da „pritiskaju". Radno vreme i dalje
+   automatski gasi prikaz pre otvaranja (Sub pre 10h, Ned).
+   Napomena: WP-Cron okida na prvi saobraćaj posle 8h (ne baš u 8:00:00).
+   ============================================================ */
+function dry65_live_morning_reset() {
+    // Uvek prezakaži za sledećih 08:00 (single-event = tačno vreme i preko DST-a).
+    dry65_live_arm_daily_reset(true);
+
+    // Diraj status samo ako ima šta da se počisti — bez nepotrebnih upisa/logova.
+    $raw = dry65_live_get_raw();
+    if (!$raw['full'] && !$raw['closed'] && $raw['wait'] <= 0 && $raw['message'] === '') return;
+
+    update_option('dry65_live_wait', 0);
+    update_option('dry65_live_full', '0');
+    update_option('dry65_live_closed', '0');
+    update_option('dry65_live_message', '');
+    update_option('dry65_live_updated_at', current_time('timestamp'));
+    update_option('dry65_live_updated_by', 0); // 0 = automatika (ne osoblje)
+    dry65_live_log_append(); // upiši „slobodno u 8h" u istoriju
+}
+add_action('dry65_live_daily_reset', 'dry65_live_morning_reset');
+
+/* Zakaži jednokratni događaj za sledećih 08:00 po Beogradu.
+   $force = true prvo očisti postojeći zakazani termin (koristi se pri
+   prezakazivanju iz samog handlera). */
+function dry65_live_arm_daily_reset($force = false) {
+    if (!$force && wp_next_scheduled('dry65_live_daily_reset')) return;
+    if ($force) wp_clear_scheduled_hook('dry65_live_daily_reset');
+
+    $tz   = new DateTimeZone('Europe/Belgrade');
+    $now  = new DateTime('now', $tz);
+    $next = new DateTime('today 08:00', $tz);
+    if ($next <= $now) $next->modify('+1 day');
+    wp_schedule_single_event($next->getTimestamp(), 'dry65_live_daily_reset');
+}
+add_action('init', 'dry65_live_arm_daily_reset');
