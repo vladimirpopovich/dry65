@@ -2064,8 +2064,8 @@ add_action('template_redirect', function () {
       <div style="max-width:420px;margin:0 auto;text-align:center;">
         <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:30px;width:auto;margin:0 auto 22px;display:block;">
         <?php if (!$cust): ?>
-          <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Ćao<?php echo $u->display_name ? ', ' . esc_html($u->display_name) : ''; ?>!</h1>
-          <p class="lead" style="margin:12px 0 18px;">Unesi broj telefona da nađemo tvoju karticu.</p>
+          <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Poslednji korak</h1>
+          <p style="margin:12px 0 18px;font-size:16px;line-height:1.5;">Unesi broj telefona da nađemo tvoju karticu.</p>
           <?php if ($err): ?><p style="color:#a00;margin:0 0 12px;"><?php echo esc_html($err); ?></p><?php endif; ?>
           <form method="post" style="display:grid;gap:12px;max-width:320px;margin:0 auto;text-align:left;">
             <input type="tel" name="phone" required placeholder="06X XXX XXXX" style="padding:12px 14px;border:1px solid var(--sage-line,#ccc);border-radius:12px;font-size:16px;text-align:center;">
