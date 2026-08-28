@@ -79,6 +79,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   .live-card[data-tier="yellow"] { --accent: #F6D63B; --accent-ink: #000000; }
   .live-card[data-tier="orange"] { --accent: #F0A73C; --accent-ink: #000000; }
   .live-card[data-tier="red"]    { --accent: #E8472B; --accent-ink: #ffffff; }
+  .live-card[data-tier="bordo"]  { --accent: #800020; --accent-ink: #ffffff; }
   .live-card[data-tier="closed"] { --accent: #D0CFC7; --accent-ink: #000000; }
   .live-card[data-tier="full"]   { --accent: #D0CFC7; --accent-ink: #000000; }
 
@@ -195,7 +196,8 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
     if (min <= 10) return 'lime';
     if (min <= 30) return 'yellow';
     if (min <= 45) return 'orange';
-    return 'red';
+    if (min <= 60) return 'red';
+    return 'bordo';
   }
 
   // Editabilni tekstovi iz admina — prag = najmanja vrednost >= min. Prati dry65_live_copy() u PHP-u.
