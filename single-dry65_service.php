@@ -7,17 +7,17 @@ $usluge_url  = $usluge_page ? get_permalink($usluge_page) : home_url('/usluge/')
 
 while (have_posts()): the_post();
 $id     = get_the_ID();
-$title  = get_the_title();
-$kicker = dry65_get_field('kicker', $id) ?: '';
-$short  = dry65_get_field('short', $id) ?: get_the_excerpt();
-$body   = dry65_get_field('body', $id) ?: '';
+$title  = dry65_svc_title($id);
+$kicker = dry65_svc('kicker', $id) ?: '';
+$short  = dry65_svc('short', $id) ?: get_the_excerpt();
+$body   = dry65_svc('body', $id) ?: '';
 $img    = dry65_get_field('image', $id);
 if (!$img && has_post_thumbnail($id)) $img = get_the_post_thumbnail_url($id, 'full');
 $hero_img = $img ?: (function_exists('dry65_service_image') ? dry65_service_image(get_post($id)) : '');
 $points = array_values(array_filter([
-    dry65_get_field('point_1', $id),
-    dry65_get_field('point_2', $id),
-    dry65_get_field('point_3', $id),
+    dry65_svc('point_1', $id),
+    dry65_svc('point_2', $id),
+    dry65_svc('point_3', $id),
 ]));
 
 // Hub (kategorija sa decom) vs leaf (pojedinačni stil)
@@ -58,8 +58,8 @@ $parent = (int) get_post_field('post_parent', $id);
     <div class="svc-hero<?php echo $is_hub ? ' svc-hero-solo' : ''; ?>">
       <div>
         <p class="mono" style="margin:0 0 10px;font-size:13px;color:var(--muted);">
-          <a href="<?php echo esc_url($usluge_url); ?>" style="color:var(--clay);text-decoration:none;">Usluge</a>
-          <?php if ($parent): ?> &nbsp;/&nbsp; <a href="<?php echo esc_url(get_permalink($parent)); ?>" style="color:var(--clay);text-decoration:none;"><?php echo esc_html(get_the_title($parent)); ?></a><?php endif; ?>
+          <a href="<?php echo esc_url($usluge_url); ?>" style="color:var(--clay);text-decoration:none;"><?php echo t('Usluge'); ?></a>
+          <?php if ($parent): ?> &nbsp;/&nbsp; <a href="<?php echo esc_url(get_permalink($parent)); ?>" style="color:var(--clay);text-decoration:none;"><?php echo esc_html(dry65_svc_title($parent)); ?></a><?php endif; ?>
           &nbsp;/&nbsp; <?php echo esc_html($title); ?>
         </p>
         <?php if ($kicker): ?><span class="mono" style="color:var(--clay);"><?php echo esc_html($kicker); ?></span><?php endif; ?>
@@ -81,14 +81,14 @@ $parent = (int) get_post_field('post_parent', $id);
 
 <?php if ($is_hub): ?>
 <!-- HUB: linkovi ka stilovima (odmah ispod hero-a) + opisni tekst -->
-<?php $hub_html = trim((string) get_post_field('post_content', $id)); ?>
+<?php $hub_html = trim((string) dry65_svc_content($id)); ?>
 <section class="section">
   <div class="wrap">
     <?php if ($kids): ?>
-    <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:0 0 14px;">Izaberi svoj stil</h2>
+    <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:0 0 14px;"><?php echo t('Izaberi svoj stil'); ?></h2>
     <ul class="svc-hub-links">
       <?php foreach ($kids as $c): ?>
-      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($c->ID)); ?>"><span class="arr">→</span> <?php echo esc_html($c->post_title); ?></a></li>
+      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($c->ID)); ?>"><span class="arr">→</span> <?php echo esc_html(dry65_svc_title($c->ID)); ?></a></li>
       <?php endforeach; ?>
     </ul>
     <?php endif; ?>
@@ -100,8 +100,8 @@ $parent = (int) get_post_field('post_parent', $id);
     <?php endif; ?>
 
     <div class="btn-row" style="margin-top:clamp(28px,4vw,44px);gap:12px;flex-wrap:wrap;">
-      <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">Kako do nas <span class="arrow">→</span></a>
-      <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-outline">Cenovnik</a>
+      <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark"><?php echo t('Kako do nas'); ?> <span class="arrow">→</span></a>
+      <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-outline"><?php echo t('Cenovnik'); ?></a>
     </div>
   </div>
 </section>
@@ -241,7 +241,7 @@ if ($g_total > 0 || $g_quote):
       <a class="svc-trust-rate" href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener">
         <span class="svc-trust-stars" aria-hidden="true">★★★★★</span>
         <span class="svc-trust-num"><?php echo esc_html($g_rating_disp); ?></span>
-        <?php if ($g_total > 0): ?><span class="svc-trust-total">· <?php echo esc_html($g_total); ?> recenzija na Google-u</span><?php endif; ?>
+        <?php if ($g_total > 0): ?><span class="svc-trust-total">· <?php echo esc_html($g_total); ?> <?php echo t('recenzija na Google-u'); ?></span><?php endif; ?>
       </a>
       <?php if ($g_quote && !empty($g_quote['text'])): ?>
       <blockquote class="svc-trust-card">
@@ -300,22 +300,22 @@ endif;
       <?php
       // Cenovnik blok (po dužini kose) — ide odmah posle uvodnog teksta
       $lengths = function_exists('dry65_lengths') ? dry65_lengths() : [];
-      $price_title = $title ? $title . ' cena' : 'Cena';
+      $price_title = $title ? $title . ' ' . t('cena') : t('Cena');
       ob_start(); ?>
       <div class="svc-price">
         <div class="svc-price-top">
           <div>
             <h2><?php echo esc_html($price_title); ?></h2>
           </div>
-          <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark" style="white-space:nowrap;">Ceo cenovnik <span class="arrow">→</span></a>
+          <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark" style="white-space:nowrap;"><?php echo t('Ceo cenovnik'); ?> <span class="arrow">→</span></a>
         </div>
         <?php if ($lengths): ?>
         <div class="svc-price-list">
           <?php foreach ($lengths as $li => $l):
-            $row_label = $l['label'] . ' kosa'; ?>
+            $row_label = t($l['label']) . ' ' . t('kosa'); ?>
           <div class="svc-price-row">
             <span class="row" style="gap:12px;"><span class="mono" style="color:var(--clay);"><?php echo str_pad($li + 1, 2, '0', STR_PAD_LEFT); ?></span><span style="font-weight:500;font-size:17px;"><?php echo esc_html($row_label); ?></span></span>
-            <span class="display num" style="font-size:26px;"><?php echo dry65_rsd($l['price']); ?><span class="u" style="font-size:13px;margin-left:3px;">din</span></span>
+            <span class="display num" style="font-size:26px;"><?php echo dry65_rsd($l['price']); ?><span class="u" style="font-size:13px;margin-left:3px;"><?php echo t('din'); ?></span></span>
           </div>
           <?php endforeach; ?>
         </div>
@@ -324,8 +324,8 @@ endif;
       <?php $price_block = ob_get_clean(); ob_start(); ?>
       <div class="svc-live">
         <div>
-          <div class="svc-live-h">Danas dolazite?</div>
-          <p>Pogledajte trenutno stanje u salonu i procenu čekanja uživo.</p>
+          <div class="svc-live-h"><?php echo t('Danas dolazite?'); ?></div>
+          <p><?php echo t('Pogledajte trenutno stanje u salonu i procenu čekanja uživo.'); ?></p>
         </div>
         <a href="<?php echo esc_url(home_url('/live/')); ?>" class="svc-live-link"><span class="svc-live-dot" aria-hidden="true"></span> dry65 live <span class="arrow">→</span></a>
       </div>
@@ -342,7 +342,7 @@ endif;
           echo $price_block;
           echo $live_block;
       else:
-          $content_html = apply_filters('the_content', get_the_content());
+          $content_html = apply_filters('the_content', dry65_svc_content($id));
           $parts = preg_split('/(?=<h2)/i', $content_html); // deli na svakom H2
           $intro = array_shift($parts);          // pre prvog H2 (uvod)
           $first = array_shift($parts);          // prva H2 sekcija ispod cenovnika
@@ -362,10 +362,10 @@ endif;
       <?php endif; ?>
 
       <div class="btn-row" style="margin-top:36px;gap:12px;flex-wrap:wrap;">
-        <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">Kako do nas <span class="arrow">→</span></a>
-        <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-outline">Cenovnik</a>
+        <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark"><?php echo t('Kako do nas'); ?> <span class="arrow">→</span></a>
+        <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-outline"><?php echo t('Cenovnik'); ?></a>
       </div>
-      <p class="muted" style="margin-top:18px;font-size:15px;">Bez zakazivanja, samo svrati. West 65, Novi Beograd.</p>
+      <p class="muted" style="margin-top:18px;font-size:15px;"><?php echo t('Bez zakazivanja, samo svrati. West 65, Novi Beograd.'); ?></p>
     </div>
   </div>
 </section>
@@ -383,20 +383,20 @@ $siblings = $parent ? get_posts([
 if ($siblings): ?>
 <section class="section-sm bg-paper2">
   <div class="wrap">
-    <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:0 0 14px;">Ostali stilovi feniranja</h2>
+    <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:0 0 14px;"><?php echo t('Ostali stilovi feniranja'); ?></h2>
     <ul class="svc-hub-links">
       <?php foreach ($siblings as $s): ?>
-      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($s->ID)); ?>"><span class="arr">→</span> <?php echo esc_html($s->post_title); ?></a></li>
+      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($s->ID)); ?>"><span class="arr">→</span> <?php echo esc_html(dry65_svc_title($s->ID)); ?></a></li>
       <?php endforeach; ?>
     </ul>
-    <a href="<?php echo esc_url(get_permalink($parent)); ?>" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;color:var(--clay);font-weight:600;text-decoration:none;">Sve o: <?php echo esc_html(get_the_title($parent)); ?> <span class="arrow">→</span></a>
+    <a href="<?php echo esc_url(get_permalink($parent)); ?>" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;color:var(--clay);font-weight:600;text-decoration:none;"><?php echo t('Sve o:'); ?> <?php echo esc_html(dry65_svc_title($parent)); ?> <span class="arrow">→</span></a>
   </div>
 </section>
 <?php endif; ?>
 <?php endif; ?>
 
 <!-- FAQ (reusable, kategorija 'usluge') -->
-<?php if (function_exists('dry65_render_faq_section')) dry65_render_faq_section('usluge', 'Česta pitanja', 'Najčešća pitanja o feniranju i stilizovanju u Dry65.'); ?>
+<?php if (function_exists('dry65_render_faq_section')) dry65_render_faq_section('usluge', t('Česta pitanja'), t('Najčešća pitanja o feniranju i stilizovanju u Dry65.')); ?>
 
 <!-- Schema: Service -->
 <script type="application/ld+json"><?php echo wp_json_encode([

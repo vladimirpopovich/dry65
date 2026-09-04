@@ -177,6 +177,32 @@ function tk($key, $sr_default = '') {
 }
 function tke($key, $sr_default = '') { echo tk($key, $sr_default); }
 
+/* ---- 3b) DB sadrzaj usluga (CPT dry65_service) po jeziku ----
+   EN se cuva u ACF poljima sa sufiksom _en (npr. body_en, kicker_en),
+   naslov u title_en, sadrzaj u content_en. Prazno -> fallback na SR. */
+function dry65_svc($field, $id) {
+    $sr = dry65_get_field($field, $id);
+    if (dry65_is_en()) {
+        $en = dry65_get_field($field . '_en', $id);
+        if ($en !== '' && $en !== null && $en !== false) return $en;
+    }
+    return $sr;
+}
+function dry65_svc_title($id) {
+    if (dry65_is_en()) {
+        $en = dry65_get_field('title_en', $id);
+        if ($en !== '' && $en !== null && $en !== false) return $en;
+    }
+    return get_the_title($id);
+}
+function dry65_svc_content($id) {
+    if (dry65_is_en()) {
+        $en = dry65_get_field('content_en', $id);
+        if ($en !== '' && $en !== null && $en !== false) return $en;
+    }
+    return get_post_field('post_content', $id);
+}
+
 /* ---- 4) Pomocni URL-ovi za switcher / hreflang ---- */
 function dry65_current_path() {
     return $GLOBALS['dry65_path'] ?? '/';

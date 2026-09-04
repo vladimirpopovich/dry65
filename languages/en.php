@@ -2,6 +2,7 @@
 /* ============================================================
    Dry65 — engleski prevodi (EN)
    Kljuc = srpski original (t) ILI kratak kod (tk). Prazno '' = fallback na SR.
+   Sadrzaj usluga/paketa se prevodi u WP adminu (ACF '🇬🇧 English' tab), NE ovde.
    ============================================================ */
 
 return [
@@ -10,9 +11,13 @@ return [
     'O nama' => 'About',
     'Usluge' => 'Services',
     'Cenovnik' => 'Pricing',
+    'Paketi' => 'Packages',
     'Ambijent' => 'Ambience',
+    'Karijera' => 'Careers',
     'Kontakt' => 'Contact',
+    'Blog' => 'Blog',
     'Otvori meni' => 'Open menu',
+    'Zatvori meni' => 'Close menu',
 
     /* ---- Ostali kratki stringovi (t) ---- */
     'Feniranje bez zakazivanja, Novi Beograd' => '',
@@ -104,6 +109,25 @@ return [
     'Trenutni status' => '',
     'Slobodan termin' => '',
     'Sledeći slobodan termin je za manje od' => '',
+    'Mesečni paketi feniranja u Dry65' => '',
+    'Članstvo za klijentkinje kojima je feniranje deo nedeljne rutine. Mogućnost izbora između 4, 8 ili 12 feniranja mesečno, sa ili bez zakazivanja uz članstvo. Cena prati dužinu kose. Uz svaki paket sledi masaža glave i profesionalni tretman nege kose.' => '',
+    'Izaberi dužinu kose' => '',
+    'din / mesečno' => '',
+    'Masaža glave uz svako pranje' => '',
+    'Paketi se kupuju u salonu. Profesionalni tretmani dubinske nege, vredni i do 6.000 dinara, uključeni su u svako članstvo. Zdrava kosa drži feniranje duže.' => '',
+    'Sve o mesečnim paketima' => '',
+    'Odgovori na pitanja o mesečnim paketima, uštedi i uslovima korišćenja.' => '',
+    'Izaberi svoj stil' => '',
+    'recenzija na Google-u' => '',
+    'cena' => '',
+    'Cena' => '',
+    'kosa' => '',
+    'Danas dolazite?' => '',
+    'Pogledajte trenutno stanje u salonu i procenu čekanja uživo.' => '',
+    'Bez zakazivanja, samo svrati. West 65, Novi Beograd.' => '',
+    'Ostali stilovi feniranja' => '',
+    'Sve o:' => '',
+    'Najčešća pitanja o feniranju i stilizovanju u Dry65.' => '',
     'Dobrodošli' => '',
     'Dry65, feniranje bez zakazivanja. Na pravom ste mestu.' => '',
     'Zatvoreno' => '',
@@ -219,6 +243,12 @@ return [
     'Subota' => '',
     'Nedelja' => '',
     'Ne radimo' => '',
+    '4 tretmana mesečno' => '',
+    '8 tretmana mesečno' => '',
+    '12 tretmana mesečno' => '',
+    'Deep Hair Infusion na poklon' => '',
+    'Signature Hair Mask na poklon' => '',
+    'Premium Boost Steam Ritual na poklon' => '',
 
     /* ---- Veliki HTML blokovi (tk) — SR original u komentaru ---- */
     // SR: Dry65 je <strong>frizerski salon na Novom Beogradu, u West 65</strong>, specijalizovan za feniranje. Walk-in, bez zakazivanja. Lokne, talasi, glatko, volumen, sve za savršenu frizuru koja drži danima.
