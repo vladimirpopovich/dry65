@@ -3,6 +3,7 @@
    Dry65 — functions.php
    ============================================================ */
 
+require_once get_template_directory() . '/inc/i18n.php'; // dvojezicni sloj (mora prvi)
 require_once get_template_directory() . '/inc/data.php';
 require_once get_template_directory() . '/inc/cpt.php';
 require_once get_template_directory() . '/inc/acf-fields.php';
@@ -513,7 +514,7 @@ function dry65_nav_links($mobile = false) {
             $url  = $page ? get_permalink($page) : home_url('/' . $item['slug'] . '/');
         }
         $active = ($cur === $item['slug']) ? ' active' : '';
-        echo '<a href="' . esc_url($url) . '" class="nav-link' . $active . '">' . esc_html($item['label']) . '</a>';
+        echo '<a href="' . esc_url($url) . '" class="nav-link' . $active . '">' . esc_html(t($item['label'])) . '</a>';
     }
 }
 

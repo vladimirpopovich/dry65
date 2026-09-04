@@ -34,6 +34,20 @@
   @media (max-width: 1080px) {
     .nav-live { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
   }
+  /* Jezik switcher (SR / EN) */
+  .nav-tools { display: inline-flex; align-items: center; gap: 12px; }
+  .lang-switch {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.03em;
+  }
+  .lang-switch .lang-opt {
+    color: rgba(17,28,29,0.45); text-decoration: none; padding: 2px 3px; transition: color .15s;
+  }
+  .lang-switch .lang-opt:hover { color: var(--ink); }
+  .lang-switch .lang-opt.is-active { color: var(--ink); }
+  .lang-switch .lang-sep { color: rgba(17,28,29,0.25); }
+  .mobile-lang { margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(17,28,29,0.1); }
+  .mobile-lang .lang-switch { font-size: 16px; gap: 8px; }
 </style>
 
 <header class="nav" id="site-header">
@@ -51,7 +65,8 @@
     </a>
 
     <div class="nav-tools">
-      <button class="nav-burger" id="nav-burger" aria-label="Otvori meni" aria-expanded="false" aria-controls="mobile-menu">
+      <?php dry65_lang_switcher(); ?>
+      <button class="nav-burger" id="nav-burger" aria-label="<?php echo esc_attr(t('Otvori meni')); ?>" aria-expanded="false" aria-controls="mobile-menu">
         <span></span>
         <span></span>
         <span></span>
@@ -61,5 +76,6 @@
 
   <div class="mobile-menu" id="mobile-menu" aria-hidden="true" inert>
     <?php dry65_nav_links(true); ?>
+    <div class="mobile-lang"><?php dry65_lang_switcher(); ?></div>
   </div>
 </header>
