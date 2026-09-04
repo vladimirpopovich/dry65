@@ -21,17 +21,17 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 
       <div>
         <h1 class="display caps" style="font-size:clamp(32px,4.8vw,64px);margin:0;line-height:1.04;letter-spacing:0.005em;color:var(--ink);font-weight:300;">
-          Feniranje bez zakazivanja, Novi Beograd
+          <?php echo t('Feniranje bez zakazivanja, Novi Beograd'); ?>
         </h1>
         <p class="lead" style="margin-top:28px;max-width:480px;">
-          Dry65 je <strong>frizerski salon na Novom Beogradu, u West 65</strong>, specijalizovan za feniranje. Walk-in, bez zakazivanja. Lokne, talasi, glatko, volumen, sve za savršenu frizuru koja drži danima.
+          <?php echo tk('home.hero.lead', 'Dry65 je <strong>frizerski salon na Novom Beogradu, u West 65</strong>, specijalizovan za feniranje. Walk-in, bez zakazivanja. Lokne, talasi, glatko, volumen, sve za savršenu frizuru koja drži danima.'); ?>
         </p>
         <div class="btn-row" style="margin-top:34px;">
           <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">
-            Kako do nas <span class="arrow">→</span>
+            <?php echo t('Kako do nas'); ?> <span class="arrow">→</span>
           </a>
           <a href="<?php echo esc_url(get_permalink(get_page_by_path('paketi'))); ?>" class="btn btn-outline">
-            Mesečni paketi
+            <?php echo t('Mesečni paketi'); ?>
           </a>
         </div>
 
@@ -44,7 +44,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
           <picture>
             <source media="(max-width: 860px)" srcset="<?php echo $tpl; ?>/assets/salon/s06-mobile.webp">
             <img src="<?php echo $tpl; ?>/assets/salon/s06.webp"
-              alt="Dry65 walk-in salon na Novom Beogradu, feniranje bez zakazivanja"
+              alt="<?php echo esc_attr(t('Dry65 walk-in salon na Novom Beogradu, feniranje bez zakazivanja')); ?>"
               width="1200" height="1600"
               loading="eager" fetchpriority="high" decoding="async"
               style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
@@ -64,10 +64,10 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
   <div class="wrap">
     <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:clamp(20px,2.5vw,32px);flex-wrap:wrap;">
       <div>
-        <span class="script" style="font-size:clamp(24px,3vw,36px);display:block;line-height:1;">Aktuelne ponude</span>
-        <h2 class="display" style="font-size:clamp(24px,3vw,36px);margin-top:4px;font-weight:400;">u Dry65 salonu</h2>
+        <span class="script" style="font-size:clamp(24px,3vw,36px);display:block;line-height:1;"><?php echo t('Aktuelne ponude'); ?></span>
+        <h2 class="display" style="font-size:clamp(24px,3vw,36px);margin-top:4px;font-weight:400;"><?php echo t('u Dry65 salonu'); ?></h2>
       </div>
-      <span class="mono" style="color:var(--oxblood);font-size:12px;letter-spacing:0.14em;font-weight:600;">TRENUTNO AKTIVNE</span>
+      <span class="mono" style="color:var(--oxblood);font-size:12px;letter-spacing:0.14em;font-weight:600;"><?php echo t('TRENUTNO AKTIVNE'); ?></span>
     </div>
 
     <div class="offers-grid">
@@ -78,10 +78,10 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         if (!empty($offer['start_date']) && !empty($offer['end_date'])) {
           $dates_str = date_i18n('j. M', strtotime($offer['start_date'])) . ' – ' . date_i18n('j. M Y', strtotime($offer['end_date']));
         } elseif (!empty($offer['end_date'])) {
-          $dates_str = 'Do ' . date_i18n('j. M Y', strtotime($offer['end_date']));
+          $dates_str = t('Do ') . date_i18n('j. M Y', strtotime($offer['end_date']));
         }
       ?>
-        <article class="offer-card" role="button" tabindex="0" data-offer-open="<?php echo esc_attr($modal_id); ?>" aria-label="Otvori detalje: <?php echo esc_attr($offer['title']); ?>">
+        <article class="offer-card" role="button" tabindex="0" data-offer-open="<?php echo esc_attr($modal_id); ?>" aria-label="<?php echo esc_attr(t('Otvori detalje') . ': ' . $offer['title']); ?>">
           <?php if (!empty($offer['image'])): ?>
             <div class="offer-image">
               <img src="<?php echo esc_url($offer['image']); ?>" alt="<?php echo esc_attr($offer['title']); ?>" loading="lazy" width="600" height="338">
@@ -103,7 +103,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
             <?php endif; ?>
 
             <span class="offer-link" aria-hidden="true">
-              Saznaj više <span class="arrow">→</span>
+              <?php echo t('Saznaj više'); ?> <span class="arrow">→</span>
             </span>
           </div>
         </article>
@@ -112,7 +112,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         <div class="offer-modal" id="<?php echo esc_attr($modal_id); ?>" role="dialog" aria-modal="true" aria-labelledby="<?php echo esc_attr($modal_id); ?>-title" hidden>
           <div class="offer-modal-backdrop" data-offer-close></div>
           <div class="offer-modal-content" role="document">
-            <button type="button" class="offer-modal-close" aria-label="Zatvori" data-offer-close>×</button>
+            <button type="button" class="offer-modal-close" aria-label="<?php echo esc_attr(t('Zatvori')); ?>" data-offer-close>×</button>
             <div class="offer-modal-handle" aria-hidden="true"></div>
 
             <?php if (!empty($offer['image'])): ?>
@@ -156,12 +156,12 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
   <div class="wrap">
     <div style="display:grid;grid-template-columns:0.9fr 1.1fr;gap:clamp(32px,5vw,72px);align-items:center;" class="hero-grid">
       <div class="reveal">
-        <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;">Cenovnik</span>
-        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;">Cena feniranja prati dužinu kose.</h2>
-        <p class="lead" style="margin-top:20px;">Cena prati dužinu Vaše kose. Sve ostalo je iskustvo koje pripada samo Vama.</p>
+        <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;"><?php echo t('Cenovnik'); ?></span>
+        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;"><?php echo t('Cena feniranja prati dužinu kose.'); ?></h2>
+        <p class="lead" style="margin-top:20px;"><?php echo t('Cena prati dužinu Vaše kose. Sve ostalo je iskustvo koje pripada samo Vama.'); ?></p>
         <div style="margin-top:28px;">
           <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark">
-            Ceo cenovnik <span class="arrow">→</span>
+            <?php echo t('Ceo cenovnik'); ?> <span class="arrow">→</span>
           </a>
         </div>
       </div>
@@ -170,9 +170,9 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         <div class="row" style="justify-content:space-between;padding:20px 26px;<?php echo $i < count($lengths) - 1 ? 'border-bottom:1px solid var(--sage-line);' : ''; ?>">
           <span class="row" style="gap:14px;">
             <span class="mono" style="color:var(--clay);"><?php echo str_pad($i + 1, 2, '0', STR_PAD_LEFT); ?></span>
-            <span style="font-weight:500;font-size:19px;"><?php echo esc_html($l['label']); ?></span>
+            <span style="font-weight:500;font-size:19px;"><?php echo esc_html(t($l['label'])); ?></span>
           </span>
-          <span class="display num" style="font-size:30px;"><?php echo dry65_rsd($l['price']); ?><span class="u">din</span></span>
+          <span class="display num" style="font-size:30px;"><?php echo dry65_rsd($l['price']); ?><span class="u"><?php echo t('din'); ?></span></span>
         </div>
         <?php endforeach; ?>
       </div>
@@ -187,10 +187,10 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
   <div class="wrap">
     <div class="row" style="justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;margin-bottom:clamp(34px,4vw,56px);">
       <div>
-        <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;">Šta radimo</span>
-        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;">Tri stvari. Sve oko feniranja.</h2>
+        <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;"><?php echo t('Šta radimo'); ?></span>
+        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;"><?php echo t('Tri stvari. Sve oko feniranja.'); ?></h2>
       </div>
-      <a href="<?php echo esc_url(get_permalink(get_page_by_path('usluge'))); ?>" class="textlink">Pogledaj sve <span>→</span></a>
+      <a href="<?php echo esc_url(get_permalink(get_page_by_path('usluge'))); ?>" class="textlink"><?php echo t('Pogledaj sve'); ?> <span>→</span></a>
     </div>
     <style>
       .hp-svc-links { list-style:none; padding:0; margin:16px 0 0; }
@@ -254,7 +254,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
           <?php endif; ?>
           <?php elseif (!$locked): ?>
           <?php if ($cat['intro']): ?><p class="muted" style="margin-top:12px;font-size:15.5px;flex:1;"><?php echo esc_html($cat['intro']); ?></p><?php endif; ?>
-          <div style="margin-top:18px;"><a href="<?php echo esc_url($cat['url']); ?>" class="textlink">Saznaj više <span>→</span></a></div>
+          <div style="margin-top:18px;"><a href="<?php echo esc_url($cat['url']); ?>" class="textlink"><?php echo t('Saznaj više'); ?> <span>→</span></a></div>
           <?php endif; ?>
         </div>
       </div>
@@ -274,7 +274,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
     foreach ($items as $it):
     ?>
       <span class="display" style="font-size:clamp(26px,3.4vw,44px);padding-inline:34px;display:inline-flex;align-items:center;gap:34px;">
-        <?php echo esc_html($it); ?><span style="color:var(--clay);font-size:0.6em;">✦</span>
+        <?php echo esc_html(t($it)); ?><span style="color:var(--clay);font-size:0.6em;">✦</span>
       </span>
     <?php endforeach; ?>
   </div>
@@ -287,10 +287,10 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
   <div class="wrap">
     <div class="row" style="justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;margin-bottom:32px;">
       <div>
-        <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;">ambijent</span>
-        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;">Kako izgleda Dry65 frizerski salon.</h2>
+        <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;"><?php echo t('ambijent'); ?></span>
+        <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;"><?php echo t('Kako izgleda Dry65 frizerski salon.'); ?></h2>
       </div>
-      <a href="<?php echo esc_url(get_permalink(get_page_by_path('ambijent'))); ?>" class="textlink">Pogledaj sve <span>→</span></a>
+      <a href="<?php echo esc_url(get_permalink(get_page_by_path('ambijent'))); ?>" class="textlink"><?php echo t('Pogledaj sve'); ?> <span>→</span></a>
     </div>
     <div class="grid cols-3">
       <?php foreach (array_slice($gallery, 0, 3) as $i => $g): ?>
@@ -313,26 +313,26 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 <section class="section bg-ink">
   <div class="wrap">
     <div class="center" style="margin-bottom:clamp(34px,4vw,56px);">
-      <span class="script on-dark" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;">Mesečni paketi</span>
-      <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;">Jer zdrava kosa drži feniranje duže.</h2>
+      <span class="script on-dark" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;"><?php echo t('Mesečni paketi'); ?></span>
+      <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;"><?php echo t('Jer zdrava kosa drži feniranje duže.'); ?></h2>
       <p class="lead" style="margin-top:20px;max-width:680px;margin-inline:auto;">
-        Članstvo za klijentkinje kojima je feniranje deo nedeljne rutine. Mogućnost izbora između 4, 8 ili 12 feniranja mesečno, sa ili bez zakazivanja uz članstvo.
+        <?php echo t('Članstvo za klijentkinje kojima je feniranje deo nedeljne rutine. Mogućnost izbora između 4, 8 ili 12 feniranja mesečno, sa ili bez zakazivanja uz članstvo.'); ?>
       </p>
     </div>
     <div class="grid cols-3">
       <?php foreach ($packages as $i => $p): ?>
       <div class="reveal" style="position:relative;" data-delay="<?php echo $i * 90; ?>">
         <?php if ($p['featured']): ?>
-        <span class="chip" style="position:absolute;top:-15px;left:50%;transform:translateX(-50%);z-index:2;box-shadow:0 8px 18px -8px rgba(17,28,29,0.55);">Najpopularniji</span>
+        <span class="chip" style="position:absolute;top:-15px;left:50%;transform:translateX(-50%);z-index:2;box-shadow:0 8px 18px -8px rgba(17,28,29,0.55);"><?php echo t('Najpopularniji'); ?></span>
         <?php endif; ?>
         <a href="<?php echo esc_url(get_permalink(get_page_by_path('paketi'))); ?>" style="height:100%;display:flex;flex-direction:column;position:relative;text-decoration:none;color:inherit;">
           <img src="<?php echo esc_url(preg_match('#^https?://#', $p['img']) ? $p['img'] : $tpl . '/' . $p['img']); ?>" alt="<?php echo esc_attr($p['name']); ?> plan, Dry65" loading="lazy"
             class="rounded pkg-img" style="width:100%;aspect-ratio:820/990;object-fit:cover;display:block;">
           <div class="row" style="justify-content:space-between;align-items:baseline;margin-top:20px;gap:10px;">
-            <span style="font-size:15px;"><?php echo esc_html($p['cadence']); ?></span>
+            <span style="font-size:15px;"><?php echo esc_html(t($p['cadence'])); ?></span>
             <span class="row" style="gap:6px;align-items:baseline;">
-              <span style="font-size:13px;opacity:0.7;">od</span>
-              <span class="display num" style="font-size:30px;color:var(--cream);"><?php echo dry65_rsd($base_price * $p['count']); ?><span class="u">din</span></span>
+              <span style="font-size:13px;opacity:0.7;"><?php echo t('od'); ?></span>
+              <span class="display num" style="font-size:30px;color:var(--cream);"><?php echo dry65_rsd($base_price * $p['count']); ?><span class="u"><?php echo t('din'); ?></span></span>
             </span>
           </div>
         </a>
@@ -341,7 +341,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
     </div>
     <div class="center" style="margin-top:clamp(36px,4vw,52px);">
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('paketi'))); ?>" class="btn btn-primary">
-        Pogledaj pakete <span class="arrow">→</span>
+        <?php echo t('Pogledaj pakete'); ?> <span class="arrow">→</span>
       </a>
     </div>
   </div>
@@ -370,19 +370,19 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         // Format u sr-RS stil sa zarezom (4,9 umesto 4.9)
         $r_display = number_format($r, 1, ',', '');
         ?>
-        <span class="g-rating-single" aria-label="Ocena <?php echo esc_attr($r_display); ?> od 5">
+        <span class="g-rating-single" aria-label="<?php echo esc_attr(t('Ocena') . ' ' . $r_display . ' ' . t('od 5')); ?>">
           <span class="g-star-single" aria-hidden="true">★</span>
           <span class="g-rating-value"><?php echo esc_html($r_display); ?></span>
         </span>
         <?php if ($gmeta['total'] > 0): ?>
-        <span class="g-rating-count">(<?php echo number_format($gmeta['total']); ?> recenzija)</span>
+        <span class="g-rating-count">(<?php echo number_format($gmeta['total']); ?> <?php echo t('recenzija'); ?>)</span>
         <?php endif; ?>
       </div>
     </div>
 
     <div class="reviews-slider-wrap">
-      <button class="rs-arrow rs-prev" aria-label="Prethodna">‹</button>
-      <div class="reviews-slider" id="reviews-slider" tabindex="0" role="region" aria-label="Recenzije mušterija (pomeranje strelicama)">
+      <button class="rs-arrow rs-prev" aria-label="<?php echo esc_attr(t('Prethodna')); ?>">‹</button>
+      <div class="reviews-slider" id="reviews-slider" tabindex="0" role="region" aria-label="<?php echo esc_attr(t('Recenzije mušterija (pomeranje strelicama)')); ?>">
         <?php foreach ($reviews as $i => $r):
           $initial = function_exists('mb_substr') ? mb_substr($r['name'], 0, 1, 'UTF-8') : substr($r['name'], 0, 1);
         ?>
@@ -408,12 +408,12 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
         </article>
         <?php endforeach; ?>
       </div>
-      <button class="rs-arrow rs-next" aria-label="Sledeća">›</button>
+      <button class="rs-arrow rs-next" aria-label="<?php echo esc_attr(t('Sledeća')); ?>">›</button>
     </div>
 
     <div class="center" style="margin-top:40px;">
       <a href="<?php echo esc_url($biz['reviews_url']); ?>" target="_blank" rel="noopener" class="btn btn-outline">
-        Pogledaj na Google-u <span class="arrow">→</span>
+        <?php echo t('Pogledaj na Google-u'); ?> <span class="arrow">→</span>
       </a>
     </div>
   </div>
@@ -427,27 +427,27 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
   <div class="wrap">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,5vw,64px);align-items:center;" class="hero-grid">
       <div class="reveal">
-        <span class="eyebrow on-dark">Radno vreme</span>
+        <span class="eyebrow on-dark"><?php echo t('Radno vreme'); ?></span>
         <div style="margin-top:26px;">
           <?php foreach ($biz['hours'] as $i => $h): ?>
           <div class="row" style="justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(242,225,190,0.22);">
-            <span style="font-size:18px;"><?php echo esc_html($h['day']); ?></span>
-            <span class="display" style="font-size:24px;"><?php echo esc_html($h['time']); ?></span>
+            <span style="font-size:18px;"><?php echo esc_html(t($h['day'])); ?></span>
+            <span class="display" style="font-size:24px;"><?php echo esc_html(t($h['time'])); ?></span>
           </div>
           <?php endforeach; ?>
         </div>
       </div>
       <div class="reveal">
         <h2 class="display" style="font-size:clamp(34px,5vw,58px);">
-          Ne moraš da zakažeš.<br>Samo svrati.
+          <?php echo tk('home.hours.title', 'Ne moraš da zakažeš.<br>Samo svrati.'); ?>
         </h2>
         <p class="lead" style="margin-top:18px;">
-          Frizerski salon specijalizovan za feniranje, West 65, Novi Beograd.
+          <?php echo t('Frizerski salon specijalizovan za feniranje, West 65, Novi Beograd.'); ?>
         </p>
         <p class="lead" style="margin-top:8px;opacity:0.75;font-size:16px;"><?php echo esc_html($biz['address']); ?></p>
         <div class="btn-row" style="margin-top:28px;">
           <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-ghost-light">
-            Kako do nas <span class="arrow">→</span>
+            <?php echo t('Kako do nas'); ?> <span class="arrow">→</span>
           </a>
           <a href="tel:<?php echo esc_attr($biz['phone']); ?>" class="btn btn-ghost-light">
             <?php echo esc_html($biz['phone_display']); ?>
@@ -460,8 +460,9 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 
 
 <!-- ======================================================
-     KARIJERA — job announcement (pred footer)
+     KARIJERA — job announcement (pred footer) — sakriveno na EN
      ====================================================== -->
+<?php if (!dry65_is_en()): ?>
 <section class="section-sm bg-paper2">
   <div class="wrap">
     <?php $karijera_url = get_permalink(get_page_by_path('karijera')) ?: home_url('/karijera/'); ?>
@@ -469,18 +470,18 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
       <div>
         <div style="display:inline-flex;align-items:center;gap:8px;background:var(--cream);color:var(--ink);border:1px solid var(--cream-deep);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:16px;">
           <span style="width:6px;height:6px;background:var(--clay);border-radius:50%;"></span>
-          Posao
+          <?php echo t('Posao'); ?>
         </div>
         <h2 class="display" style="font-size:clamp(26px,3.6vw,40px);margin:0;line-height:1.15;">
-          Otvorili smo poziciju za asistenta u radu
+          <?php echo t('Otvorili smo poziciju za asistenta u radu'); ?>
         </h2>
         <p class="lead" style="margin:16px 0 0;max-width:560px;font-size:16px;">
-          Tražimo osobu koja želi da uči zanat pored najboljih, u modernom walk-in salonu na Novom Beogradu. Plaćena praksa, put ka poziciji blowout specijaliste.
+          <?php echo t('Tražimo osobu koja želi da uči zanat pored najboljih, u modernom walk-in salonu na Novom Beogradu. Plaćena praksa, put ka poziciji blowout specijaliste.'); ?>
         </p>
       </div>
       <div style="flex-shrink:0;">
         <a href="<?php echo esc_url($karijera_url); ?>" class="btn btn-dark">
-          Vidi detalje <span class="arrow">→</span>
+          <?php echo t('Vidi detalje'); ?> <span class="arrow">→</span>
         </a>
       </div>
     </div>
@@ -494,11 +495,12 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
   }
 }
 </style>
+<?php endif; // kraj: karijera CTA sakriven na EN ?>
 
 <!-- ======================================================
      FAQ SEKCIJA (pred footer) — home varijanta
      ====================================================== -->
-<?php dry65_render_faq_section('home', 'Sve što treba da znate', 'Odgovori na najčešća pitanja o feniranju u Dry65 salonu.'); ?>
+<?php dry65_render_faq_section('home', t('Sve što treba da znate'), t('Odgovori na najčešća pitanja o feniranju u Dry65 salonu.')); ?>
 
 </main>
 

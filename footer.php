@@ -15,7 +15,7 @@ $tpl  = get_template_directory_uri();
           <img class="brand-img" src="<?php echo $tpl; ?>/assets/logo-light.svg" alt="Dry65, Blowout Hair Bar" loading="lazy" decoding="async" width="140" height="52">
         </a>
         <p style="margin-top:18px;max-width:260px;color:rgba(242,225,190,0.7);font-size:15px;">
-          Blowout hair bar bez zakazivanja. Radimo jednu stvar, feniramo. I to savršeno.
+          <?php echo t('Blowout hair bar bez zakazivanja. Radimo jednu stvar, feniramo. I to savršeno.'); ?>
         </p>
         <div class="row" style="margin-top:20px;gap:10px;">
           <a href="<?php echo esc_url($biz['instagram_url']); ?>" target="_blank" rel="noopener" aria-label="Instagram — dry65belgrade" title="Instagram"
@@ -34,30 +34,30 @@ $tpl  = get_template_directory_uri();
       </div>
 
       <div>
-        <h3 class="footer-h">Stranice</h3>
+        <h3 class="footer-h"><?php echo t('Stranice'); ?></h3>
         <ul>
           <?php foreach ($col1 as $item):
             $url = get_permalink(get_page_by_path($item['slug'])) ?: home_url('/' . $item['slug'] . '/'); ?>
-            <li><a href="<?php echo esc_url($url); ?>"><?php echo esc_html($item['label']); ?></a></li>
+            <li><a href="<?php echo esc_url($url); ?>"><?php echo esc_html(t($item['label'])); ?></a></li>
           <?php endforeach; ?>
         </ul>
       </div>
 
       <div>
-        <h3 class="footer-h">Više</h3>
+        <h3 class="footer-h"><?php echo t('Više'); ?></h3>
         <ul>
           <?php foreach ($col2 as $item):
             $url = get_permalink(get_page_by_path($item['slug'])) ?: home_url('/' . $item['slug'] . '/'); ?>
-            <li><a href="<?php echo esc_url($url); ?>"><?php echo esc_html($item['label']); ?></a></li>
+            <li><a href="<?php echo esc_url($url); ?>"><?php echo esc_html(t($item['label'])); ?></a></li>
           <?php endforeach; ?>
           <?php $faq_page = get_page_by_path('faq'); if ($faq_page): ?>
-            <li><a href="<?php echo esc_url(get_permalink($faq_page)); ?>">Česta pitanja</a></li>
+            <li><a href="<?php echo esc_url(get_permalink($faq_page)); ?>"><?php echo t('Česta pitanja'); ?></a></li>
           <?php endif; ?>
         </ul>
       </div>
 
       <div>
-        <h3 class="footer-h">Kontakt</h3>
+        <h3 class="footer-h"><?php echo t('Kontakt'); ?></h3>
         <ul>
           <li><?php echo esc_html($biz['address']); ?></li>
           <li><a href="tel:<?php echo esc_attr($biz['phone']); ?>"><?php echo esc_html($biz['phone_display']); ?></a></li>
@@ -68,17 +68,17 @@ $tpl  = get_template_directory_uri();
     </div>
 
     <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:14px;margin-top:52px;padding-top:24px;border-top:1px solid rgba(242,225,190,0.18);font-size:13px;color:rgba(242,225,190,0.6);">
-      <span>© <?php echo date('Y'); ?> Dry65. Sva prava zadržana.</span>
+      <span>© <?php echo date('Y'); ?> Dry65. <?php echo t('Sva prava zadržana.'); ?></span>
       <span class="row" style="gap:20px;">
         <?php
         $privacy = get_page_by_path('politika-privatnosti');
         $terms   = get_page_by_path('uslovi-koriscenja');
         ?>
         <?php if ($privacy): ?>
-          <a href="<?php echo esc_url(get_permalink($privacy)); ?>">Politika privatnosti</a>
+          <a href="<?php echo esc_url(get_permalink($privacy)); ?>"><?php echo t('Politika privatnosti'); ?></a>
         <?php endif; ?>
         <?php if ($terms): ?>
-          <a href="<?php echo esc_url(get_permalink($terms)); ?>">Uslovi korišćenja</a>
+          <a href="<?php echo esc_url(get_permalink($terms)); ?>"><?php echo t('Uslovi korišćenja'); ?></a>
         <?php endif; ?>
       </span>
     </div>

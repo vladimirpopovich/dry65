@@ -232,7 +232,7 @@ a:hover > .pkg-img { transform: translateY(-7px); box-shadow: 0 36px 60px -28px 
 @media (max-width: 600px) { .cols-2, .cols-3, .cols-4 { grid-template-columns: 1fr; } }
 
 /* ---------- Length guide ---------- */
-.length-guide { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(10px, 1.6vw, 22px); }
+.length-guide { display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(10px, 1.6vw, 22px); }
 .length-card { border: 0; background: transparent; cursor: pointer; padding: 10px 8px 16px; border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; font-family: var(--font-sans); transition: background .25s var(--ease), transform .25s var(--ease); }
 .length-card:hover { transform: translateY(-3px); }
 .length-oval { width: 100%; aspect-ratio: 625 / 814; border-radius: 50% / 46%; overflow: hidden; background: var(--paper); border: 1px solid var(--sage-line); display: block; transition: border-color .25s var(--ease), box-shadow .25s var(--ease); }
@@ -257,9 +257,9 @@ a:hover > .pkg-img { transform: translateY(-7px); box-shadow: 0 36px 60px -28px 
 @media (max-width: 640px) { .length-guide { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
 
 /* ---------- Price tables ---------- */
-.ptable { width: 100%; border-collapse: collapse; }
+.ptable { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .ptable th, .ptable td { padding: 16px 14px; text-align: right; }
-.ptable th:first-child, .ptable td:first-child { text-align: left; }
+.ptable th:first-child, .ptable td:first-child { text-align: left; width: 28%; }
 .ptable thead th { font-family: var(--font-sans); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--sage-line); padding-bottom: 12px; }
 .ptable tbody tr { border-bottom: 1px solid var(--sage-line); }
 .ptable tbody tr:last-child { border-bottom: 0; }

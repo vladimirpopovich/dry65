@@ -122,7 +122,8 @@ function dry65_en_map() {
 function t($sr) {
     if (!dry65_is_en()) return $sr;
     $map = dry65_en_map();
-    return isset($map[$sr]) ? $map[$sr] : $sr;
+    // prazna vrednost = "jos nije prevedeno" -> fallback na srpski original
+    return (isset($map[$sr]) && $map[$sr] !== '') ? $map[$sr] : $sr;
 }
 /** echo varijanta */
 function te($sr) { echo t($sr); }
@@ -134,7 +135,7 @@ function te($sr) { echo t($sr); }
 function tk($key, $sr_default = '') {
     if (!dry65_is_en()) return $sr_default;
     $map = dry65_en_map();
-    return isset($map[$key]) ? $map[$key] : $sr_default;
+    return (isset($map[$key]) && $map[$key] !== '') ? $map[$key] : $sr_default;
 }
 function tke($key, $sr_default = '') { echo tk($key, $sr_default); }
 

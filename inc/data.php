@@ -54,10 +54,11 @@ function dry65_lengths() {
         ['id' => 'srednja', 'label' => 'Srednja',    'price' => 1800, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/srednja-kosa.webp'],
         ['id' => 'duga',    'label' => 'Duga',       'price' => 2000, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/duga-kosa.webp'],
         ['id' => 'extra',   'label' => 'Extra duga', 'price' => 2200, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/veoma-duga-kosa.webp'],
+        ['id' => 'extra-gusta', 'label' => 'Extra duga gusta', 'price' => 2500, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/veoma-duga-gusta-kosa.webp'],
     ];
-    $ids = ['kratka', 'srednja', 'duga', 'extra'];
+    $ids = ['kratka', 'srednja', 'duga', 'extra', 'extra-gusta'];
     $out = [];
-    for ($i = 1; $i <= 4; $i++) {
+    for ($i = 1; $i <= 5; $i++) {
         $out[] = [
             'id'    => $ids[$i-1],
             'label' => dry65_setting("l{$i}_label", $defaults[$i-1]['label']),
@@ -75,9 +76,9 @@ function dry65_pricing() {
             'title'  => 'Feniranje i stilizovanje',
             'kicker' => 'po dužini kose',
             'rows'   => [
-                ['name' => 'Pranje i feniranje', 'prices' => [1400, 1800, 2000, 2200]],
-                ['name' => 'Hair curler, lokne',  'prices' => [2800, 3600, 4000, 4400]],
-                ['name' => 'Hair press, presovanje', 'prices' => [2800, 3600, 4000, 4400]],
+                ['name' => 'Pranje i feniranje', 'prices' => [1400, 1800, 2000, 2200, 2500]],
+                ['name' => 'Hair curler, lokne',  'prices' => [2800, 3600, 4000, 4400, 4800]],
+                ['name' => 'Hair press, presovanje', 'prices' => [2800, 3600, 4000, 4400, 4800]],
             ],
         ],
         'wash' => [
@@ -633,7 +634,7 @@ function dry65_gallery() {
 
 /* ---- NAV (static) ---- */
 function dry65_nav() {
-    return [
+    $nav = [
         ['id' => 'o-nama',    'label' => 'O nama',    'slug' => 'o-nama'],
         ['id' => 'usluge',    'label' => 'Usluge',    'slug' => 'usluge'],
         ['id' => 'cenovnik',  'label' => 'Cenovnik',  'slug' => 'cenovnik'],
@@ -643,6 +644,11 @@ function dry65_nav() {
         ['id' => 'karijera',  'label' => 'Karijera',  'slug' => 'karijera'],
         ['id' => 'kontakt',   'label' => 'Kontakt',   'slug' => 'kontakt'],
     ];
+    // Karijera se ne prikazuje na engleskoj verziji (samo SR)
+    if (function_exists('dry65_is_en') && dry65_is_en()) {
+        $nav = array_values(array_filter($nav, fn($i) => $i['slug'] !== 'karijera'));
+    }
+    return $nav;
 }
 
 function dry65_rsd($n) {
