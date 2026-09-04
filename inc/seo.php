@@ -201,10 +201,10 @@ add_filter('wpseo_title', function($title) {
     $slug = dry65_seo_current_slug();
     $map  = dry65_seo_map();
     if ($slug && isset($map[$slug])) {
-        return $map[$slug]['title'];
+        return function_exists('t') ? t($map[$slug]['title']) : $map[$slug]['title'];
     }
     $svc = dry65_service_seo_title();
-    if ($svc) return $svc;
+    if ($svc) return function_exists('t') ? t($svc) : $svc;
     return $title;
 }, 99);
 
@@ -213,10 +213,10 @@ add_filter('wpseo_metadesc', function($desc) {
     $slug = dry65_seo_current_slug();
     $map  = dry65_seo_map();
     if ($slug && isset($map[$slug])) {
-        return $map[$slug]['desc'];
+        return function_exists('t') ? t($map[$slug]['desc']) : $map[$slug]['desc'];
     }
     $svc = dry65_service_seo_desc();
-    if ($svc) return $svc;
+    if ($svc) return function_exists('t') ? t($svc) : $svc;
     // Fallback za blog postove ili druge stranice bez custom desc
     if (is_singular('post') && (empty($desc) || mb_strlen($desc) < 120)) {
         $excerpt = get_the_excerpt();
@@ -355,7 +355,7 @@ add_filter('pre_get_document_title', function($title) {
     $slug = dry65_seo_current_slug();
     $map  = dry65_seo_map();
     if ($slug && isset($map[$slug])) {
-        return $map[$slug]['title'];
+        return function_exists('t') ? t($map[$slug]['title']) : $map[$slug]['title'];
     }
     return $title;
 }, 99);
@@ -366,6 +366,7 @@ add_action('wp_head', function() {
     $slug = dry65_seo_current_slug();
     $map  = dry65_seo_map();
     if ($slug && isset($map[$slug])) {
-        echo '<meta name="description" content="' . esc_attr($map[$slug]['desc']) . '">' . "\n";
+        $d = function_exists('t') ? t($map[$slug]['desc']) : $map[$slug]['desc'];
+        echo '<meta name="description" content="' . esc_attr($d) . '">' . "\n";
     }
 }, 1);

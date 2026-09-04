@@ -240,6 +240,20 @@ add_action('wp_head', function () {
     }
 }, 1);
 
+/* ---- Yoast <title> i meta description po jeziku ----
+   Na EN stranama provuci Yoast naslov/opis kroz t() (kljuc = SR original).
+   Dopuni prevode u languages/en.php. Prazno -> ostaje SR (fallback). */
+add_filter('wpseo_title', function ($title) {
+    return dry65_is_en() ? t($title) : $title;
+}, 20);
+add_filter('wpseo_metadesc', function ($desc) {
+    return dry65_is_en() ? t($desc) : $desc;
+}, 20);
+add_filter('wpseo_opengraph_title', function ($v) { return dry65_is_en() ? t($v) : $v; }, 20);
+add_filter('wpseo_opengraph_desc',  function ($v) { return dry65_is_en() ? t($v) : $v; }, 20);
+add_filter('wpseo_twitter_title',   function ($v) { return dry65_is_en() ? t($v) : $v; }, 20);
+add_filter('wpseo_twitter_description', function ($v) { return dry65_is_en() ? t($v) : $v; }, 20);
+
 /* ---- Canonical pokazuje na verziju u tekucem jeziku ---- */
 add_filter('wpseo_canonical', function ($canonical) {
     // Yoast: kanonik = URL tekuce jezicke verzije
