@@ -80,8 +80,8 @@ add_action('template_redirect', function () {
     <main class="page-enter">
       <section class="bg-paper2 section-sm" style="padding-top:clamp(22px,3vw,36px);padding-bottom:clamp(18px,2.4vw,28px);">
         <div class="wrap menu-hub" style="max-width:620px;margin-left:auto;margin-right:auto;">
-          <h1 class="script" style="font-size:clamp(34px,6vw,56px);line-height:1;">Dobrodošli</h1>
-          <p class="lead" style="margin-top:16px;font-size:18px;max-width:560px;">Dry65, feniranje bez zakazivanja. Na pravom ste mestu.</p>
+          <h1 class="script" style="font-size:clamp(34px,6vw,56px);line-height:1;"><?php echo t('Dobrodošli'); ?></h1>
+          <p class="lead" style="margin-top:16px;font-size:18px;max-width:560px;"><?php echo t('Dry65, feniranje bez zakazivanja. Na pravom ste mestu.'); ?></p>
         </div>
       </section>
 
@@ -91,13 +91,13 @@ add_action('template_redirect', function () {
           <!-- MINI LIVE -->
           <?php
           $lv_tier = $st['tier']; $lv_min = (int) ($st['remaining_min'] ?? 0); $lv_cl = !empty($st['closed']);
-          if ($lv_cl || $lv_tier === 'closed') { $lv_b = 'Zatvoreno'; $lv_s = 'Trenutno ne radimo'; }
-          elseif ($lv_tier === 'full')          { $lv_b = 'Za danas popunjeni'; $lv_s = 'Vidimo se sutra'; }
-          elseif ($lv_min > 0)                  { $lv_b = '~' . ((int) (ceil($lv_min / 5) * 5)) . ' min čekanja'; $lv_s = 'Trenutna procena'; }
-          else                                  { $lv_b = 'Slobodan termin'; $lv_s = 'Slobodno, samo dođite'; }
+          if ($lv_cl || $lv_tier === 'closed') { $lv_b = t('Zatvoreno'); $lv_s = t('Trenutno ne radimo'); }
+          elseif ($lv_tier === 'full')          { $lv_b = t('Za danas popunjeni'); $lv_s = t('Vidimo se sutra'); }
+          elseif ($lv_min > 0)                  { $lv_b = '~' . ((int) (ceil($lv_min / 5) * 5)) . ' ' . t('min čekanja'); $lv_s = t('Trenutna procena'); }
+          else                                  { $lv_b = t('Slobodan termin'); $lv_s = t('Slobodno, samo dođite'); }
           ?>
           <div>
-            <h2 class="menu-h">Trenutni status salona</h2>
+            <h2 class="menu-h"><?php echo t('Trenutni status salona'); ?></h2>
             <a href="<?php echo esc_url(home_url('/live/')); ?>" class="menu-card menu-live" id="menuLive" data-tier="<?php echo esc_attr($st['tier']); ?>">
               <span class="menu-live-dot"></span>
               <span class="menu-live-txt">
@@ -110,47 +110,47 @@ add_action('template_redirect', function () {
 
           <!-- MINI CENOVNIK -->
           <div>
-            <h2 class="menu-h">Cenovnik za feniranje</h2>
+            <h2 class="menu-h"><?php echo t('Cenovnik za feniranje'); ?></h2>
             <a href="<?php echo esc_url($cen_url); ?>" class="menu-card">
               <?php if ($lengths): ?>
               <div class="menu-price-list">
                 <?php foreach ($lengths as $l): ?>
-                <div class="menu-price-row"><span style="font-weight:500;"><?php echo esc_html($l['label']); ?></span><span class="num"><?php echo function_exists('dry65_rsd') ? dry65_rsd($l['price']) : (int) $l['price']; ?><span class="u">din</span></span></div>
+                <div class="menu-price-row"><span style="font-weight:500;"><?php echo esc_html(t($l['label'])); ?></span><span class="num"><?php echo function_exists('dry65_rsd') ? dry65_rsd($l['price']) : (int) $l['price']; ?><span class="u"><?php echo t('din'); ?></span></span></div>
                 <?php endforeach; ?>
               </div>
               <?php endif; ?>
-              <p class="menu-note">Cene feniranja po dužini kose. U <strong>detaljnom cenovniku</strong> su i ostale usluge, tretmani i paketi.</p>
-              <span class="menu-more menu-more-btn">Vidi ceo cenovnik <span class="arrow">→</span></span>
+              <p class="menu-note"><?php echo tk('menu.cen.note', 'Cene feniranja po dužini kose. U <strong>detaljnom cenovniku</strong> su i ostale usluge, tretmani i paketi.'); ?></p>
+              <span class="menu-more menu-more-btn"><?php echo t('Vidi ceo cenovnik'); ?> <span class="arrow">→</span></span>
             </a>
           </div>
 
           <!-- MAPA + KAKO DO NAS -->
           <div>
-            <h2 class="menu-h">Gde se nalazimo</h2>
+            <h2 class="menu-h"><?php echo t('Gde se nalazimo'); ?></h2>
             <div class="menu-card" style="padding:0;overflow:hidden;">
               <iframe src="https://maps.google.com/maps?q=<?php echo rawurlencode('Dry65, Omladinskih Brigada 86Ž, Novi Beograd'); ?>&amp;z=16&amp;hl=sr&amp;output=embed" style="width:100%;height:clamp(220px,42vw,300px);border:0;display:block;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa, Dry65 Novi Beograd"></iframe>
             </div>
-            <a href="<?php echo esc_url($maps); ?>" target="_blank" rel="noopener" class="btn btn-dark" style="margin-top:14px;">Kako do nas <span class="arrow">→</span></a>
+            <a href="<?php echo esc_url($maps); ?>" target="_blank" rel="noopener" class="btn btn-dark" style="margin-top:14px;"><?php echo t('Kako do nas'); ?> <span class="arrow">→</span></a>
           </div>
 
           <!-- MINI GALERIJA -->
           <div>
-            <h2 class="menu-h">Ambijent salona</h2>
+            <h2 class="menu-h"><?php echo t('Ambijent salona'); ?></h2>
             <a href="<?php echo esc_url($amb_url); ?>" class="menu-card">
               <div class="menu-gallery">
                 <?php foreach (['s02', 's03', 's04', 's05'] as $s): ?>
                 <div class="gi"><?php echo dry65_picture('assets/salon/' . $s . '.webp', 'Dry65 salon, Novi Beograd', ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?></div>
                 <?php endforeach; ?>
               </div>
-              <span class="menu-more">Pogledaj salon <span class="arrow">→</span></span>
+              <span class="menu-more"><?php echo t('Pogledaj salon'); ?> <span class="arrow">→</span></span>
             </a>
           </div>
 
           <!-- IMATE PITANJA -->
           <div style="text-align:center;margin-top:clamp(12px,2.4vw,22px);">
-            <h2 class="menu-h" style="margin-bottom:6px;">Imate pitanja?</h2>
-            <p style="color:var(--ink-soft);font-size:16px;margin:0 0 16px;">Pozovite nas, rado ćemo pomoći.</p>
-            <?php if ($phone): ?><a href="tel:<?php echo esc_attr($phone); ?>" class="btn btn-dark">Pozovite <?php echo esc_html($phone_d); ?></a><?php endif; ?>
+            <h2 class="menu-h" style="margin-bottom:6px;"><?php echo t('Imate pitanja?'); ?></h2>
+            <p style="color:var(--ink-soft);font-size:16px;margin:0 0 16px;"><?php echo t('Pozovite nas, rado ćemo pomoći.'); ?></p>
+            <?php if ($phone): ?><a href="tel:<?php echo esc_attr($phone); ?>" class="btn btn-dark"><?php echo t('Pozovite'); ?> <?php echo esc_html($phone_d); ?></a><?php endif; ?>
           </div>
 
         </div>
@@ -167,10 +167,10 @@ add_action('template_redirect', function () {
           if(!d) return;
           if(d.tier) el.setAttribute('data-tier', d.tier);
           var b, s;
-          if(d.closed || d.tier==='closed'){ b='Zatvoreno'; s='Trenutno ne radimo'; }
-          else if(d.tier==='full'){ b='Za danas popunjeni'; s='Vidimo se sutra'; }
-          else if(d.remaining_min>0){ b='~'+(Math.ceil(d.remaining_min/5)*5)+' min čekanja'; s='Trenutna procena'; }
-          else { b='Slobodan termin'; s='Slobodno, samo dođite'; }
+          if(d.closed || d.tier==='closed'){ b=<?php echo wp_json_encode(t('Zatvoreno')); ?>; s=<?php echo wp_json_encode(t('Trenutno ne radimo')); ?>; }
+          else if(d.tier==='full'){ b=<?php echo wp_json_encode(t('Za danas popunjeni')); ?>; s=<?php echo wp_json_encode(t('Vidimo se sutra')); ?>; }
+          else if(d.remaining_min>0){ b='~'+(Math.ceil(d.remaining_min/5)*5)+' '+<?php echo wp_json_encode(t('min čekanja')); ?>; s=<?php echo wp_json_encode(t('Trenutna procena')); ?>; }
+          else { b=<?php echo wp_json_encode(t('Slobodan termin')); ?>; s=<?php echo wp_json_encode(t('Slobodno, samo dođite')); ?>; }
           h.textContent=b; w.textContent=s;
         }).catch(function(){});
       }

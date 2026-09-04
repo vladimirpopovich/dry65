@@ -19,6 +19,35 @@
 
 if (!defined('ABSPATH')) exit;
 
+/* ---- Mapa slug-ova SR => EN (engleski URL-ovi na /en/) ----
+   Dodaj ovde nove parove kad prevedes slug. Segmenti bez para
+   ostaju nepromenjeni (npr. slug pojedinacne usluge dok se ne prevede). */
+function dry65_slug_map() {
+    return [
+        'o-nama'   => 'about-us',
+        'usluge'   => 'services',
+        'cenovnik' => 'pricing',
+        'paketi'   => 'packages',
+        'ambijent' => 'ambience',
+        'kontakt'  => 'contact',
+        'karijera' => 'careers',
+    ];
+}
+/* Prevedi svaki segment putanje po mapi (smer: 'sr2en' ili 'en2sr'). */
+function dry65_translate_path($path, $dir = 'sr2en') {
+    $map = dry65_slug_map();
+    if ($dir === 'en2sr') $map = array_flip($map);
+    $segs = explode('/', trim((string) $path, '/'));
+    foreach ($segs as &$seg) {
+        if ($seg !== '' && isset($map[$seg])) $seg = $map[$seg];
+    }
+    unset($seg);
+    $out = '/' . implode('/', array_filter($segs, fn($s) => $s !== ''));
+    // zadrzi trailing slash ako ga je original imao
+    if (substr($path, -1) === '/' && $out !== '/') $out .= '/';
+    return $out === '' ? '/' : $out;
+}
+
 /* ---- 1) Detekcija jezika + skidanje /en prefiksa iz rute ---- */
 function dry65_boot_i18n() {
     // Admin, AJAX, REST, cron -> uvek izvorni jezik, ne diramo rutu
@@ -36,13 +65,18 @@ function dry65_boot_i18n() {
 
     if (preg_match('#^/en(/|$)#', $path)) {
         $GLOBALS['dry65_lang'] = 'en';
-        // ukloni vodeci /en, zadrzi ostatak putanje + query string
+        // ukloni vodeci /en
         $new = preg_replace('#^/en#', '', $uri);
         if ($new === '' || $new[0] === '?') $new = '/' . ltrim($new, '/');
         if ($new === '' || $new[0] !== '/') $new = '/' . ltrim($new, '/');
-        $_SERVER['REQUEST_URI'] = $new;
+        // razdvoji putanju i query, prevedi EN slug-ove nazad u SR da WP nadje stranu
+        $qpos    = strpos($new, '?');
+        $en_path = $qpos === false ? $new : substr($new, 0, $qpos);
+        $query   = $qpos === false ? ''   : substr($new, $qpos);
+        $sr_path = dry65_translate_path($en_path, 'en2sr');
+        $_SERVER['REQUEST_URI'] = $sr_path . $query;
         // zapamti "cistu" (SR) putanju za switcher / hreflang
-        $GLOBALS['dry65_path'] = parse_url($new, PHP_URL_PATH) ?: '/';
+        $GLOBALS['dry65_path'] = $sr_path ?: '/';
     } else {
         $GLOBALS['dry65_lang'] = 'sr';
         $GLOBALS['dry65_path'] = $path ?: '/';
@@ -77,7 +111,11 @@ function dry65_prefix_en_url($url) {
     $last  = basename($rpath);
     if ($last !== '' && strpos($last, '.') !== false) return $url;
     if ($rest === '') $rest = '/';
-    return $base . '/en' . $rest;
+    // prevedi SR slug-ove u EN (o-nama -> about-us), zadrzi query string
+    $qpos  = strpos($rest, '?');
+    $rpath = $qpos === false ? $rest : substr($rest, 0, $qpos);
+    $rq    = $qpos === false ? ''    : substr($rest, $qpos);
+    return $base . '/en' . dry65_translate_path($rpath, 'sr2en') . $rq;
 }
 
 add_filter('home_url', function ($url, $path, $scheme) {
@@ -143,14 +181,51 @@ function tke($key, $sr_default = '') { echo tk($key, $sr_default); }
 function dry65_current_path() {
     return $GLOBALS['dry65_path'] ?? '/';
 }
-/** Puni URL date strane u trazenom jeziku (za switcher i hreflang) */
+/** Puni URL date strane u trazenom jeziku (za switcher i hreflang).
+    $path je uvek SR putanja (npr. /o-nama/). EN dobija /en/ + prevedene slug-ove. */
 function dry65_lang_url($lang, $path = null) {
     $base = untrailingslashit(get_option('home'));
     $path = $path ?: dry65_current_path();
     if ($path === '' || $path[0] !== '/') $path = '/' . ltrim($path, '/');
-    return $lang === 'en' ? $base . '/en' . ($path === '/' ? '/' : $path)
-                          : $base . $path;
+    if ($lang === 'en') {
+        $en = dry65_translate_path($path, 'sr2en');
+        return $base . '/en' . ($en === '/' ? '/' : $en);
+    }
+    return $base . $path;
 }
+
+/* Da li trenutna strana ima englesku verziju? (Karijera je samo SR) */
+function dry65_has_en_version() {
+    $p = dry65_current_path();
+    if (preg_match('#^/karijera(/|$)#', $p)) return false;
+    return true;
+}
+
+/* ---- hreflang alternate + x-default (povezuje SR i EN verzije) ---- */
+add_action('wp_head', function () {
+    if (is_admin() || is_404() || is_search()) return;
+    if (!(is_front_page() || is_home() || is_page() || is_singular() || is_post_type_archive())) return;
+
+    $sr = dry65_lang_url('sr');
+    echo '<link rel="alternate" hreflang="sr-RS" href="' . esc_url($sr) . '">' . "\n";
+    echo '<link rel="alternate" hreflang="x-default" href="' . esc_url($sr) . '">' . "\n";
+    if (dry65_has_en_version()) {
+        echo '<link rel="alternate" hreflang="en" href="' . esc_url(dry65_lang_url('en')) . '">' . "\n";
+    }
+}, 1);
+
+/* ---- Canonical pokazuje na verziju u tekucem jeziku ---- */
+add_filter('wpseo_canonical', function ($canonical) {
+    // Yoast: kanonik = URL tekuce jezicke verzije
+    return dry65_lang_url(dry65_lang());
+});
+// Ako Yoast nije aktivan, sami ispisemo canonical
+add_action('wp_head', function () {
+    if (defined('WPSEO_VERSION')) return; // Yoast to vec radi (uz filter gore)
+    if (is_admin() || is_404() || is_search()) return;
+    if (!(is_front_page() || is_home() || is_page() || is_singular() || is_post_type_archive())) return;
+    echo '<link rel="canonical" href="' . esc_url(dry65_lang_url(dry65_lang())) . '">' . "\n";
+}, 2);
 
 /* ---- 5) Switcher u navigaciji ---- */
 function dry65_lang_switcher() {

@@ -533,7 +533,7 @@ function dry65_render_faq_section($category, $title = null, $subtitle = null) {
             <?php endif; ?>
           </div>
           <?php $faq_page = get_page_by_path('faq'); if ($faq_page): ?>
-            <a href="<?php echo esc_url(get_permalink($faq_page)); ?>" class="textlink">Vidi sva pitanja <span>→</span></a>
+            <a href="<?php echo esc_url(get_permalink($faq_page)); ?>" class="textlink"><?php echo t('Vidi sva pitanja'); ?> <span>→</span></a>
           <?php endif; ?>
         </div>
 
@@ -541,10 +541,10 @@ function dry65_render_faq_section($category, $title = null, $subtitle = null) {
           <?php foreach ($faqs as $item): ?>
             <details class="faq-item">
               <summary class="faq-q">
-                <span><?php echo esc_html($item['q']); ?></span>
+                <span><?php echo esc_html(t($item['q'])); ?></span>
                 <span class="faq-icon" aria-hidden="true">+</span>
               </summary>
-              <div class="faq-a"><?php echo wp_kses_post($item['a']); ?></div>
+              <div class="faq-a"><?php echo wp_kses_post(t($item['a'])); ?></div>
             </details>
           <?php endforeach; ?>
         </div>
@@ -561,10 +561,10 @@ function dry65_render_faq_section($category, $title = null, $subtitle = null) {
     foreach ($faqs as $item) {
         $schema['mainEntity'][] = [
             '@type' => 'Question',
-            'name'  => $item['q'],
+            'name'  => t($item['q']),
             'acceptedAnswer' => [
                 '@type' => 'Answer',
-                'text'  => wp_strip_all_tags($item['a']),
+                'text'  => wp_strip_all_tags(t($item['a'])),
             ],
         ];
     }

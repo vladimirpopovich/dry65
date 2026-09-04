@@ -13,12 +13,12 @@ $ratios  = ['3/4','1/1','4/5','4/5','3/4','4/5','1/1','3/4','4/5'];
 
 <section class="bg-paper2 section-sm" style="padding-top:clamp(24px,3vw,40px);padding-bottom:clamp(20px,2.5vw,32px);">
   <div class="wrap">
-    <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">Ambijent</span>
+    <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;"><?php echo t('Ambijent'); ?></span>
     <h1 class="display caps" style="font-size:clamp(30px,4.2vw,52px);margin-top:4px;max-width:32ch;line-height:1.0;letter-spacing:0.01em;">
-      Ambijent frizerskog salona Dry65
+      <?php echo t('Ambijent frizerskog salona Dry65'); ?>
     </h1>
     <p class="lead" style="margin-top:26px;max-width:680px;">
-      Ambijent osmišljen tako da se osećate prijatno. Imate svoj prostor, svoje vreme i komfor koji Vam je potreban da izađete sa najboljom frizurom.
+      <?php echo t('Ambijent osmišljen tako da se osećate prijatno. Imate svoj prostor, svoje vreme i komfor koji Vam je potreban da izađete sa najboljom frizurom.'); ?>
     </p>
   </div>
 </section>
@@ -44,7 +44,7 @@ $ratios  = ['3/4','1/1','4/5','4/5','3/4','4/5','1/1','3/4','4/5'];
     <div class="center" style="margin-top:44px;">
       <a href="<?php echo esc_url($biz['instagram_url']); ?>" target="_blank" rel="noopener" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;vertical-align:-3px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-        Prati nas · <?php echo esc_html($biz['instagram']); ?> <span class="arrow">→</span>
+        <?php echo t('Prati nas'); ?> · <?php echo esc_html($biz['instagram']); ?> <span class="arrow">→</span>
       </a>
     </div>
   </div>

@@ -16,12 +16,12 @@ $rows = [
 
 <section class="bg-paper2 section-sm" style="padding-top:clamp(24px,3vw,40px);padding-bottom:clamp(20px,2.5vw,32px);">
   <div class="wrap">
-    <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">Kontakt</span>
+    <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;"><?php echo t('Kontakt'); ?></span>
     <h1 class="display caps" style="font-size:clamp(28px,3.8vw,48px);margin-top:4px;max-width:34ch;line-height:1.05;letter-spacing:0.01em;">
-      Dry65 frizerski salon specijalizovan za feniranje
+      <?php echo t('Dry65 frizerski salon specijalizovan za feniranje'); ?>
     </h1>
     <p class="lead" style="margin-top:20px;max-width:680px;">
-      Frizerski salon specijalizovan za feniranje, u West 65 mall-u na Novom Beogradu. Nema zakazivanja, samo dođi.
+      <?php echo t('Frizerski salon specijalizovan za feniranje, u West 65 mall-u na Novom Beogradu. Nema zakazivanja, samo dođi.'); ?>
     </p>
   </div>
 </section>
@@ -36,19 +36,19 @@ $rows = [
           <?php if ($r['ext']): ?>target="_blank" rel="noopener"<?php endif; ?>
           class="row contact-row"
           style="justify-content:space-between;padding:22px 26px;<?php echo $i < count($rows) - 1 ? 'border-bottom:1px solid var(--sage-line);' : ''; ?>transition:background .2s;">
-          <span class="mono" style="font-size:12px;color:var(--clay);text-transform:uppercase;letter-spacing:0.08em;"><?php echo esc_html($r['k']); ?></span>
+          <span class="mono" style="font-size:12px;color:var(--clay);text-transform:uppercase;letter-spacing:0.08em;"><?php echo esc_html(t($r["k"])); ?></span>
           <span style="font-weight:500;font-size:17px;text-align:right;"><?php echo esc_html($r['v']); ?> <span style="color:var(--clay);">→</span></span>
         </a>
         <?php endforeach; ?>
       </div>
 
       <div style="margin-top:30px;">
-        <span class="eyebrow">Radno vreme</span>
+        <span class="eyebrow"><?php echo t('Radno vreme'); ?></span>
         <div style="margin-top:16px;">
           <?php foreach ($biz['hours'] as $i => $h): ?>
           <div class="row" style="justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--sage-line);">
-            <span><?php echo esc_html($h['day']); ?></span>
-            <span style="font-weight:600;"><?php echo esc_html($h['time']); ?></span>
+            <span><?php echo esc_html(t($h["day"])); ?></span>
+            <span style="font-weight:600;"><?php echo esc_html(t($h["time"])); ?></span>
           </div>
           <?php endforeach; ?>
         </div>
@@ -64,13 +64,13 @@ $rows = [
           loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
         <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener"
           class="btn btn-dark" style="position:absolute;bottom:16px;right:16px;">
-          Kako do nas <span class="arrow">→</span>
+          <?php echo t('Kako do nas'); ?> <span class="arrow">→</span>
         </a>
       </div>
       <div style="margin-top:24px;padding:26px;background:var(--cream);border-radius:var(--radius-lg);">
-        <h3 class="display" style="font-size:26px;">Dolaziš kolima?</h3>
+        <h3 class="display" style="font-size:26px;"><?php echo t('Dolaziš kolima?'); ?></h3>
         <p class="muted" style="margin-top:10px;font-size:16px;">
-          U West 65 Mall prvi sat parkiranja je besplatan. Iskoristi ga, mi smo samo nekoliko koraka od ulaza.
+          <?php echo t('U West 65 Mall prvi sat parkiranja je besplatan. Iskoristi ga, mi smo samo nekoliko koraka od ulaza.'); ?>
         </p>
       </div>
     </div>

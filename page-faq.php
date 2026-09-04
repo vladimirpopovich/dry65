@@ -112,9 +112,9 @@ $faq_groups = [
 
 <section class="bg-paper2 section-sm" style="padding-top:clamp(24px,3vw,40px);padding-bottom:clamp(20px,2.5vw,32px);">
   <div class="wrap">
-    <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">Česta pitanja</span>
+    <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;"><?php echo t('Česta pitanja'); ?></span>
     <h1 class="display caps" style="font-size:clamp(30px,4.2vw,52px);margin-top:4px;max-width:30ch;line-height:1.0;letter-spacing:0.01em;">
-      Sve što treba da znate o Dry65 salonu
+      <?php echo t('Sve što treba da znate o Dry65 salonu'); ?>
     </h1>
     <p class="lead" style="margin-top:26px;max-width:680px;">
       Odgovori na najčešća pitanja klijentkinja o feniranju, cenama, radnom vremenu i lokaciji. Ako Vaše pitanje nije ovde, pišite nam na <a href="mailto:<?php echo esc_attr($biz['email']); ?>" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;"><?php echo esc_html($biz['email']); ?></a> ili pozovite <?php echo esc_html($biz['phone_display']); ?>.
@@ -127,17 +127,17 @@ $faq_groups = [
     <?php foreach ($faq_groups as $g_i => $group): ?>
       <div class="faq-group" style="margin-bottom:clamp(40px,5vw,64px);">
         <h2 class="display" style="font-size:clamp(26px,3.6vw,38px);margin-bottom:20px;color:var(--oxblood);">
-          <?php echo esc_html($group['title']); ?>
+          <?php echo esc_html(t($group['title'])); ?>
         </h2>
         <div class="faq-list">
           <?php foreach ($group['items'] as $i_i => $item): ?>
             <details class="faq-item" style="border:1px solid var(--sage-line);border-radius:var(--radius-lg);padding:0;margin-bottom:12px;background:#fff;">
               <summary class="faq-q" style="padding:20px 24px;cursor:pointer;font-family:var(--font-sans);font-weight:600;font-size:17px;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;">
-                <span><?php echo esc_html($item['q']); ?></span>
+                <span><?php echo esc_html(t($item['q'])); ?></span>
                 <span class="faq-icon" aria-hidden="true" style="flex-shrink:0;font-size:20px;color:var(--clay);transition:transform .25s var(--ease);">+</span>
               </summary>
               <div class="faq-a" style="padding:0 24px 22px;font-family:var(--font-sans);font-size:16px;line-height:1.6;color:var(--muted);">
-                <?php echo wp_kses_post($item['a']); ?>
+                <?php echo wp_kses_post(t($item['a'])); ?>
               </div>
             </details>
           <?php endforeach; ?>
@@ -149,16 +149,16 @@ $faq_groups = [
 
 <section class="section-sm bg-cream">
   <div class="wrap center">
-    <h2 class="display" style="font-size:clamp(28px,4vw,44px);">Niste našli odgovor?</h2>
+    <h2 class="display" style="font-size:clamp(28px,4vw,44px);"><?php echo t('Niste našli odgovor?'); ?></h2>
     <p class="lead" style="margin-top:16px;max-width:520px;margin-inline:auto;">
-      Kontaktirajte nas — rado ćemo pojasniti sve što Vas interesuje.
+      <?php echo t('Kontaktirajte nas — rado ćemo pojasniti sve što Vas interesuje.'); ?>
     </p>
     <div class="btn-row" style="justify-content:center;margin-top:26px;">
       <a href="tel:<?php echo esc_attr($biz['phone']); ?>" class="btn btn-dark">
-        Pozovi nas <span class="arrow">→</span>
+        <?php echo t('Pozovi nas'); ?> <span class="arrow">→</span>
       </a>
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('kontakt'))); ?>" class="btn btn-outline">
-        Sve kontakt info
+        <?php echo t('Sve kontakt info'); ?>
       </a>
     </div>
   </div>
@@ -187,10 +187,10 @@ $faq_schema = [
 foreach ($faq_groups as $group) {
     foreach ($group['items'] as $item) {
         // Za Schema — plain text bez HTML tagova
-        $answer_plain = wp_strip_all_tags($item['a']);
+        $answer_plain = wp_strip_all_tags(t($item['a']));
         $faq_schema['mainEntity'][] = [
             '@type' => 'Question',
-            'name'  => $item['q'],
+            'name'  => t($item['q']),
             'acceptedAnswer' => [
                 '@type' => 'Answer',
                 'text'  => $answer_plain,

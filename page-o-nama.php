@@ -18,15 +18,15 @@ $stats = [
 
 <section class="bg-paper2 section-sm" style="padding-top:clamp(24px,3vw,40px);padding-bottom:clamp(20px,2.5vw,32px);">
   <div class="wrap">
-    <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;">O nama</span>
+    <span class="script" style="font-size:clamp(28px,3.6vw,44px);display:block;margin-bottom:4px;"><?php echo t('O nama'); ?></span>
     <h1 class="display caps" style="font-size:clamp(30px,4.2vw,52px);margin-top:4px;max-width:28ch;line-height:1.0;letter-spacing:0.01em;">
-      Walk-in blowout salon Dry65
+      <?php echo t('Walk-in blowout salon Dry65'); ?>
     </h1>
     <p class="lead" style="margin-top:26px;max-width:640px;">
-      Dry65 je <strong>frizerski salon specijalizovan za feniranje na Novom Beogradu</strong>, u West 65. Walk-in koncept, bez zakazivanja. Radimo jednu stvar, feniramo, i u tome smo najbolji.
+      <?php echo tk('onama.lead', 'Dry65 je <strong>frizerski salon specijalizovan za feniranje na Novom Beogradu</strong>, u West 65. Walk-in koncept, bez zakazivanja. Radimo jednu stvar, feniramo, i u tome smo najbolji.'); ?>
     </p>
     <p class="lead" style="margin-top:14px;max-width:640px;font-size:15px;color:var(--muted);">
-      Radimo isključivo sa <a href="https://www.schwarzkopf-professional.com/" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Schwarzkopf Professional</a> proizvodima, vodećim svetskim brendom za salonsku negu kose.
+      <?php echo tk('onama.schwarzkopf', 'Radimo isključivo sa <a href="https://www.schwarzkopf-professional.com/" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Schwarzkopf Professional</a> proizvodima, vodećim svetskim brendom za salonsku negu kose.'); ?>
     </p>
   </div>
 </section>
@@ -37,7 +37,7 @@ $stats = [
     <?php foreach ($stats as $i => $s): ?>
     <div class="reveal" data-delay="<?php echo $i * 80; ?>">
       <div class="big-num" style="color:var(--clay);"><?php echo esc_html($s['n']); ?></div>
-      <p class="muted" style="margin-top:10px;font-size:15px;"><?php echo esc_html($s['l']); ?></p>
+      <p class="muted" style="margin-top:10px;font-size:15px;"><?php echo esc_html(t($s["l"])); ?></p>
     </div>
     <?php endforeach; ?>
   </div>
@@ -73,8 +73,8 @@ $stats = [
 <section class="section">
   <div class="wrap center">
     <div>
-      <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;">Vrednosti</span>
-      <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;">Zašto baš Dry65?</h2>
+      <span class="script" style="font-size:clamp(28px,3.4vw,40px);display:block;margin-bottom:2px;"><?php echo t('Vrednosti'); ?></span>
+      <h2 class="display" style="font-size:clamp(34px,5.2vw,64px);margin-top:6px;"><?php echo t('Zašto baš Dry65?'); ?></h2>
     </div>
     <?php
     $values = [
@@ -87,14 +87,14 @@ $stats = [
       <?php foreach ($values as $i => $v): ?>
       <div class="reveal card" style="padding:30px 28px;height:100%;" data-delay="<?php echo $i * 80; ?>">
         <span class="mono" style="color:var(--clay);"><?php echo str_pad($i + 1, 2, '0', STR_PAD_LEFT); ?></span>
-        <h3 class="display" style="font-size:27px;margin-top:12px;"><?php echo esc_html($v['t']); ?></h3>
-        <p class="muted" style="margin-top:12px;font-size:16px;"><?php echo esc_html($v['d']); ?></p>
+        <h3 class="display" style="font-size:27px;margin-top:12px;"><?php echo esc_html(t($v["t"])); ?></h3>
+        <p class="muted" style="margin-top:12px;font-size:16px;"><?php echo esc_html(t($v["d"])); ?></p>
       </div>
       <?php endforeach; ?>
     </div>
     <div style="margin-top:44px;">
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('kontakt'))); ?>" class="btn btn-dark">
-        Kako do nas <span class="arrow">→</span>
+        <?php echo t('Kako do nas'); ?> <span class="arrow">→</span>
       </a>
     </div>
   </div>
