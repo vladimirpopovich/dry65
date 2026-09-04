@@ -1,27 +1,20 @@
 <?php
 /* ============================================================
    Dry65 — engleski prevodi (EN)
-   ------------------------------------------------------------
-   Kljuc = srpski original (t) ILI kratak kod (tk).
-   Popuni engleski u praznim '' poljima. Prazno = fallback na SR,
-   pa je bezbedno prevoditi postepeno.
+   Kljuc = srpski original (t) ILI kratak kod (tk). Prazno '' = fallback na SR.
    ============================================================ */
 
 return [
 
-    /* ---- Meni + osnovni UI (prevedeno) ---- */
+    /* ---- Meni + osnovni UI ---- */
     'O nama' => 'About',
     'Usluge' => 'Services',
     'Cenovnik' => 'Pricing',
-    'Paketi' => 'Packages',
     'Ambijent' => 'Ambience',
-    'Karijera' => 'Careers',
     'Kontakt' => 'Contact',
-    'Blog' => 'Blog',
     'Otvori meni' => 'Open menu',
-    'Zatvori meni' => 'Close menu',
 
-    /* ---- Kratki stringovi (t) — popuni EN ---- */
+    /* ---- Ostali kratki stringovi (t) ---- */
     'Feniranje bez zakazivanja, Novi Beograd' => '',
     'Kako do nas' => '',
     'Mesečni paketi' => '',
@@ -102,6 +95,15 @@ return [
     'Kontaktirajte nas — rado ćemo pojasniti sve što Vas interesuje.' => '',
     'Pozovi nas' => '',
     'Sve kontakt info' => '',
+    'minuta' => '',
+    'Broj ljudi koji trenutno gledaju ovu stranicu' => '',
+    'Pozovi' => '',
+    'Česta pitanja o čekanju' => '',
+    'Kako radi walk-in feniranje u Dry65 i koliko se čeka.' => '',
+    'Zatvoreni smo' => 'We are closed',
+    'Trenutni status' => '',
+    'Slobodan termin' => '',
+    'Sledeći slobodan termin je za manje od' => '',
     'Dobrodošli' => '',
     'Dry65, feniranje bez zakazivanja. Na pravom ste mestu.' => '',
     'Zatvoreno' => '',
@@ -110,7 +112,6 @@ return [
     'Vidimo se sutra' => '',
     'min čekanja' => '',
     'Trenutna procena' => '',
-    'Slobodan termin' => '',
     'Slobodno, samo dođite' => '',
     'Trenutni status salona' => '',
     'Cenovnik za feniranje' => '',
@@ -121,6 +122,64 @@ return [
     'Imate pitanja?' => '',
     'Pozovite nas, rado ćemo pomoći.' => '',
     'Pozovite' => '',
+    'Radno vreme: ponedeljak - petak od 8h do 20h, subotom od 10h do 18h, nedeljom ne radimo.' => '',
+    'ponedeljak' => '',
+    'utorak' => '',
+    'sredu' => '',
+    'četvrtak' => '',
+    'petak' => '',
+    'subotu' => '',
+    'sutra' => '',
+    'u ' => '',
+    'Hvala vam što nas birate, vidimo se ' => '',
+    ' od ' => '',
+    'Hvala vam što nas birate, vidimo se uskoro.' => '',
+    'Za danas smo popunjeni' => '',
+    'minut' => '',
+    'sat' => '',
+    'sata' => '',
+    'sati' => '',
+    'dan' => '',
+    'dana' => '',
+    'Status je ažuriran upravo sada' => '',
+    'Status je ažuriran pre ' => '',
+    'Prvi ste na redu' => '',
+    'Na redu ste za manje od ' => '',
+    'Samo dođite' => 'Just come in',
+    'Čekamo vas.' => 'We are waiting for you.',
+    'Krenite ka nama' => '',
+    'Taman dovoljno vremena da stignete bez žurbe.' => '',
+    'Pravo vreme da krenete' => '',
+    'Bićemo spremni baš kada stignete.' => '',
+    'Ako ste u blizini…' => '',
+    'Savršen trenutak da isplanirate polazak.' => '',
+    'Polako krenite' => '',
+    'Uz kafu ili prosecco vreme će brže proći.' => '',
+    'Salon je danas tražen' => '',
+    'Dajemo sve od sebe da smanjimo vreme čekanja.' => '',
+    'Velika zainteresovanost' => '',
+    'Dajemo sve od sebe da smanjimo vreme čekanja. Hvala na razumevanju.' => '',
+    'Popularan termin' => '',
+    'Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.' => '',
+    'Moguće je da se procena promeni kako se oslobađaju mesta.' => '',
+    'Slobodni smo' => '',
+    'Samo dođite, čekamo vas.' => '',
+    'Ako planirate dolazak, preporučujemo da krenete uskoro.' => '',
+    'Uskoro slobodni' => '',
+    'Krenite, uskoro će se osloboditi mesto.' => '',
+    'Može se promeniti kako klijenti dolaze i odlaze.' => '',
+    'Malo čekanja' => '',
+    'Ako ste u blizini, pravo je vreme da svratite.' => '',
+    'Manja gužva' => '',
+    'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.' => '',
+    'Imamo gužvu' => '',
+    'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.' => '',
+    'Popunjeni' => '',
+    'Prikazano vreme je procena zasnovana na trenutnoj popunjenosti salona i ažurira se uživo kako se mesta oslobađaju i popunjavaju.' => '',
+    'Trenutno radi: ' => '',
+    'Trenutno rade: ' => '',
+    ' i ' => '',
+    'Proveri uživo koliko se čeka' => '',
     'Vidi sva pitanja' => '',
     'Kratka' => '',
     'Srednja' => '',
@@ -161,7 +220,7 @@ return [
     'Nedelja' => '',
     'Ne radimo' => '',
 
-    /* ---- Veliki HTML blokovi (tk) — popuni EN (SR original u komentaru) ---- */
+    /* ---- Veliki HTML blokovi (tk) — SR original u komentaru ---- */
     // SR: Dry65 je <strong>frizerski salon na Novom Beogradu, u West 65</strong>, specijalizovan za feniranje. Walk-in, bez zakazivanja. Lokne, talasi, glatko, volumen, sve za savršenu frizuru koja drži danima.
     'home.hero.lead' => '',
     // SR: Ne moraš da zakažeš.<br>Samo svrati.
@@ -172,6 +231,12 @@ return [
     'onama.schwarzkopf' => '',
     // SR: Koristimo isključivo <a href="https://www.schwarzkopf-professional.com/" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Schwarzkopf Professional</a> proizvode, vodeću svetsku marku za profesionalne salone. Od pranja i nege do stilizovanja, svaki proizvod biramo da kosa ostane zdrava, mekana i puna sjaja.
     'usluge.schwarzkopf' => '',
+    // SR: osoba
+    'live.viewers.one' => '',
+    // SR: osobe
+    'live.viewers.few' => '',
+    // SR: osoba
+    'live.viewers.many' => '',
     // SR: Cene feniranja po dužini kose. U <strong>detaljnom cenovniku</strong> su i ostale usluge, tretmani i paketi.
     'menu.cen.note' => '',
 

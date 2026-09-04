@@ -26,7 +26,7 @@ get_header();
         <svg class="live-closed-icon" id="live-closed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"<?php echo $st['tier'] === 'closed' ? '' : ' style="display:none;"'; ?>><path d="M6 12h12"></path></svg>
         <svg class="live-heart" id="live-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"<?php echo $st['tier'] === 'full' ? '' : ' style="display:none;"'; ?>><path d="M20.8 8.6a4.6 4.6 0 0 0-7.8-2.4L12 7.1l-1-1a4.6 4.6 0 1 0-6.5 6.5l1 1L12 21l6.5-7.4 1-1c.9-.9 1.3-2 1.3-3z"></path></svg>
         <span class="live-ring-num" id="live-ring-num"<?php echo ($st['is_free'] || $st['ring_num'] === '') ? ' style="display:none;"' : ''; ?>><?php echo esc_html($st['ring_num']); ?></span>
-        <span class="live-ring-unit" id="live-ring-unit"<?php echo ($st['is_free'] || $st['ring_num'] === '') ? ' style="display:none;"' : ''; ?>>minuta</span>
+        <span class="live-ring-unit" id="live-ring-unit"<?php echo ($st['is_free'] || $st['ring_num'] === '') ? ' style="display:none;"' : ''; ?>><?php echo t('minuta'); ?></span>
       </div>
 
       <h1 class="display live-headline" id="live-headline"><?php echo esc_html($st['headline']); ?></h1>
@@ -41,7 +41,7 @@ get_header();
       <p class="live-chairs" id="live-chairs"<?php echo $live_chairs_vis ? '' : ' style="display:none;"'; ?>><?php echo esc_html($live_staff_text); ?></p>
 
 
-      <div class="live-viewers" id="live-viewers" style="display:none;" title="Broj ljudi koji trenutno gledaju ovu stranicu">
+      <div class="live-viewers" id="live-viewers" style="display:none;" title="<?php echo esc_attr(t('Broj ljudi koji trenutno gledaju ovu stranicu')); ?>">
         <svg class="live-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span id="live-viewers-text"></span>
       </div>
 
@@ -50,15 +50,15 @@ get_header();
     </div>
 
     <div class="btn-row live-cta" style="justify-content:center;flex-wrap:wrap;">
-      <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">Kako do nas <span class="arrow">→</span></a>
-      <a href="tel:<?php echo esc_attr(preg_replace('/\s+/', '', $biz['phone'])); ?>" class="btn btn-ghost">Pozovi</a>
+      <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark"><?php echo t('Kako do nas'); ?> <span class="arrow">→</span></a>
+      <a href="tel:<?php echo esc_attr(preg_replace('/\s+/', '', $biz['phone'])); ?>" class="btn btn-ghost"><?php echo t('Pozovi'); ?></a>
     </div>
 
   </div>
 </section>
 
 <?php // FAQ specifičan za /live (čekanje + walk-in) — skroz na dnu, jedinstven tekst za SEO/AI
-dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in feniranje u Dry65 i koliko se čeka.'); ?>
+dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi walk-in feniranje u Dry65 i koliko se čeka.')); ?>
 </main>
 
 <style>
@@ -204,7 +204,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
   var DRY65_WAITS = <?php echo wp_json_encode(dry65_live_allowed_waits()); ?>;
   var DRY65_TEXTS = <?php echo wp_json_encode(dry65_live_texts(), JSON_UNESCAPED_UNICODE); ?>;
   function copyText(min) {
-    if (state.closed) return ['Zatvoreni smo', state.hoursText];
+    if (state.closed) return [<?php echo wp_json_encode(t('Zatvoreni smo')); ?>, state.hoursText];
     if (state.full)   return [state.fullH, state.fullS];
     for (var i = 0; i < DRY65_WAITS.length; i++) {
       var v = DRY65_WAITS[i];
@@ -230,7 +230,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
     // Eyebrow
     if (elEyebrow) {
-      elEyebrow.textContent = (state.closed || state.full) ? 'Trenutni status' : (free ? 'Slobodan termin' : 'Sledeći slobodan termin je za manje od');
+      elEyebrow.textContent = (state.closed || state.full) ? <?php echo wp_json_encode(t('Trenutni status')); ?> : (free ? <?php echo wp_json_encode(t('Slobodan termin')); ?> : <?php echo wp_json_encode(t('Sledeći slobodan termin je za manje od')); ?>);
       elEyebrow.style.display = '';
     }
     // Prsten: kvačica (slobodno) / broj+minuta (čekanje) / ⊖ (zatvoreno) / ♥ (popunjeni)
@@ -268,7 +268,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
   // AJAX — autoritativni podatak sa servera (hvata izmene admina: nova mušterija → veći broj).
   function refresh() {
-    fetch(ajaxUrl + '?action=dry65_live_get&v=' + encodeURIComponent(token) + '&_=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' })
+    fetch(ajaxUrl + '?action=dry65_live_get&lang=<?php echo dry65_lang(); ?>&v=' + encodeURIComponent(token) + '&_=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d) return;
@@ -286,7 +286,7 @@ dry65_render_faq_section('live', 'Česta pitanja o čekanju', 'Kako radi walk-in
 
         // Brojač gledalaca — ikonica oka + broj + osoba/osobe, prikaži iznad praga
         if (d.viewers >= d.viewers_min) {
-          elViewersT.textContent = d.viewers + ' ' + srPlural(d.viewers, 'osoba', 'osobe', 'osoba');
+          elViewersT.textContent = d.viewers + ' ' + srPlural(d.viewers, <?php echo wp_json_encode(tk('live.viewers.one','osoba')); ?>, <?php echo wp_json_encode(tk('live.viewers.few','osobe')); ?>, <?php echo wp_json_encode(tk('live.viewers.many','osoba')); ?>);
           elViewers.style.display = '';
         } else {
           elViewers.style.display = 'none';

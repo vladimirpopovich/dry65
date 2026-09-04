@@ -117,7 +117,7 @@ function dry65_live_is_open_now() {
 /* Radno vreme kao TEKST (prikaz kad je zatvoreno). Logika je iznad, u
    dry65_live_is_open_now() — ako menjaš sate, promeni i brojeve i ovaj tekst. */
 function dry65_live_hours_text() {
-    return 'Radno vreme: ponedeljak - petak od 8h do 20h, subotom od 10h do 18h, nedeljom ne radimo.';
+    return t('Radno vreme: ponedeljak - petak od 8h do 20h, subotom od 10h do 18h, nedeljom ne radimo.');
 }
 
 /* Dinamičan tekst za „Za danas popunjeni": kad se sledeći put otvaramo.
@@ -125,23 +125,23 @@ function dry65_live_hours_text() {
 function dry65_live_next_open_text() {
     $tz    = new DateTimeZone('Europe/Belgrade');
     $now   = new DateTime('now', $tz);
-    $days  = [1 => 'ponedeljak', 2 => 'utorak', 3 => 'sredu', 4 => 'četvrtak', 5 => 'petak', 6 => 'subotu'];
+    $days  = [1 => t('ponedeljak'), 2 => t('utorak'), 3 => t('sredu'), 4 => t('četvrtak'), 5 => t('petak'), 6 => t('subotu')];
     for ($i = 1; $i <= 7; $i++) {
         $d   = (clone $now)->modify("+$i day");
         $dow = (int) $d->format('N');
         if ($dow >= 1 && $dow <= 5) $open = '8h';
         elseif ($dow === 6)         $open = '10h';
         else                        continue; // nedelja — preskoči
-        $when = ($i === 1) ? 'sutra' : 'u ' . $days[$dow];
-        return 'Hvala vam što nas birate, vidimo se ' . $when . ' od ' . $open . '.';
+        $when = ($i === 1) ? t('sutra') : t('u ') . $days[$dow];
+        return t('Hvala vam što nas birate, vidimo se ') . $when . t(' od ') . $open . '.';
     }
-    return 'Hvala vam što nas birate, vidimo se uskoro.';
+    return t('Hvala vam što nas birate, vidimo se uskoro.');
 }
 
 /* Naslov + opis za „Za danas popunjeni" (editabilno preko admina; opis default = dinamičan). */
 function dry65_live_full_copy() {
     $texts = dry65_live_texts();
-    $h = (isset($texts['full']['h']) && $texts['full']['h'] !== '') ? $texts['full']['h'] : 'Za danas smo popunjeni';
+    $h = (isset($texts['full']['h']) && $texts['full']['h'] !== '') ? $texts['full']['h'] : t('Za danas smo popunjeni');
     $s = (isset($texts['full']['s']) && $texts['full']['s'] !== '') ? $texts['full']['s'] : dry65_live_next_open_text();
     return [$h, $s];
 }
@@ -274,11 +274,11 @@ function dry65_live_ago_duration($sec) {
         return $many;
     };
     $m = intdiv($sec, 60);
-    if ($m < 60)      return $m . ' ' . $sr($m, 'minut', 'minuta', 'minuta');
+    if ($m < 60)      return $m . ' ' . $sr($m, t('minut'), t('minuta'), t('minuta'));
     $h = intdiv($m, 60);
-    if ($h < 24)      return $h . ' ' . $sr($h, 'sat', 'sata', 'sati');
+    if ($h < 24)      return $h . ' ' . $sr($h, t('sat'), t('sata'), t('sati'));
     $d = intdiv($h, 24);
-    return $d . ' ' . $sr($d, 'dan', 'dana', 'dana');
+    return $d . ' ' . $sr($d, t('dan'), t('dana'), t('dana'));
 }
 
 /* „Status je ažuriran pre 3 minuta" — uvod u `note`.
@@ -286,7 +286,7 @@ function dry65_live_ago_duration($sec) {
 function dry65_live_ago_sentence($sec) {
     if ((int) $sec < 0) return '';
     $d = dry65_live_ago_duration($sec);
-    return $d === '' ? 'Status je ažuriran upravo sada' : 'Status je ažuriran pre ' . $d;
+    return $d === '' ? t('Status je ažuriran upravo sada') : t('Status je ažuriran pre ') . $d;
 }
 
 /* ---- ODBROJAVANJE: koliko je OSTALO od postavljenog vremena ----
@@ -317,27 +317,27 @@ function dry65_live_remaining_sec($raw = null) {
    „minuta" (svi koraci se završavaju na 0 ili 5 — nema srpske pluralizacije).
    Mirror JS funkcije `waitLabel` u page-live.php — menjaj na OBA mesta. */
 function dry65_live_wait_label($remaining_min) {
-    if ($remaining_min <= 0)  return 'Prvi ste na redu';
-    return 'Na redu ste za manje od ' . (int) (ceil($remaining_min / 5) * 5) . ' minuta';
+    if ($remaining_min <= 0)  return t('Prvi ste na redu');
+    return t('Na redu ste za manje od ') . (int) (ceil($remaining_min / 5) * 5) . ' ' . t('minuta');
 }
 
 /* ---- Podrazumevani tekstovi [vrednost => [h(naslov), s(opis)]] ----
    Ovo je fallback; admin ih može prepisati u „Dry65 Uživo" panelu. */
 function dry65_live_default_texts() {
     return [
-        0  => ['h' => 'Samo dođite',             's' => 'Čekamo vas.'],
-        5  => ['h' => 'Krenite ka nama',         's' => 'Taman dovoljno vremena da stignete bez žurbe.'],
-        10 => ['h' => 'Pravo vreme da krenete',  's' => 'Bićemo spremni baš kada stignete.'],
-        15 => ['h' => 'Ako ste u blizini…',      's' => 'Savršen trenutak da isplanirate polazak.'],
-        20 => ['h' => 'Polako krenite',          's' => 'Uz kafu ili prosecco vreme će brže proći.'],
-        25 => ['h' => 'Polako krenite',          's' => 'Uz kafu ili prosecco vreme će brže proći.'],
-        30 => ['h' => 'Polako krenite',          's' => 'Uz kafu ili prosecco vreme će brže proći.'],
-        35 => ['h' => 'Salon je danas tražen',   's' => 'Dajemo sve od sebe da smanjimo vreme čekanja.'],
-        45 => ['h' => 'Velika zainteresovanost', 's' => 'Dajemo sve od sebe da smanjimo vreme čekanja. Hvala na razumevanju.'],
-        60 => ['h' => 'Popularan termin',        's' => 'Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.'],
-        90 => ['h' => 'Popularan termin',        's' => 'Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.'],
+        0  => ['h' => t('Samo dođite'),             's' => t('Čekamo vas.')],
+        5  => ['h' => t('Krenite ka nama'),         's' => t('Taman dovoljno vremena da stignete bez žurbe.')],
+        10 => ['h' => t('Pravo vreme da krenete'),  's' => t('Bićemo spremni baš kada stignete.')],
+        15 => ['h' => t('Ako ste u blizini…'),      's' => t('Savršen trenutak da isplanirate polazak.')],
+        20 => ['h' => t('Polako krenite'),          's' => t('Uz kafu ili prosecco vreme će brže proći.')],
+        25 => ['h' => t('Polako krenite'),          's' => t('Uz kafu ili prosecco vreme će brže proći.')],
+        30 => ['h' => t('Polako krenite'),          's' => t('Uz kafu ili prosecco vreme će brže proći.')],
+        35 => ['h' => t('Salon je danas tražen'),   's' => t('Dajemo sve od sebe da smanjimo vreme čekanja.')],
+        45 => ['h' => t('Velika zainteresovanost'), 's' => t('Dajemo sve od sebe da smanjimo vreme čekanja. Hvala na razumevanju.')],
+        60 => ['h' => t('Popularan termin'),        's' => t('Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.')],
+        90 => ['h' => t('Popularan termin'),        's' => t('Pratite stanje i izaberite mirniji deo dana kako biste izbegli čekanje.')],
         // Za danas popunjeni (manuelni status). Opis prazan = dinamičan default („vidimo se sutra od Xh").
-        'full' => ['h' => 'Za danas smo popunjeni', 's' => ''],
+        'full' => ['h' => t('Za danas smo popunjeni'), 's' => ''],
     ];
 }
 
@@ -374,29 +374,29 @@ function dry65_live_ring_num($remaining_min) {
 
 function dry65_live_tier_copy($remaining_min, $phone) {
     // `note` je samo NASTAVAK — resolve() ispred zalepi „Status je ažuriran pre X. "
-    $busy_note = 'Moguće je da se procena promeni kako se oslobađaju mesta.';
+    $busy_note = t('Moguće je da se procena promeni kako se oslobađaju mesta.');
     if ($remaining_min <= 0) {
-        return ['tier' => 'free', 'emoji' => '🟢', 'headline' => 'Slobodni smo',
-                'sub' => 'Samo dođite, čekamo vas.',
-                'note' => 'Ako planirate dolazak, preporučujemo da krenete uskoro.'];
+        return ['tier' => 'free', 'emoji' => '🟢', 'headline' => t('Slobodni smo'),
+                'sub' => t('Samo dođite, čekamo vas.'),
+                'note' => t('Ako planirate dolazak, preporučujemo da krenete uskoro.')];
     }
     if ($remaining_min <= 10) {
-        return ['tier' => 'lime', 'emoji' => '🟢', 'headline' => 'Uskoro slobodni',
-                'sub' => 'Krenite, uskoro će se osloboditi mesto.',
-                'note' => 'Može se promeniti kako klijenti dolaze i odlaze.'];
+        return ['tier' => 'lime', 'emoji' => '🟢', 'headline' => t('Uskoro slobodni'),
+                'sub' => t('Krenite, uskoro će se osloboditi mesto.'),
+                'note' => t('Može se promeniti kako klijenti dolaze i odlaze.')];
     }
     if ($remaining_min <= 30) {
-        return ['tier' => 'yellow', 'emoji' => '🟡', 'headline' => 'Malo čekanja',
-                'sub' => 'Ako ste u blizini, pravo je vreme da svratite.',
+        return ['tier' => 'yellow', 'emoji' => '🟡', 'headline' => t('Malo čekanja'),
+                'sub' => t('Ako ste u blizini, pravo je vreme da svratite.'),
                 'note' => $busy_note];
     }
     if ($remaining_min <= 45) {
-        return ['tier' => 'orange', 'emoji' => '🟠', 'headline' => 'Manja gužva',
-                'sub' => 'Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.',
+        return ['tier' => 'orange', 'emoji' => '🟠', 'headline' => t('Manja gužva'),
+                'sub' => t('Popijte kafu ili prosecco dok čekate. Vreme će proći brže nego što mislite.'),
                 'note' => $busy_note];
     }
-    $heavy = ['emoji' => '🔴', 'headline' => 'Imamo gužvu',
-              'sub' => 'Ako vam se ne žuri, preporučujemo da svratite malo kasnije.',
+    $heavy = ['emoji' => '🔴', 'headline' => t('Imamo gužvu'),
+              'sub' => t('Ako vam se ne žuri, preporučujemo da svratite malo kasnije.'),
               'note' => $busy_note];
     if ($remaining_min <= 60) return ['tier' => 'red'] + $heavy;
     // 61+ (dugme 90) — isti tekst kao crveno, samo bordo boja
@@ -416,23 +416,23 @@ function dry65_live_resolve() {
     $remaining_min = (int) ceil($remaining_sec / 60);
 
     if ($closed) {
-        $data = ['tier' => 'closed', 'emoji' => '⚪', 'headline' => 'Zatvoreni smo',
-                 'wait_label' => 'Zatvoreno', 'sub' => dry65_live_hours_text(),
-                 'note' => '', 'eyebrow' => 'Trenutni status', 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
+        $data = ['tier' => 'closed', 'emoji' => '⚪', 'headline' => t('Zatvoreni smo'),
+                 'wait_label' => t('Zatvoreno'), 'sub' => dry65_live_hours_text(),
+                 'note' => '', 'eyebrow' => t('Trenutni status'), 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
     } elseif ($full) {
         list($fh, $fs) = dry65_live_full_copy();
         $data = ['tier' => 'full', 'emoji' => '🩶', 'headline' => $fh,
-                 'wait_label' => 'Popunjeni', 'sub' => $fs,
-                 'note' => '', 'eyebrow' => 'Trenutni status', 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
+                 'wait_label' => t('Popunjeni'), 'sub' => $fs,
+                 'note' => '', 'eyebrow' => t('Trenutni status'), 'is_free' => false, 'ring_num' => '', 'footnote' => ''];
     } else {
         $data = dry65_live_tier_copy($remaining_min, $phone); // za boju (tier) + emoji
         list($hl, $sub_new) = dry65_live_copy($remaining_min);
         $data['headline']   = $hl;
         $data['sub']        = $sub_new;
-        $data['eyebrow']    = ($remaining_min <= 0) ? 'Slobodan termin' : 'Sledeći slobodan termin je za manje od';
+        $data['eyebrow']    = ($remaining_min <= 0) ? t('Slobodan termin') : t('Sledeći slobodan termin je za manje od');
         $data['is_free']    = ($remaining_min <= 0);
         $data['ring_num']   = ($remaining_min <= 0) ? '' : (string) dry65_live_ring_num($remaining_min);
-        $data['footnote']   = 'Prikazano vreme je procena zasnovana na trenutnoj popunjenosti salona i ažurira se uživo kako se mesta oslobađaju i popunjavaju.';
+        $data['footnote']   = t('Prikazano vreme je procena zasnovana na trenutnoj popunjenosti salona i ažurira se uživo kako se mesta oslobađaju i popunjavaju.');
         $data['wait_label'] = dry65_live_wait_label($remaining_min); // admin panel koristi
     }
 
@@ -783,9 +783,9 @@ function dry65_live_today_text() {
     $names = dry65_live_schedule_now_names();
     $n = count($names);
     if ($n === 0) return '';
-    if ($n === 1) return 'Trenutno radi: ' . $names[0];
+    if ($n === 1) return t('Trenutno radi: ') . $names[0];
     $last = array_pop($names);
-    return 'Trenutno rade: ' . implode(', ', $names) . ' i ' . $last;
+    return t('Trenutno rade: ') . implode(', ', $names) . t(' i ') . $last;
 }
 
 function dry65_live_schedule_page() {
@@ -1241,6 +1241,7 @@ function dry65_live_admin_page() {
 add_action('wp_ajax_dry65_live_get', 'dry65_live_ajax');
 add_action('wp_ajax_nopriv_dry65_live_get', 'dry65_live_ajax');
 function dry65_live_ajax() {
+    if (isset($_GET['lang']) && $_GET['lang'] === 'en') $GLOBALS['dry65_lang'] = 'en';
     nocache_headers(); // status je uživo — nikad ne keširaj (ni CDN ni browser)
     if (function_exists('do_action')) do_action('litespeed_control_set_nocache', 'dry65 live ajax');
     $st  = dry65_live_resolve();
@@ -1286,7 +1287,7 @@ function dry65_live_widget() {
     ?>
     <a class="live-strip" id="dry65-live-strip" href="<?php echo esc_url(home_url('/live/')); ?>">
         <span class="live-strip-dot" aria-hidden="true"></span>
-        <span class="live-strip-text" id="dry65-live-strip-text">Proveri uživo koliko se čeka</span>
+        <span class="live-strip-text" id="dry65-live-strip-text"><?php echo t('Proveri uživo koliko se čeka'); ?></span>
         <span class="live-strip-arrow" aria-hidden="true">→</span>
     </a>
 
@@ -1331,7 +1332,7 @@ function dry65_live_widget() {
         var txt = document.getElementById('dry65-live-strip-text');
         // Namerno BEZ `&v=` — taj parametar registruje gledaoca, pa bi svaki
         // posetilac homepage-a naduvao brojač „ko gleda /live".
-        fetch(<?php echo wp_json_encode(admin_url('admin-ajax.php')); ?> + '?action=dry65_live_get', { cache: 'no-store', credentials: 'same-origin' })
+        fetch(<?php echo wp_json_encode(admin_url('admin-ajax.php')); ?> + '?action=dry65_live_get&lang=<?php echo dry65_lang(); ?>', { cache: 'no-store', credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (!d || !d.tier) return;
