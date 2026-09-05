@@ -345,10 +345,17 @@ function dry65_live_default_texts() {
 function dry65_live_texts() {
     $saved = get_option('dry65_live_texts', []);
     if (!is_array($saved)) $saved = [];
+    $en = function_exists('dry65_is_en') && dry65_is_en();
     $out = [];
     foreach (dry65_live_default_texts() as $v => $def) {
-        $h = (isset($saved[$v]['h']) && $saved[$v]['h'] !== '') ? $saved[$v]['h'] : $def['h'];
-        $s = (isset($saved[$v]['s']) && $saved[$v]['s'] !== '') ? $saved[$v]['s'] : $def['s'];
+        // $def je vec preveden (t()) -> na EN je engleski default.
+        if ($en) {
+            $h = (isset($saved[$v]['h_en']) && $saved[$v]['h_en'] !== '') ? $saved[$v]['h_en'] : $def['h'];
+            $s = (isset($saved[$v]['s_en']) && $saved[$v]['s_en'] !== '') ? $saved[$v]['s_en'] : $def['s'];
+        } else {
+            $h = (isset($saved[$v]['h']) && $saved[$v]['h'] !== '') ? $saved[$v]['h'] : $def['h'];
+            $s = (isset($saved[$v]['s']) && $saved[$v]['s'] !== '') ? $saved[$v]['s'] : $def['s'];
+        }
         $out[$v] = ['h' => $h, 's' => $s];
     }
     return $out;
@@ -1118,19 +1125,27 @@ function dry65_live_admin_page() {
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                 <input type="hidden" name="action" value="dry65_live_save_texts">
                 <?php wp_nonce_field('dry65_live_save_texts'); ?>
-                <?php foreach (dry65_live_texts() as $v => $t):
+                <p style="color:#555;margin:0 0 6px;font-size:12.5px;">🇷🇸 srpski &nbsp;•&nbsp; 🇬🇧 engleski (prikazuje se na <code>/en/live</code>). Prazno = automatski prevod.</p>
+                <?php $saved_texts = get_option('dry65_live_texts', []); if (!is_array($saved_texts)) $saved_texts = [];
+                foreach (dry65_live_texts() as $v => $t):
                     if ($v === 'full') { $label = '♥ Za danas popunjeni'; $sph = 'Opis (prazno = „vidimo se sutra od 8h/10h" automatski)'; }
                     elseif ($v === 0)  { $label = 'Slobodno (0 min)'; $sph = 'Opisni tekst'; }
                     elseif ($v === 60) { $label = '60 min'; $sph = 'Opisni tekst'; }
                     elseif ($v === 90) { $label = '90+ min'; $sph = 'Opisni tekst'; }
                     else               { $label = $v . ' min'; $sph = 'Opisni tekst'; }
+                    $h_en = $saved_texts[$v]['h_en'] ?? '';
+                    $s_en = $saved_texts[$v]['s_en'] ?? '';
                 ?>
                 <div style="border-top:1px solid #eef0f2;padding:14px 0;">
                     <div style="font-weight:600;font-size:13px;color:#1d2327;margin-bottom:7px;"><?php echo esc_html($label); ?></div>
                     <input type="text" name="texts[<?php echo esc_attr($v); ?>][h]" value="<?php echo esc_attr($t['h']); ?>"
-                        placeholder="Naslov" style="width:100%;max-width:560px;margin-bottom:7px;display:block;">
+                        placeholder="🇷🇸 Naslov" style="width:100%;max-width:560px;margin-bottom:6px;display:block;">
                     <input type="text" name="texts[<?php echo esc_attr($v); ?>][s]" value="<?php echo esc_attr($t['s']); ?>"
-                        placeholder="<?php echo esc_attr($sph); ?>" style="width:100%;max-width:560px;display:block;">
+                        placeholder="🇷🇸 <?php echo esc_attr($sph); ?>" style="width:100%;max-width:560px;margin-bottom:10px;display:block;">
+                    <input type="text" name="texts[<?php echo esc_attr($v); ?>][h_en]" value="<?php echo esc_attr($h_en); ?>"
+                        placeholder="🇬🇧 Title (EN)" style="width:100%;max-width:560px;margin-bottom:6px;display:block;background:#f6f7f7;">
+                    <input type="text" name="texts[<?php echo esc_attr($v); ?>][s_en]" value="<?php echo esc_attr($s_en); ?>"
+                        placeholder="🇬🇧 Description (EN)" style="width:100%;max-width:560px;display:block;background:#f6f7f7;">
                 </div>
                 <?php endforeach; ?>
                 <button class="button button-primary" style="margin-top:16px;">Sačuvaj tekstove</button>
@@ -1463,9 +1478,13 @@ add_action('admin_post_dry65_live_save_texts', function () {
     $in  = (isset($_POST['texts']) && is_array($_POST['texts'])) ? wp_unslash($_POST['texts']) : [];
     $out = [];
     foreach (array_keys(dry65_live_default_texts()) as $v) { // uključuje i 'full'
-        $h = isset($in[$v]['h']) ? sanitize_text_field($in[$v]['h']) : '';
-        $s = isset($in[$v]['s']) ? sanitize_text_field($in[$v]['s']) : '';
-        if ($h !== '' || $s !== '') $out[$v] = ['h' => $h, 's' => $s];
+        $h    = isset($in[$v]['h'])    ? sanitize_text_field($in[$v]['h'])    : '';
+        $s    = isset($in[$v]['s'])    ? sanitize_text_field($in[$v]['s'])    : '';
+        $h_en = isset($in[$v]['h_en']) ? sanitize_text_field($in[$v]['h_en']) : '';
+        $s_en = isset($in[$v]['s_en']) ? sanitize_text_field($in[$v]['s_en']) : '';
+        if ($h !== '' || $s !== '' || $h_en !== '' || $s_en !== '') {
+            $out[$v] = ['h' => $h, 's' => $s, 'h_en' => $h_en, 's_en' => $s_en];
+        }
     }
     update_option('dry65_live_texts', $out);
 
