@@ -24,6 +24,7 @@ if (!defined('ABSPATH')) exit;
    ostaju nepromenjeni (npr. slug pojedinacne usluge dok se ne prevede). */
 function dry65_slug_map() {
     return [
+        // Glavne strane
         'o-nama'   => 'about-us',
         'usluge'   => 'services',
         'cenovnik' => 'pricing',
@@ -31,6 +32,26 @@ function dry65_slug_map() {
         'ambijent' => 'ambience',
         'kontakt'  => 'contact',
         'karijera' => 'careers',
+        // Usluge — kategorije
+        'feniranje-na-cetke' => 'round-brush-blowout',
+        'stilizovanje'       => 'styling',
+        'nega'               => 'hair-care',
+        // Feniranje — stilovi
+        'feniranje-na-ravno'   => 'straight-blowout',
+        'feniranje-na-talase'  => 'wavy-blowout',
+        'feniranje-na-lokne'   => 'curly-blowout',
+        'feniranje-na-volumen' => 'volume-blowout',
+        // Stilizovanje — stilovi
+        'ravna-kosa-peglom' => 'flat-iron-straight',
+        'talasi-peglom'     => 'flat-iron-waves',
+        'lokne-figarom'     => 'wand-curls',
+        'hollywood-talasi'  => 'hollywood-waves',
+        'beach-waves'       => 'beach-waves',
+        // Nega — tretmani
+        'infuzija-kose'   => 'infusion',
+        'maska-za-kosu'   => 'mask',
+        'booster-za-kosu' => 'booster',
+        'parna-stanica'   => 'steam-station',
     ];
 }
 /* Prevedi svaki segment putanje po mapi (smer: 'sr2en' ili 'en2sr'). */
