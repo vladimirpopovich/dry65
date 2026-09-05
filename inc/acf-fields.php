@@ -164,6 +164,12 @@ add_action('acf/init', function() {
             ['key' => 'field_off_image',     'label' => 'Glavna slika',    'name' => 'image',     'type' => 'image', 'return_format' => 'url', 'instructions' => 'Idealno kvadratni format (1000x1000px)'],
             ['key' => 'field_off_btn_text',  'label' => 'Tekst dugmeta',   'name' => 'btn_text',  'type' => 'text', 'default_value' => 'Saznaj više', 'instructions' => 'npr. Saznaj više, Iskoristi ponudu'],
             ['key' => 'field_off_btn_url',   'label' => 'Link dugmeta',    'name' => 'btn_url',   'type' => 'url', 'instructions' => 'Interni ili eksterni link. Ostavi prazno ako nema dugmeta.'],
+            /* ---- Engleski prevod (prikazuje se na /en/) ---- */
+            ['key' => 'field_off_en_tab',    'label' => '🇬🇧 English', 'type' => 'tab'],
+            ['key' => 'field_off_title_en',  'label' => 'Title (EN)',       'name' => 'title_en',  'type' => 'text', 'instructions' => 'Engleski naslov ponude. Prazno = prikazuje se srpski.'],
+            ['key' => 'field_off_badge_en',  'label' => 'Badge (EN)',       'name' => 'badge_en',  'type' => 'text'],
+            ['key' => 'field_off_desc_en',   'label' => 'Description (EN)', 'name' => 'description_en', 'type' => 'wysiwyg', 'tabs' => 'visual', 'media_upload' => 0, 'toolbar' => 'basic'],
+            ['key' => 'field_off_btn_en',    'label' => 'Button text (EN)', 'name' => 'btn_text_en', 'type' => 'text', 'instructions' => 'npr. Learn more, Get the offer'],
         ],
         'location' => [[['param' => 'post_type', 'operator' => '==', 'value' => 'dry65_offer']]],
     ]);

@@ -378,13 +378,13 @@ function dry65_offers() {
         if ($end_date && $end_date < $today) continue;
 
         $out[] = [
-            'title'       => $p->post_title,
-            'badge'       => dry65_get_field('badge', $p->ID) ?: '',
+            'title'       => function_exists('dry65_svc_title') ? dry65_svc_title($p->ID) : $p->post_title,
+            'badge'       => (function_exists('dry65_svc') ? dry65_svc('badge', $p->ID) : dry65_get_field('badge', $p->ID)) ?: '',
             'start_date'  => dry65_get_field('start_date', $p->ID) ?: '',
             'end_date'    => $end_date ?: '',
-            'description' => dry65_get_field('description', $p->ID) ?: '',
+            'description' => (function_exists('dry65_svc') ? dry65_svc('description', $p->ID) : dry65_get_field('description', $p->ID)) ?: '',
             'image'       => dry65_get_field('image', $p->ID) ?: '',
-            'btn_text'    => dry65_get_field('btn_text', $p->ID) ?: 'Saznaj više',
+            'btn_text'    => (function_exists('dry65_svc') ? dry65_svc('btn_text', $p->ID) : dry65_get_field('btn_text', $p->ID)) ?: (function_exists('t') ? t('Saznaj više') : 'Saznaj više'),
             'btn_url'     => dry65_get_field('btn_url', $p->ID) ?: '',
         ];
     }
