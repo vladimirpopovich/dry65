@@ -180,18 +180,39 @@ function tke($key, $sr_default = '') { echo tk($key, $sr_default); }
 /* ---- 3b) DB sadrzaj usluga (CPT dry65_service) po jeziku ----
    EN se cuva u ACF poljima sa sufiksom _en (npr. body_en, kicker_en),
    naslov u title_en, sadrzaj u content_en. Prazno -> fallback na SR. */
-function dry65_svc($field, $id) {
-    $sr = dry65_get_field($field, $id);
-    if (dry65_is_en()) {
-        $en = dry65_get_field($field . '_en', $id);
-        if ($en !== '' && $en !== null && $en !== false) return $en;
+/* Mapa EN prevoda sadrzaja usluga po slug-u (languages/services_en.php). */
+function dry65_svc_en_map() {
+    static $map = null;
+    if ($map === null) {
+        $f = get_template_directory() . '/languages/services_en.php';
+        $map = file_exists($f) ? include $f : [];
+        if (!is_array($map)) $map = [];
     }
-    return $sr;
+    return $map;
+}
+/* Vrati EN vrednost polja iz mape po ID-u posta (ili '' ako nema). */
+function dry65_svc_map_val($id, $field) {
+    $map = dry65_svc_en_map();
+    $slug = get_post_field('post_name', $id);
+    if ($slug && isset($map[$slug][$field]) && $map[$slug][$field] !== '') return $map[$slug][$field];
+    return '';
+}
+
+function dry65_svc($field, $id) {
+    if (dry65_is_en()) {
+        $en = dry65_get_field($field . '_en', $id);        // 1) ACF _en polje
+        if ($en !== '' && $en !== null && $en !== false) return $en;
+        $mv = dry65_svc_map_val($id, $field);              // 2) mapa u kodu
+        if ($mv !== '') return $mv;
+    }
+    return dry65_get_field($field, $id);                   // 3) srpski
 }
 function dry65_svc_title($id) {
     if (dry65_is_en()) {
         $en = dry65_get_field('title_en', $id);
         if ($en !== '' && $en !== null && $en !== false) return $en;
+        $mv = dry65_svc_map_val($id, 'title');
+        if ($mv !== '') return $mv;
     }
     return get_the_title($id);
 }
@@ -199,6 +220,8 @@ function dry65_svc_content($id) {
     if (dry65_is_en()) {
         $en = dry65_get_field('content_en', $id);
         if ($en !== '' && $en !== null && $en !== false) return $en;
+        $mv = dry65_svc_map_val($id, 'content');
+        if ($mv !== '') return $mv;
     }
     return get_post_field('post_content', $id);
 }

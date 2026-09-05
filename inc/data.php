@@ -249,7 +249,12 @@ function dry65_service_tree() {
         }
         $intro = $p->post_excerpt ?: (function_exists('dry65_get_field') ? (dry65_get_field('short', $p->ID) ?: '') : '');
         if (function_exists('dry65_is_en') && dry65_is_en()) {
+            // EN uvod: ACF short_en -> mapa (intro/short) -> SR
             $intro_en = function_exists('dry65_get_field') ? dry65_get_field('short_en', $p->ID) : '';
+            if (($intro_en === '' || $intro_en === null) && function_exists('dry65_svc_map_val')) {
+                $intro_en = dry65_svc_map_val($p->ID, 'intro');
+                if ($intro_en === '') $intro_en = dry65_svc_map_val($p->ID, 'short');
+            }
             if ($intro_en !== '' && $intro_en !== null) $intro = $intro_en;
         }
         $out[] = [
