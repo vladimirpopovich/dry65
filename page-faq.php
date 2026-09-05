@@ -117,7 +117,11 @@ $faq_groups = [
       <?php echo t('Sve što treba da znate o Dry65 salonu'); ?>
     </h1>
     <p class="lead" style="margin-top:26px;max-width:680px;">
-      Odgovori na najčešća pitanja klijentkinja o feniranju, cenama, radnom vremenu i lokaciji. Ako Vaše pitanje nije ovde, pišite nam na <a href="mailto:<?php echo esc_attr($biz['email']); ?>" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;"><?php echo esc_html($biz['email']); ?></a> ili pozovite <?php echo esc_html($biz['phone_display']); ?>.
+<?php echo sprintf(
+        t('Odgovori na najčešća pitanja klijentkinja o feniranju, cenama, radnom vremenu i lokaciji. Ako Vaše pitanje nije ovde, pišite nam na <a href="mailto:%1$s" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">%1$s</a> ili pozovite %2$s.'),
+        esc_attr($biz['email']),
+        esc_html($biz['phone_display'])
+      ); ?>
     </p>
   </div>
 </section>

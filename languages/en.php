@@ -384,4 +384,9 @@ return [
     'Tvoje vreme je tvoje. Dođeš kad ti odgovara, mi smo tu.' => 'Your time is yours. Come whenever suits you, we are here.',
     'Fokus na jednu stvar znači da je radimo brže i bolje od svih.' => 'Focusing on one thing means we do it faster and better than anyone.',
     'Tretmani nege na poklon uz pakete, kosa ostaje zdrava.' => 'Care treatments as a gift with packages, so hair stays healthy.',
+
+    /* ---- Schema description (SEO) + FAQ uvod ---- */
+    'Frizerski salon specijalizovan za feniranje, na Novom Beogradu u West65 mall-u. Walk-in blowout hair bar, bez zakazivanja - samo dođeš. Cene od 1.400 din. Otvoreni Pon-Pet 8-20h, Sub 10-18h.' => 'Hair salon specialized in blow-drying, in New Belgrade at the West65 mall. A walk-in blowout hair bar, no appointments, just drop by. Prices from 1,400 RSD. Open Mon-Fri 8am-8pm, Sat 10am-6pm.',
+    'Jednostavan vodič kako da posetite Dry65 walk-in blowout hair bar u Novom Beogradu.' => 'A simple guide on how to visit the Dry65 walk-in blowout hair bar in New Belgrade.',
+    'Odgovori na najčešća pitanja klijentkinja o feniranju, cenama, radnom vremenu i lokaciji. Ako Vaše pitanje nije ovde, pišite nam na <a href="mailto:%1$s" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">%1$s</a> ili pozovite %2$s.' => 'Answers to the most common questions from clients about blow-drying, prices, opening hours and location. If your question isn’t here, write to us at <a href="mailto:%1$s" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">%1$s</a> or call %2$s.',
 ];
