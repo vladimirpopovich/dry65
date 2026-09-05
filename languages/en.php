@@ -345,4 +345,28 @@ return [
     'Prihvatamo obе opcije: gotovinu i sve kartice (Visa, Mastercard, Maestro, Dinacard).' => 'We accept both: cash and all cards (Visa, Mastercard, Maestro, Dinacard).',
     'Da. Poklon vaučer za feniranje ili mesečni paket je odličan poklon za prijateljicu, majku ili sestru. Za detalje pozovite +381 60 6900655 ili pišite na Instagram @dry65belgrade.' => 'Yes. A gift voucher for a blow-dry or a monthly package is a great gift for a friend, mother or sister. For details call +381 60 6900655 or message us on Instagram @dry65belgrade.',
     'Prosek čekanja je 5 do 15 minuta. Za trenutan status pozovite +381 60 6900655 pre dolaska.' => 'The average wait is 5 to 15 minutes. For the current status call +381 60 6900655 before you come.',
+
+    /* ---- /faq strana (svoj set) ---- */
+    'Zakazivanje i termini' => 'Appointments and hours',
+    'Usluge i tehnike' => 'Services and techniques',
+    'Cene i paketi' => 'Prices and packages',
+    'Lokacija i pristup' => 'Location and access',
+    'Ostalo' => 'Other',
+    'Kako doći javnim prevozom?' => 'How do I get there by public transport?',
+    'Da li mogu doći sa detetom?' => 'Can I come with a child?',
+    'Da li imate akcije i popuste?' => 'Do you have promotions and discounts?',
+    'Prihvatamo obе opcije, gotovinu i sve kartice (Visa, Mastercard, Maestro, Dinacard).' => 'We accept both, cash and all cards (Visa, Mastercard, Maestro, Dinacard).',
+    'Autobuske linije 18, 65, 68 i 74 staju u neposrednoj blizini West 65 mall-a.' => 'Bus lines 18, 65, 68 and 74 stop right by the West 65 mall.',
+    'Naravno. Imamo prijatan ambijent gde deca mogu čekati dok mama fenira kosu.' => 'Of course. We have a pleasant space where children can wait while mum has her hair done.',
+    'Kvalitetno feniranje sa Schwarzkopf Professional preparatima drži 3 do 5 dana, u zavisnosti od tipa kose i sna. Za produženo trajanje preporučujemo svilenu jastučnicu.' => 'A quality blow-dry with Schwarzkopf Professional products lasts 3 to 5 days, depending on your hair type and how you sleep. For longer wear we recommend a silk pillowcase.',
+    'Radimo od ponedeljka do petka 8:00 - 20:00, subotom 10:00 - 18:00. Nedeljom ne radimo.' => 'We are open Monday to Friday 8:00 - 20:00, Saturday 10:00 - 18:00. Closed on Sunday.',
+    'Ne, Dry65 je walk-in salon. Samo dođete kad Vam odgovara, bez zakazivanja, bez pritiska. Nalazimo se u West 65 mall-u na Novom Beogradu.' => 'No, Dry65 is a walk-in salon. Just come whenever suits you, no appointments, no pressure. We are in the West 65 mall in New Belgrade.',
+
+    /* ---- /faq odgovori sa linkovima (sprintf %s) ---- */
+    'Prosek čekanja je 5-15 minuta. Za trenutan status pozovite %s pre dolaska.' => 'The average wait is 5-15 minutes. For the current status call %s before you come.',
+    'Cene feniranja: kratka kosa 1.400 din, srednja 1.800 din, duga 2.000 din, extra duga 2.200 din. Detaljan cenovnik svih usluga možete videti <a href="%s">na stranici Cenovnik</a>.' => 'Blow-dry prices: short hair 1,400 RSD, medium 1,800 RSD, long 2,000 RSD, extra long 2,200 RSD. You can see the full price list for all services <a href="%s">on the Pricing page</a>.',
+    'Da. Imamo mesečne pakete od 4, 8 ili 12 feniranja mesečno, sa značajnom uštedom po feniranju. Uz svaki paket dobijate na poklon masažu glave i profesionalni tretman nege kose. <a href="%s">Pogledajte pakete</a>.' => 'Yes. We have monthly packages of 4, 8 or 12 blow-drys per month, with significant savings per blow-dry. Every package includes a complimentary scalp massage and a professional hair care treatment. <a href="%s">See the packages</a>.',
+    'Da. Poklon vaučer za feniranje ili mesečni paket je odličan poklon za prijateljicu, majku ili sestru. Za detalje pozovite %s ili pišite na Instagram <a href="%s" target="_blank" rel="noopener">%s</a>.' => 'Yes. A gift voucher for a blow-dry or a monthly package is a great gift for a friend, mother or sister. For details call %s or message us on Instagram <a href="%s" target="_blank" rel="noopener">%s</a>.',
+    'Omladinskih Brigada 86Ž, West 65 mall, Novi Beograd, blizu Airport City poslovne zone. <a href="%s" target="_blank" rel="noopener">Otvori Google Maps</a>.' => 'Omladinskih Brigada 86Ž, West 65 mall, New Belgrade, near the Airport City business zone. <a href="%s" target="_blank" rel="noopener">Open Google Maps</a>.',
+    'Aktuelne ponude i akcije objavljujemo na <a href="%s">početnoj strani</a> i na Instagram-u <a href="%s" target="_blank" rel="noopener">%s</a>. Prati nas za sezonske akcije.' => 'We post current offers and promotions on the <a href="%s">home page</a> and on Instagram <a href="%s" target="_blank" rel="noopener">%s</a>. Follow us for seasonal offers.',
 ];

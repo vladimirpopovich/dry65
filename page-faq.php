@@ -5,7 +5,7 @@ Template Name: FAQ
 get_header();
 $biz = dry65_biz();
 
-/* FAQ podaci — kategorije + pitanja/odgovori.
+/* FAQ podaci, kategorije + pitanja/odgovori.
    Isti podaci se koriste za HTML render i za FAQPage Schema markup dole. */
 $faq_groups = [
     [
@@ -13,7 +13,7 @@ $faq_groups = [
         'items' => [
             [
                 'q' => 'Da li treba da zakažem termin za feniranje u Dry65?',
-                'a' => 'Ne, Dry65 je walk-in salon. Samo dođete kad Vam odgovara — bez zakazivanja, bez pritiska. Nalazimo se u West 65 mall-u na Novom Beogradu.',
+                'a' => 'Ne, Dry65 je walk-in salon. Samo dođete kad Vam odgovara, bez zakazivanja, bez pritiska. Nalazimo se u West 65 mall-u na Novom Beogradu.',
             ],
             [
                 'q' => 'Koje je radno vreme Dry65 salona?',
@@ -21,7 +21,7 @@ $faq_groups = [
             ],
             [
                 'q' => 'Ako je gužva, koliko čekam?',
-                'a' => 'Prosek čekanja je 5-15 minuta. Za trenutan status pozovite ' . esc_html($biz['phone_display']) . ' pre dolaska.',
+                'a' => sprintf(t('Prosek čekanja je 5-15 minuta. Za trenutan status pozovite %s pre dolaska.'), esc_html($biz['phone_display'])),
             ],
         ],
     ],
@@ -38,11 +38,11 @@ $faq_groups = [
             ],
             [
                 'q' => 'Da li radite šišanje ili farbanje?',
-                'a' => 'Ne. Dry65 je specijalizovan isključivo za feniranje, stilizovanje i negu kose. Radimo jednu stvar — feniramo, i u tome smo najbolji.',
+                'a' => 'Ne. Dry65 je specijalizovan isključivo za feniranje, stilizovanje i negu kose. Radimo jednu stvar, feniramo, i u tome smo najbolji.',
             ],
             [
                 'q' => 'Koje proizvode za kosu koristite?',
-                'a' => 'Isključivo Schwarzkopf Professional preparate — vodeći svetski brend za profesionalnu salonsku negu kose.',
+                'a' => 'Isključivo Schwarzkopf Professional preparate, vodeći svetski brend za profesionalnu salonsku negu kose.',
             ],
             [
                 'q' => 'Šta je Hair Mask tretman?',
@@ -55,19 +55,19 @@ $faq_groups = [
         'items' => [
             [
                 'q' => 'Koliko košta feniranje u Dry65?',
-                'a' => 'Cene feniranja: kratka kosa 1.400 din, srednja 1.800 din, duga 2.000 din, extra duga 2.200 din. Detaljan cenovnik svih usluga možete videti <a href="' . esc_url(get_permalink(get_page_by_path('cenovnik'))) . '">na stranici Cenovnik</a>.',
+                'a' => sprintf(t('Cene feniranja: kratka kosa 1.400 din, srednja 1.800 din, duga 2.000 din, extra duga 2.200 din. Detaljan cenovnik svih usluga možete videti <a href="%s">na stranici Cenovnik</a>.'), esc_url(get_permalink(get_page_by_path('cenovnik')))),
             ],
             [
                 'q' => 'Da li imate mesečne pakete?',
-                'a' => 'Da. Imamo mesečne pakete od 4, 8 ili 12 feniranja mesečno, sa značajnom uštedom po feniranju. Uz svaki paket dobijate na poklon masažu glave i profesionalni tretman nege kose. <a href="' . esc_url(get_permalink(get_page_by_path('paketi'))) . '">Pogledajte pakete</a>.',
+                'a' => sprintf(t('Da. Imamo mesečne pakete od 4, 8 ili 12 feniranja mesečno, sa značajnom uštedom po feniranju. Uz svaki paket dobijate na poklon masažu glave i profesionalni tretman nege kose. <a href="%s">Pogledajte pakete</a>.'), esc_url(get_permalink(get_page_by_path('paketi')))),
             ],
             [
-                'q' => 'Kako se plaća — gotovina ili kartica?',
-                'a' => 'Prihvatamo obе opcije — gotovinu i sve kartice (Visa, Mastercard, Maestro, Dinacard).',
+                'q' => 'Kako se plaća, gotovina ili kartica?',
+                'a' => 'Prihvatamo obе opcije, gotovinu i sve kartice (Visa, Mastercard, Maestro, Dinacard).',
             ],
             [
                 'q' => 'Da li dajete poklon vaučere?',
-                'a' => 'Da. Poklon vaučer za feniranje ili mesečni paket je odličan poklon za prijateljicu, majku ili sestru. Za detalje pozovite ' . esc_html($biz['phone_display']) . ' ili pišite na Instagram <a href="' . esc_url($biz['instagram_url']) . '" target="_blank" rel="noopener">' . esc_html($biz['instagram']) . '</a>.',
+                'a' => sprintf(t('Da. Poklon vaučer za feniranje ili mesečni paket je odličan poklon za prijateljicu, majku ili sestru. Za detalje pozovite %s ili pišite na Instagram <a href="%s" target="_blank" rel="noopener">%s</a>.'), esc_html($biz['phone_display']), esc_url($biz['instagram_url']), esc_html($biz['instagram'])),
             ],
         ],
     ],
@@ -76,7 +76,7 @@ $faq_groups = [
         'items' => [
             [
                 'q' => 'Gde se nalazi Dry65 salon?',
-                'a' => 'Omladinskih Brigada 86Ž, West 65 mall, Novi Beograd — blizu Airport City poslovne zone. <a href="' . esc_url($biz['maps_url']) . '" target="_blank" rel="noopener">Otvori Google Maps</a>.',
+                'a' => sprintf(t('Omladinskih Brigada 86Ž, West 65 mall, Novi Beograd, blizu Airport City poslovne zone. <a href="%s" target="_blank" rel="noopener">Otvori Google Maps</a>.'), esc_url($biz['maps_url'])),
             ],
             [
                 'q' => 'Da li ima parking?',
@@ -101,7 +101,7 @@ $faq_groups = [
             ],
             [
                 'q' => 'Da li imate akcije i popuste?',
-                'a' => 'Aktuelne ponude i akcije objavljujemo na <a href="' . esc_url(home_url('/')) . '">početnoj strani</a> i na Instagram-u <a href="' . esc_url($biz['instagram_url']) . '" target="_blank" rel="noopener">' . esc_html($biz['instagram']) . '</a>. Prati nas za sezonske akcije.',
+                'a' => sprintf(t('Aktuelne ponude i akcije objavljujemo na <a href="%s">početnoj strani</a> i na Instagram-u <a href="%s" target="_blank" rel="noopener">%s</a>. Prati nas za sezonske akcije.'), esc_url(home_url('/')), esc_url($biz['instagram_url']), esc_html($biz['instagram'])),
             ],
         ],
     ],
@@ -176,7 +176,7 @@ $faq_groups = [
 
 <?php
 /* ============================================================
-   FAQPage Schema markup (JSON-LD) — za Google Featured Snippets
+   FAQPage Schema markup (JSON-LD), za Google Featured Snippets
    i AI SEO (ChatGPT, Perplexity, Claude direktno vuku odavde)
    ============================================================ */
 $faq_schema = [
@@ -186,7 +186,7 @@ $faq_schema = [
 ];
 foreach ($faq_groups as $group) {
     foreach ($group['items'] as $item) {
-        // Za Schema — plain text bez HTML tagova
+        // Za Schema, plain text bez HTML tagova
         $answer_plain = wp_strip_all_tags(t($item['a']));
         $faq_schema['mainEntity'][] = [
             '@type' => 'Question',
