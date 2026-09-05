@@ -369,4 +369,19 @@ return [
     'Da. Poklon vaučer za feniranje ili mesečni paket je odličan poklon za prijateljicu, majku ili sestru. Za detalje pozovite %s ili pišite na Instagram <a href="%s" target="_blank" rel="noopener">%s</a>.' => 'Yes. A gift voucher for a blow-dry or a monthly package is a great gift for a friend, mother or sister. For details call %s or message us on Instagram <a href="%s" target="_blank" rel="noopener">%s</a>.',
     'Omladinskih Brigada 86Ž, West 65 mall, Novi Beograd, blizu Airport City poslovne zone. <a href="%s" target="_blank" rel="noopener">Otvori Google Maps</a>.' => 'Omladinskih Brigada 86Ž, West 65 mall, New Belgrade, near the Airport City business zone. <a href="%s" target="_blank" rel="noopener">Open Google Maps</a>.',
     'Aktuelne ponude i akcije objavljujemo na <a href="%s">početnoj strani</a> i na Instagram-u <a href="%s" target="_blank" rel="noopener">%s</a>. Prati nas za sezonske akcije.' => 'We post current offers and promotions on the <a href="%s">home page</a> and on Instagram <a href="%s" target="_blank" rel="noopener">%s</a>. Follow us for seasonal offers.',
+
+    /* ---- O nama (stats/values) + Kontakt labele ---- */
+    'Adresa' => 'Address',
+    'Telefon' => 'Phone',
+    'Email' => 'Email',
+    'Instagram' => 'Instagram',
+    'fokus na tvoju kosu' => 'focus on your hair',
+    'zakazivanja potrebno' => 'appointments needed',
+    'prosečna ocena' => 'average rating',
+    'stvar, i radimo je savršeno' => 'thing, and we do it perfectly',
+    'Brzo i savršeno' => 'Fast and flawless',
+    'Nega na prvom mestu' => 'Care first',
+    'Tvoje vreme je tvoje. Dođeš kad ti odgovara, mi smo tu.' => 'Your time is yours. Come whenever suits you, we are here.',
+    'Fokus na jednu stvar znači da je radimo brže i bolje od svih.' => 'Focusing on one thing means we do it faster and better than anyone.',
+    'Tretmani nege na poklon uz pakete, kosa ostaje zdrava.' => 'Care treatments as a gift with packages, so hair stays healthy.',
 ];
