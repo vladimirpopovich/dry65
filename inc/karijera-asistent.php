@@ -48,6 +48,12 @@ add_action('template_redirect', function () {
 
     get_header();
     ?>
+    <style>
+      /* Telefon: "Šta ćeš raditi?" i "Šta dobijaš?" jedan ispod drugog */
+      @media (max-width: 720px) {
+        .asistent-grid { grid-template-columns: 1fr !important; gap: 22px !important; }
+      }
+    </style>
     <main class="page-enter">
 
     <section class="bg-paper2 section-sm" style="padding-top:clamp(24px,3vw,44px);padding-bottom:clamp(20px,2.5vw,32px);">
@@ -70,7 +76,7 @@ add_action('template_redirect', function () {
       <div class="wrap" style="max-width:760px;">
         <article style="background:var(--paper);border:1px solid var(--sage-line);border-radius:var(--radius-lg);padding:clamp(28px,4vw,48px);">
 
-          <div class="karijera-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,3vw,44px);">
+          <div class="asistent-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,3vw,44px);">
             <div>
               <h2 class="mono" style="color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:0.14em;margin:0 0 16px;">Šta ćeš raditi?</h2>
               <ul style="margin:0;padding:0;list-style:none;">
