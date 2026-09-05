@@ -54,6 +54,44 @@ function dry65_time_ago_latinica($timestamp) {
     return 'pre ' . $n . ' ' . ($n == 1 ? 'godinu' : ($n < 5 ? 'godine' : 'godina'));
 }
 
+/* Englesko relativno vreme (za /en prikaz recenzija). */
+function dry65_time_ago_en($ts) {
+    $diff = time() - (int) $ts;
+    if ($diff < 60) return 'just now';
+    $u = function ($n, $w) { return $n . ' ' . $w . ($n == 1 ? '' : 's') . ' ago'; };
+    if ($diff < 3600)     return $u((int) floor($diff/60), 'minute');
+    if ($diff < 86400)    return $u((int) floor($diff/3600), 'hour');
+    if ($diff < 604800)   return $u((int) floor($diff/86400), 'day');
+    if ($diff < 2629800)  return $u((int) floor($diff/604800), 'week');
+    if ($diff < 31557600) return $u((int) floor($diff/2629800), 'month');
+    return $u((int) floor($diff/31557600), 'year');
+}
+
+/* Dohvati ENGLESKE (Google auto-prevod) tekstove recenzija -> mapa [time => text_en].
+   Bez reviews_no_translations, language=en: Google prevodi ne-engleske recenzije. */
+function dry65_google_reviews_en_map($api_key, $place_id) {
+    $map = [];
+    foreach (['newest', 'most_relevant'] as $mode) {
+        $url = 'https://maps.googleapis.com/maps/api/place/details/json?'
+            . http_build_query([
+                'place_id'     => $place_id,
+                'fields'       => 'reviews',
+                'language'     => 'en',
+                'reviews_sort' => $mode,
+                'key'          => $api_key,
+            ]);
+        $resp = wp_remote_get($url, ['timeout' => 8, 'headers' => ['Referer' => home_url('/')]]);
+        if (is_wp_error($resp)) continue;
+        $body = json_decode(wp_remote_retrieve_body($resp), true);
+        if (empty($body['result']['reviews'])) continue;
+        foreach ($body['result']['reviews'] as $r) {
+            $t = (int) ($r['time'] ?? 0);
+            if ($t > 0 && !empty($r['text'])) $map[$t] = $r['text'];
+        }
+    }
+    return $map;
+}
+
 /**
  * Interni API poziv za jedan sort mode.
  * Vraća parsed reviews array + meta (rating, total).
@@ -95,12 +133,13 @@ function dry65_google_reviews_fetch_single($api_key, $place_id, $sort_mode = 'ne
             $when = dry65_cyr_to_lat($r['relative_time_description'] ?? '');
         }
         $out[] = [
-            'name'   => dry65_cyr_to_lat($r['author_name'] ?? ''),
-            'rating' => (int) ($r['rating'] ?? 5),
-            'when'   => $when,
-            'text'   => dry65_cyr_to_lat($r['text'] ?? ''),
-            'photo'  => $r['profile_photo_url'] ?? '',
-            'time'   => $time,
+            'name'    => dry65_cyr_to_lat($r['author_name'] ?? ''),
+            'rating'  => (int) ($r['rating'] ?? 5),
+            'when'    => $when,
+            'text'    => dry65_cyr_to_lat($r['text'] ?? ''),
+            'text_en' => '',
+            'photo'   => $r['profile_photo_url'] ?? '',
+            'time'    => $time,
         ];
     }
 
@@ -117,7 +156,7 @@ function dry65_google_reviews_fetch_single($api_key, $place_id, $sort_mode = 'ne
  * Cache 12h u transient. Update-uje arhivu.
  */
 function dry65_google_reviews($force_refresh = false) {
-    $cache_key = 'dry65_google_reviews_v2';
+    $cache_key = 'dry65_google_reviews_v3';
 
     if (!$force_refresh) {
         $cached = get_transient($cache_key);
@@ -153,6 +192,13 @@ function dry65_google_reviews($force_refresh = false) {
         return [];
     }
 
+    // Spoji engleske (Google) prevode po timestampu
+    $en_map = dry65_google_reviews_en_map($api_key, $place_id);
+    foreach ($combined as &$cr) {
+        $t = (int) ($cr['time'] ?? 0);
+        $cr['text_en'] = ($t && isset($en_map[$t])) ? $en_map[$t] : ($cr['text_en'] ?? '');
+    }
+    unset($cr);
     $out = $combined;
 
     // Meta - prefer newest, fallback relevant
@@ -210,8 +256,9 @@ function dry65_update_google_reviews_archive($fetched) {
     foreach ($fetched as $r) {
         $hash = dry65_review_hash($r);
         if (isset($archive[$hash])) {
-            // Update: refresh "when" tekst i last_seen
+            // Update: refresh "when" tekst, EN prevod i last_seen
             $archive[$hash]['when']      = $r['when'];
+            if (!empty($r['text_en'])) $archive[$hash]['text_en'] = $r['text_en'];
             $archive[$hash]['last_seen'] = $now;
         } else {
             // Novi review
@@ -255,9 +302,11 @@ function dry65_google_reviews_archive($filters = []) {
 
     // Osvezi relativno vreme iz timestampa — 'when' u arhivi zastari kad recenzija
     // ispadne iz API prozora (Google vraca samo ~5 najnovijih), pa se vise ne racuna.
+    $en = function_exists('dry65_is_en') && dry65_is_en();
     foreach ($items as &$it) {
         $ts = (int) ($it['time'] ?? $it['first_seen'] ?? 0);
-        if ($ts > 0) $it['when'] = dry65_time_ago_latinica($ts);
+        if ($ts > 0) $it['when'] = $en ? dry65_time_ago_en($ts) : dry65_time_ago_latinica($ts);
+        if ($en && !empty($it['text_en'])) $it['text'] = $it['text_en'];
     }
     unset($it);
 
@@ -336,7 +385,7 @@ add_action('admin_post_dry65_refresh_google_reviews', function() {
     if (!current_user_can('manage_options')) wp_die('Nemate dozvolu.');
     check_admin_referer('dry65_refresh_google');
 
-    delete_transient('dry65_google_reviews_v2');
+    delete_transient('dry65_google_reviews_v3');
     delete_transient('dry65_google_rating');
     delete_transient('dry65_google_total');
     dry65_google_reviews(true); // force refresh
@@ -348,13 +397,13 @@ add_action('admin_post_dry65_refresh_google_reviews', function() {
 // Brisi keš svaki put kad se sačuva Settings stranica
 add_action('update_option_dry65_google_api_key', function() {
     delete_transient('dry65_google_reviews_v1');
-    delete_transient('dry65_google_reviews_v2');
+    delete_transient('dry65_google_reviews_v3');
     delete_transient('dry65_google_rating');
     delete_transient('dry65_google_total');
 });
 add_action('update_option_dry65_google_place_id', function() {
     delete_transient('dry65_google_reviews_v1');
-    delete_transient('dry65_google_reviews_v2');
+    delete_transient('dry65_google_reviews_v3');
     delete_transient('dry65_google_rating');
     delete_transient('dry65_google_total');
 });

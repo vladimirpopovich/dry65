@@ -151,7 +151,7 @@ $faq_groups = [
   <div class="wrap center">
     <h2 class="display" style="font-size:clamp(28px,4vw,44px);"><?php echo t('Niste našli odgovor?'); ?></h2>
     <p class="lead" style="margin-top:16px;max-width:520px;margin-inline:auto;">
-      <?php echo t('Kontaktirajte nas — rado ćemo pojasniti sve što Vas interesuje.'); ?>
+      <?php echo t('Kontaktirajte nas, rado ćemo pojasniti sve što Vas interesuje.'); ?>
     </p>
     <div class="btn-row" style="justify-content:center;margin-top:26px;">
       <a href="tel:<?php echo esc_attr($biz['phone']); ?>" class="btn btn-dark">

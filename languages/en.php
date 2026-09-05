@@ -60,7 +60,7 @@ return [
     'Vidi detalje' => 'See details',
     'Sve što treba da znate' => 'Everything you need to know',
     'Odgovori na najčešća pitanja o feniranju u Dry65 salonu.' => 'Answers to the most common questions about blow-drying at the Dry65 salon.',
-    'Blowout hair bar bez zakazivanja. Radimo jednu stvar, feniramo. I to savršeno.' => 'A blowout hair bar without appointments. We do one thing — blow-drying. And we do it perfectly.',
+    'Blowout hair bar bez zakazivanja. Radimo jednu stvar, feniramo. I to savršeno.' => 'A blowout hair bar without appointments. We do one thing, blow-drying. And we do it perfectly.',
     'Stranice' => 'Pages',
     'Više' => 'More',
     'Česta pitanja' => 'FAQ',
@@ -72,7 +72,7 @@ return [
     'koja je tvoja dužina kose?' => 'what is your hair length?',
     'Klikni na svoju dužinu kose i istaknućemo cenu kroz ceo cenovnik.' => 'Tap your hair length and we will highlight the price across the whole price list.',
     'dužina kose' => 'hair length',
-    'Za sve koje danas nemaju vremena, ne stižu, ili jednostavno žele da neko drugi to uradi za njih. Pranje, ispiranje i blago sušenje, uvek ste dobrodošle.' => 'For everyone who has no time today, cannot make it, or simply wants someone else to do it for them. Washing, rinsing and light drying — you are always welcome.',
+    'Za sve koje danas nemaju vremena, ne stižu, ili jednostavno žele da neko drugi to uradi za njih. Pranje, ispiranje i blago sušenje, uvek ste dobrodošle.' => 'For everyone who has no time today, cannot make it, or simply wants someone else to do it for them. Washing, rinsing and light drying, you are always welcome.',
     'Verujemo da je nega podjednako važna kao izgled. Uz mesečne pakete ovi tretmani idu na poklon.' => 'We believe care matters as much as looks. With monthly packages these treatments come as a gift.',
     'jer zdrava kosa drži feniranje duže' => 'because healthy hair holds a blow-dry longer',
     'Feniraš redovno? Uzmi paket.' => 'Blow-dry regularly? Get a package.',
@@ -87,7 +87,7 @@ return [
     'Dry65 frizerski salon specijalizovan za feniranje' => 'Dry65 hair salon specialized in blow-drying',
     'Frizerski salon specijalizovan za feniranje, u West 65 mall-u na Novom Beogradu. Nema zakazivanja, samo dođi.' => 'A hair salon specialized in blow-drying, in the West 65 mall in New Belgrade. No appointments, just drop by.',
     'Dolaziš kolima?' => 'Coming by car?',
-    'U West 65 Mall prvi sat parkiranja je besplatan. Iskoristi ga, mi smo samo nekoliko koraka od ulaza.' => 'At West 65 Mall the first hour of parking is free. Make use of it — we are just a few steps from the entrance.',
+    'U West 65 Mall prvi sat parkiranja je besplatan. Iskoristi ga, mi smo samo nekoliko koraka od ulaza.' => 'At West 65 Mall the first hour of parking is free. Make use of it, we are just a few steps from the entrance.',
     'Ambijent frizerskog salona Dry65' => 'The ambience of the Dry65 hair salon',
     'Ambijent osmišljen tako da se osećate prijatno. Imate svoj prostor, svoje vreme i komfor koji Vam je potreban da izađete sa najboljom frizurom.' => 'An ambience designed to make you feel comfortable. You have your own space, your own time and the comfort you need to leave with the best hairstyle.',
     'Prati nas' => 'Follow us',
@@ -97,7 +97,7 @@ return [
     'Pogledaj cenovnik' => 'See the price list',
     'Sve što treba da znate o Dry65 salonu' => 'Everything you need to know about the Dry65 salon',
     'Niste našli odgovor?' => 'Didn\'t find your answer?',
-    'Kontaktirajte nas — rado ćemo pojasniti sve što Vas interesuje.' => 'Contact us — we will gladly explain anything you want to know.',
+    'Kontaktirajte nas, rado ćemo pojasniti sve što Vas interesuje.' => 'Contact us, we will gladly explain anything you want to know.',
     'Pozovi nas' => 'Call us',
     'Sve kontakt info' => 'All contact info',
     'minuta' => 'minutes',
@@ -252,11 +252,11 @@ return [
 
     /* ---- Veliki HTML blokovi (tk) — SR original u komentaru ---- */
     // SR: Dry65 je <strong>frizerski salon na Novom Beogradu, u West 65</strong>, specijalizovan za feniranje. Walk-in, bez zakazivanja. Lokne, talasi, glatko, volumen, sve za savršenu frizuru koja drži danima.
-    'home.hero.lead' => 'Dry65 is a <strong>hair salon in New Belgrade, in West 65</strong>, specialized in blow-drying. Walk-in, no appointments. Curls, waves, sleek, volume — everything for a perfect hairstyle that lasts for days.',
+    'home.hero.lead' => 'Dry65 is a <strong>hair salon in New Belgrade, in West 65</strong>, specialized in blow-drying. Walk-in, no appointments. Curls, waves, sleek, volume, everything for a perfect hairstyle that lasts for days.',
     // SR: Ne moraš da zakažeš.<br>Samo svrati.
     'home.hours.title' => 'You don\'t have to book.<br>Just drop by.',
     // SR: Dry65 je <strong>frizerski salon specijalizovan za feniranje na Novom Beogradu</strong>, u West 65. Walk-in koncept, bez zakazivanja. Radimo jednu stvar, feniramo, i u tome smo najbolji.
-    'onama.lead' => 'Dry65 is a <strong>hair salon specialized in blow-drying in New Belgrade</strong>, in West 65. A walk-in concept, no appointments. We do one thing — blow-drying — and we are the best at it.',
+    'onama.lead' => 'Dry65 is a <strong>hair salon specialized in blow-drying in New Belgrade</strong>, in West 65. A walk-in concept, no appointments. We do one thing, blow-drying, and we are the best at it.',
     // SR: Radimo isključivo sa <a href="https://www.schwarzkopf-professional.com/" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Schwarzkopf Professional</a> proizvodima, vodećim svetskim brendom za salonsku negu kose.
     'onama.schwarzkopf' => 'We work exclusively with <a href="https://www.schwarzkopf-professional.com/" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Schwarzkopf Professional</a> products, the world\'s leading brand for salon hair care.',
     // SR: Koristimo isključivo <a href="https://www.schwarzkopf-professional.com/" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Schwarzkopf Professional</a> proizvode, vodeću svetsku marku za profesionalne salone. Od pranja i nege do stilizovanja, svaki proizvod biramo da kosa ostane zdrava, mekana i puna sjaja.
