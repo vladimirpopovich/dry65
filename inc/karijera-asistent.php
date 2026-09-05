@@ -23,6 +23,11 @@ add_action('wp_head', function () {
     if (get_query_var('dry65_asistent')) echo '<meta name="robots" content="noindex, nofollow">' . "\n";
 }, 1);
 
+/* Naslov strane (browser tab + link preview). */
+function dry65_asistent_title() { return 'Asistent u Dry65 Novi Beograd, West 65'; }
+add_filter('wpseo_title', function ($t) { return get_query_var('dry65_asistent') ? dry65_asistent_title() : $t; }, 100);
+add_filter('pre_get_document_title', function ($t) { return get_query_var('dry65_asistent') ? dry65_asistent_title() : $t; }, 100);
+
 add_action('template_redirect', function () {
     if (!get_query_var('dry65_asistent')) return;
 
@@ -64,6 +69,9 @@ add_action('template_redirect', function () {
         <h1 class="display" style="font-size:clamp(28px,4vw,46px);margin:0;line-height:1.1;letter-spacing:0.005em;">
           Tražimo asistenta u Dry65, ne moraš da imaš iskustvo!
         </h1>
+        <p class="mono" style="margin:12px 0 0;color:var(--clay);font-size:13px;letter-spacing:0.08em;text-transform:uppercase;">
+          Dry65 Novi Beograd, West 65
+        </p>
         <div class="lead" style="margin-top:22px;display:flex;flex-direction:column;gap:14px;">
           <p style="margin:0;">Voliš rad sa ljudima, odgovorna si osoba i želiš da zaradiš sa strane, a usput naučiš nešto novo?</p>
           <p style="margin:0;">U Dry65 Blowout Hair Bar tražimo osobu za pomoć timu u salonu.</p>
