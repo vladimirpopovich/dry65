@@ -20,7 +20,7 @@ return [
     'Zatvori meni' => 'Close menu',
 
     /* ---- Ostali kratki stringovi (t) ---- */
-    'Feniranje bez zakazivanja, Novi Beograd' => 'Walk-in blow-dry, New Belgrade',
+    'Feniranje bez zakazivanja, Novi Beograd' => 'Walk‑in<br>blow‑dry<br>New Belgrade',
     'Kako do nas' => 'Find us',
     'Mesečni paketi' => 'Monthly packages',
     'Dry65 walk-in salon na Novom Beogradu, feniranje bez zakazivanja' => 'Dry65 walk-in salon in New Belgrade, blow-dry without appointments',
