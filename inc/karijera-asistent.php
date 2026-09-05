@@ -25,8 +25,27 @@ add_action('wp_head', function () {
 
 /* Naslov strane (browser tab + link preview). */
 function dry65_asistent_title() { return 'Asistent u Dry65 Novi Beograd, West 65'; }
+function dry65_asistent_og_desc() { return 'Tražimo asistenta u Dry65, ne moraš da imaš iskustvo. Može da bude dodatni izvor prihoda, prijavi se.'; }
+/* OG slika: nadji u Media po imenu (uploaduj 'karijera-asistent'), fallback na salon sliku. */
+function dry65_asistent_og_image() {
+    foreach (['karijera-asistent', 'asistent-og', 'karijera'] as $slug) {
+        $att = get_posts(['post_type' => 'attachment', 'name' => $slug, 'posts_per_page' => 1, 'fields' => 'ids', 'post_status' => 'inherit']);
+        if ($att) { $url = wp_get_attachment_url($att[0]); if ($url) return $url; }
+    }
+    return get_template_directory_uri() . '/assets/salon/s06.webp';
+}
 add_filter('wpseo_title', function ($t) { return get_query_var('dry65_asistent') ? dry65_asistent_title() : $t; }, 100);
 add_filter('pre_get_document_title', function ($t) { return get_query_var('dry65_asistent') ? dry65_asistent_title() : $t; }, 100);
+
+/* Open Graph / Twitter — careers-specifican preview SAMO za ovu stranu. */
+add_filter('wpseo_opengraph_title',       function ($v) { return get_query_var('dry65_asistent') ? dry65_asistent_title() : $v; }, 100);
+add_filter('wpseo_twitter_title',         function ($v) { return get_query_var('dry65_asistent') ? dry65_asistent_title() : $v; }, 100);
+add_filter('wpseo_opengraph_desc',        function ($v) { return get_query_var('dry65_asistent') ? dry65_asistent_og_desc() : $v; }, 100);
+add_filter('wpseo_metadesc',              function ($v) { return get_query_var('dry65_asistent') ? dry65_asistent_og_desc() : $v; }, 100);
+add_filter('wpseo_twitter_description',   function ($v) { return get_query_var('dry65_asistent') ? dry65_asistent_og_desc() : $v; }, 100);
+add_filter('wpseo_opengraph_image',       function ($v) { return get_query_var('dry65_asistent') ? dry65_asistent_og_image() : $v; }, 100);
+add_filter('wpseo_twitter_image',         function ($v) { return get_query_var('dry65_asistent') ? dry65_asistent_og_image() : $v; }, 100);
+add_filter('wpseo_opengraph_url',         function ($v) { return get_query_var('dry65_asistent') ? home_url('/karijera/asistent/') : $v; }, 100);
 
 add_action('template_redirect', function () {
     if (!get_query_var('dry65_asistent')) return;
