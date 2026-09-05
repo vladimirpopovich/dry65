@@ -241,17 +241,22 @@ function dry65_service_tree() {
         $children = [];
         foreach ($kids as $c) {
             $children[] = [
-                'title' => $c->post_title,
+                'title' => function_exists('dry65_svc_title') ? dry65_svc_title($c->ID) : $c->post_title,
                 'short' => $c->post_excerpt,
                 'url'   => get_permalink($c->ID),
                 'img'   => dry65_service_image($c),
             ];
         }
+        $intro = $p->post_excerpt ?: (function_exists('dry65_get_field') ? (dry65_get_field('short', $p->ID) ?: '') : '');
+        if (function_exists('dry65_is_en') && dry65_is_en()) {
+            $intro_en = function_exists('dry65_get_field') ? dry65_get_field('short_en', $p->ID) : '';
+            if ($intro_en !== '' && $intro_en !== null) $intro = $intro_en;
+        }
         $out[] = [
             'id'       => $p->ID,
-            'title'    => $p->post_title,
+            'title'    => function_exists('dry65_svc_title') ? dry65_svc_title($p->ID) : $p->post_title,
             'slug'     => $p->post_name,
-            'intro'    => $p->post_excerpt ?: (function_exists('dry65_get_field') ? (dry65_get_field('short', $p->ID) ?: '') : ''),
+            'intro'    => $intro,
             'url'      => get_permalink($p->ID),
             'img'      => dry65_service_image($p),
             'children' => $children,
