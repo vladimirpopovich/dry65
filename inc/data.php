@@ -52,9 +52,11 @@ function dry65_lengths() {
     // Slika za 5. duzinu: nadji u Media biblioteci po nazivu (radi i lokalno i na produkciji),
     // fallback na apsolutni URL ako attachment nije nadjen.
     $xg_img = '';
-    $xg_att = get_posts(['post_type' => 'attachment', 'name' => 'veoma-duga-gusta', 'posts_per_page' => 1, 'fields' => 'ids', 'post_status' => 'inherit']);
-    if ($xg_att) $xg_img = (string) wp_get_attachment_url($xg_att[0]);
-    if (!$xg_img) $xg_img = 'https://dry65.com/wp-content/uploads/2026/09/veoma-duga-gusta.webp';
+    foreach (['veoma-duga-gusta', 'veoma-duga-gusta-kosa'] as $xg_slug) {
+        $xg_att = get_posts(['post_type' => 'attachment', 'name' => $xg_slug, 'posts_per_page' => 1, 'fields' => 'ids', 'post_status' => 'inherit']);
+        if ($xg_att) { $xg_img = (string) wp_get_attachment_url($xg_att[0]); if ($xg_img) break; }
+    }
+    if (!$xg_img) $xg_img = 'https://dry65.com/wp-content/uploads/2026/09/veoma-duga-gusta-kosa.webp';
 
     $defaults = [
         ['id' => 'kratka',  'label' => 'Kratka',     'price' => 1400, 'img' => 'https://dry65.com/wp-content/uploads/2026/05/kratka-kosa.webp'],

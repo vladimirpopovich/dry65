@@ -332,11 +332,14 @@ function dry65_reviews_smart() {
         'has_text' => true,
         'sort'     => 'newest',
     ]);
+    $en = function_exists('dry65_is_en') && dry65_is_en();
     $out = [];
     foreach ($archive as $r) {
-        if (!in_array($r['hash'] ?? dry65_review_hash($r), $hidden, true)) {
-            $out[] = $r;
-        }
+        if (in_array($r['hash'] ?? dry65_review_hash($r), $hidden, true)) continue;
+        // Na engleskoj verziji prikazuj samo recenzije koje imaju EN prevod
+        // (Google prevodi samo recenzije iz trenutnog prozora; text_en se trajno cuva).
+        if ($en && empty($r['text_en'])) continue;
+        $out[] = $r;
     }
     return $out;
 }
