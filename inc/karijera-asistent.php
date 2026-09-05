@@ -70,7 +70,7 @@ add_action('template_redirect', function () {
           Tražimo asistenta u Dry65, ne moraš da imaš iskustvo!
         </h1>
         <p class="mono" style="margin:12px 0 0;color:var(--clay);font-size:13px;letter-spacing:0.08em;text-transform:uppercase;">
-          Dry65 Novi Beograd, West 65
+          Novi Beograd, West 65
         </p>
         <div class="lead" style="margin-top:22px;display:flex;flex-direction:column;gap:14px;">
           <p style="margin:0;">Voliš rad sa ljudima, odgovorna si osoba i želiš da zaradiš sa strane, a usput naučiš nešto novo?</p>
