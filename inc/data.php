@@ -385,7 +385,7 @@ function dry65_offers() {
             'description' => (function_exists('dry65_svc') ? dry65_svc('description', $p->ID) : dry65_get_field('description', $p->ID)) ?: '',
             'image'       => dry65_get_field('image', $p->ID) ?: '',
             'btn_text'    => (function_exists('dry65_svc') ? dry65_svc('btn_text', $p->ID) : dry65_get_field('btn_text', $p->ID)) ?: (function_exists('t') ? t('Saznaj više') : 'Saznaj više'),
-            'btn_url'     => dry65_get_field('btn_url', $p->ID) ?: '',
+            'btn_url'     => (function_exists('dry65_localize_url') ? dry65_localize_url(dry65_get_field('btn_url', $p->ID) ?: '') : (dry65_get_field('btn_url', $p->ID) ?: '')),
         ];
     }
     return $out;

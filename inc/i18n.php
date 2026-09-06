@@ -264,6 +264,24 @@ function dry65_lang_url($lang, $path = null) {
     return $base . $path;
 }
 
+/** Interni link -> EN verzija (/en/ + prevedeni slug-ovi). Eksterne linkove ne dira.
+    Koristi se za dugmad iz baze (ponude i sl.) gde postoji samo jedno btn_url polje. */
+function dry65_localize_url($url) {
+    if (!$url || !dry65_is_en()) return $url;
+    $home   = untrailingslashit(get_option('home'));
+    $host   = parse_url($home, PHP_URL_HOST);
+    $u_host = parse_url($url, PHP_URL_HOST);
+    // interni = relativan (/...) ili apsolutni na nasem hostu
+    $is_internal = (($u_host === null) && isset($url[0]) && $url[0] === '/') || ($u_host === $host);
+    if (!$is_internal) return $url;
+    $path = parse_url($url, PHP_URL_PATH) ?: '/';
+    if (preg_match('#^/en(/|$)#', $path)) return $url;   // vec lokalizovan
+    $suffix = '';
+    if ($q = parse_url($url, PHP_URL_QUERY))    $suffix .= '?' . $q;
+    if ($f = parse_url($url, PHP_URL_FRAGMENT)) $suffix .= '#' . $f;
+    return dry65_lang_url('en', $path) . $suffix;
+}
+
 /* Da li trenutna strana ima englesku verziju? (Karijera je samo SR) */
 function dry65_has_en_version() {
     $p = dry65_current_path();
