@@ -91,6 +91,9 @@ function dry65_live_get_raw() {
         'closed'     => get_option('dry65_live_closed', '0') === '1',
         'full'       => get_option('dry65_live_full', '0') === '1',
         'message'    => (string) get_option('dry65_live_message', ''),
+        'alert'      => (string) get_option('dry65_live_alert', ''),
+        'alert_en'   => (string) get_option('dry65_live_alert_en', ''),
+        'alert_show' => get_option('dry65_live_alert_show', '0') === '1',
         'updated_at' => (int) get_option('dry65_live_updated_at', 0),
         'updated_by' => (int) get_option('dry65_live_updated_by', 0),
     ];
@@ -446,6 +449,15 @@ function dry65_live_resolve() {
     // Custom poruka (ako postoji) prepisuje default sub — ali ne za closed/full
     if ($raw['message'] !== '' && $data['tier'] !== 'closed' && $data['tier'] !== 'full') {
         $data['sub'] = $raw['message'];
+    }
+
+    // Naglašeno upozorenje (traka iznad kartice) — nezavisno od statusa, radi i kad je zatvoreno.
+    // SR je osnovni; na /en/live uzima EN tekst ako je unet, inače pada nazad na SR.
+    if ($raw['alert_show'] && $raw['alert'] !== '') {
+        $en = function_exists('dry65_is_en') && dry65_is_en();
+        $data['alert'] = ($en && $raw['alert_en'] !== '') ? $raw['alert_en'] : $raw['alert'];
+    } else {
+        $data['alert'] = '';
     }
 
     $data['updated_human'] = $raw['updated_at']
@@ -1022,6 +1034,22 @@ add_action('admin_post_dry65_live_save', function() {
     exit;
 });
 
+/* Snimanje upozorenja (traka) — zasebna forma, ne dira status ni „ažurirano pre“. */
+add_action('admin_post_dry65_live_save_alert', function() {
+    if (!current_user_can(DRY65_LIVE_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_live_save_alert');
+
+    $alert    = isset($_POST['live_alert'])    ? sanitize_textarea_field($_POST['live_alert'])    : '';
+    $alert_en = isset($_POST['live_alert_en']) ? sanitize_textarea_field($_POST['live_alert_en']) : '';
+    update_option('dry65_live_alert', $alert);
+    update_option('dry65_live_alert_en', $alert_en);
+    // Prekidač važi samo ako ima srpskog teksta (SR je osnovni).
+    update_option('dry65_live_alert_show', (isset($_POST['live_alert_show']) && $alert !== '') ? '1' : '0');
+
+    wp_redirect(add_query_arg(['page' => 'dry65-live', 'saved' => '1'], admin_url('admin.php')));
+    exit;
+});
+
 function dry65_live_admin_page() {
     $raw   = dry65_live_get_raw();
     $st    = dry65_live_resolve();
@@ -1118,6 +1146,23 @@ function dry65_live_admin_page() {
                 Napomena: van radnog vremena (Pon–Pet 8–20, Sub 10–18) stranica automatski pokazuje „Zatvoreno“, bez obzira na dugme.
             </p>
         </form>
+
+        <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;max-width:620px;margin-top:26px;">
+            <h2 style="margin-top:0;">⚠️ Upozorenje na vrhu</h2>
+            <p style="color:#555;margin-top:4px;">Naglašena žuta traka iznad kartice na <code>/live</code> — za bitne najave (npr. „Danas radimo do 16h“). Vidi se i van radnog vremena.</p>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="max-width:560px;">
+                <input type="hidden" name="action" value="dry65_live_save_alert">
+                <?php wp_nonce_field('dry65_live_save_alert'); ?>
+                <label style="display:block;font-weight:600;margin:6px 0 8px;">
+                    <input type="checkbox" name="live_alert_show" value="1"<?php echo $raw['alert_show'] ? ' checked' : ''; ?> style="margin-right:6px;vertical-align:middle;">
+                    Prikaži traku
+                </label>
+                <textarea name="live_alert" rows="2" style="width:100%;max-width:560px;margin-bottom:6px;display:block;" placeholder="🇷🇸 npr. Danas radimo samo do 16h. / Zbog nestanka struje pauziramo do 14h."><?php echo esc_textarea($raw['alert']); ?></textarea>
+                <textarea name="live_alert_en" rows="2" style="width:100%;max-width:560px;display:block;background:#f6f7f7;" placeholder="🇬🇧 EN (prikazuje se na /en/live — prazno = koristi srpski)"><?php echo esc_textarea($raw['alert_en']); ?></textarea>
+                <p style="margin:4px 0 0;color:#888;font-size:12px;">Vidi se samo kad je „Prikaži traku“ uključeno i srpsko polje nije prazno.</p>
+                <button class="button button-primary" style="margin-top:16px;">Sačuvaj upozorenje</button>
+            </form>
+        </div>
 
         <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;max-width:620px;margin-top:26px;">
             <h2 style="margin-top:0;">✏️ Tekstovi po vremenu</h2>
@@ -1279,6 +1324,7 @@ function dry65_live_ajax() {
         'headline'      => (string) $st['headline'],
         'wait_label'    => (string) $st['wait_label'],
         'message'       => (string) get_option('dry65_live_message', ''),
+        'alert'         => (string) $st['alert'],
         'phone'         => $biz['phone_display'] ?? '060 6900655',
         'updated_ago_sec' => (int) $st['updated_ago_sec'],
         'stale'         => (bool) $st['stale'],

@@ -18,6 +18,11 @@ get_header();
 <section class="section" style="min-height:40vh;display:flex;align-items:flex-start;padding-top:clamp(16px,3vw,32px);">
   <div class="wrap" style="width:100%;">
 
+    <div class="live-alert" id="live-alert" role="status" aria-live="polite"<?php echo empty($st['alert']) ? ' style="display:none;"' : ''; ?>>
+      <svg class="live-alert-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <span id="live-alert-text"><?php echo esc_html($st['alert']); ?></span>
+    </div>
+
     <div class="live-card" data-tier="<?php echo esc_attr($st['tier']); ?>" id="live-card">
       <p class="live-eyebrow" id="live-eyebrow"<?php echo $st['eyebrow'] === '' ? ' style="display:none;"' : ''; ?>><?php echo esc_html($st['eyebrow']); ?></p>
 
@@ -62,6 +67,21 @@ dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi wa
 </main>
 
 <style>
+  .live-alert {
+    max-width: 640px;
+    margin: 0 auto 16px;
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: #FEF4CD;
+    border: 1px solid #EFC53F;
+    color: #6B4E00;
+    text-align: left;
+    font-family: var(--font-sans);
+    font-size: 14.5px; font-weight: 500; line-height: 1.45;
+    box-shadow: 0 14px 34px -28px rgba(120,90,0,0.75);
+  }
+  .live-alert-ico { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; color: #D99900; }
   .live-card {
     max-width: 640px;
     margin: 0 auto;
@@ -157,6 +177,8 @@ dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi wa
   var elViewers  = document.getElementById('live-viewers');
   var elViewersT = document.getElementById('live-viewers-text');
   var elChairs   = document.getElementById('live-chairs');
+  var elAlert    = document.getElementById('live-alert');
+  var elAlertTxt = document.getElementById('live-alert-text');
 
   // Token po tabu (sessionStorage) — služi da server broji jedinstvene gledaoce.
   var token;
@@ -183,6 +205,7 @@ dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi wa
     staffText:    <?php echo wp_json_encode(dry65_live_today_text()); ?>,
     chairsShow:   <?php echo get_option('dry65_live_chairs_show', '0') === '1' ? 'true' : 'false'; ?>,
     message:      <?php echo wp_json_encode(get_option('dry65_live_message', '')); ?>,
+    alert:        <?php echo wp_json_encode($st['alert'], JSON_UNESCAPED_UNICODE); ?>,
     hoursText:    <?php echo wp_json_encode(dry65_live_hours_text()); ?>,
     phone:        <?php echo wp_json_encode($biz['phone_display']); ?>
   };
@@ -278,6 +301,11 @@ dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi wa
         if (d.full_h) state.fullH = d.full_h;
         if (typeof d.full_s === 'string') state.fullS = d.full_s;
         state.message      = d.message || '';
+        state.alert        = d.alert || '';
+        if (elAlert) {
+          if (state.alert) { elAlertTxt.textContent = state.alert; elAlert.style.display = ''; }
+          else { elAlert.style.display = 'none'; }
+        }
         state.phone        = d.phone || state.phone;
         state.staffText    = d.staff_text || '';
         state.chairsShow   = !!d.chairs_show;
