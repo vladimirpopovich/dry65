@@ -91,7 +91,7 @@ add_action('template_redirect', function () {
           <!-- MINI LIVE -->
           <?php
           $lv_tier = $st['tier']; $lv_min = (int) ($st['remaining_min'] ?? 0); $lv_cl = !empty($st['closed']);
-          if ($lv_cl || $lv_tier === 'closed') { $lv_b = t('Zatvoreno'); $lv_s = t('Trenutno ne radimo'); }
+          if ($lv_cl || $lv_tier === 'closed') { $lv_b = $st['headline']; $lv_s = $st['sub']; } // koristi živu poruku sa /live (npr. neradni dan)
           elseif ($lv_tier === 'full')          { $lv_b = t('Za danas popunjeni'); $lv_s = t('Vidimo se sutra'); }
           elseif ($lv_min > 0)                  { $lv_b = '~' . ((int) (ceil($lv_min / 5) * 5)) . ' ' . t('min čekanja'); $lv_s = t('Trenutna procena'); }
           else                                  { $lv_b = t('Slobodan termin'); $lv_s = t('Slobodno, samo dođite'); }
@@ -167,7 +167,7 @@ add_action('template_redirect', function () {
           if(!d) return;
           if(d.tier) el.setAttribute('data-tier', d.tier);
           var b, s;
-          if(d.closed || d.tier==='closed'){ b=<?php echo wp_json_encode(t('Zatvoreno')); ?>; s=<?php echo wp_json_encode(t('Trenutno ne radimo')); ?>; }
+          if(d.closed || d.tier==='closed'){ b=d.status||<?php echo wp_json_encode(t('Zatvoreno')); ?>; s=(typeof d.sub==='string'&&d.sub)?d.sub:<?php echo wp_json_encode(t('Trenutno ne radimo')); ?>; }
           else if(d.tier==='full'){ b=<?php echo wp_json_encode(t('Za danas popunjeni')); ?>; s=<?php echo wp_json_encode(t('Vidimo se sutra')); ?>; }
           else if(d.remaining_min>0){ b='~'+(Math.ceil(d.remaining_min/5)*5)+' '+<?php echo wp_json_encode(t('min čekanja')); ?>; s=<?php echo wp_json_encode(t('Trenutna procena')); ?>; }
           else { b=<?php echo wp_json_encode(t('Slobodan termin')); ?>; s=<?php echo wp_json_encode(t('Slobodno, samo dođite')); ?>; }

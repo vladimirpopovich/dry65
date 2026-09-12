@@ -1556,9 +1556,11 @@ function dry65_live_rest_status() {
     $st = dry65_live_resolve();
     return [
         'status'        => $st['headline'],
+        'sub'           => (string) $st['sub'],
         'tier'          => $st['tier'],
         'remaining_min' => (int) $st['remaining_min'],
         'closed'        => (bool) $st['closed'],
+        'dayoff'        => (bool) ($st['dayoff'] ?? false),
     ];
 }
 
