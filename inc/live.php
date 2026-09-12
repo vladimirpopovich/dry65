@@ -94,6 +94,9 @@ function dry65_live_get_raw() {
         'alert'      => (string) get_option('dry65_live_alert', ''),
         'alert_en'   => (string) get_option('dry65_live_alert_en', ''),
         'alert_show' => get_option('dry65_live_alert_show', '0') === '1',
+        'dayoff'        => get_option('dry65_live_dayoff', '0') === '1',
+        'dayoff_msg'    => (string) get_option('dry65_live_dayoff_msg', ''),
+        'dayoff_msg_en' => (string) get_option('dry65_live_dayoff_msg_en', ''),
         'updated_at' => (int) get_option('dry65_live_updated_at', 0),
         'updated_by' => (int) get_option('dry65_live_updated_by', 0),
     ];
@@ -418,8 +421,9 @@ function dry65_live_resolve() {
     $biz   = function_exists('dry65_biz') ? dry65_biz() : ['phone_display' => '060 6900655'];
     $phone = $biz['phone_display'] ?? '060 6900655';
 
-    // Van radnog vremena ILI ručno zatvoreno -> closed. „Popunjeni" samo dok je otvoreno.
-    $closed = $raw['closed'] || !dry65_live_is_open_now();
+    // Neradni dan (switch) ILI van radnog vremena ILI ručno zatvoreno -> closed.
+    // „Popunjeni" samo dok je otvoreno. Neradni dan ima prednost nad radnim vremenom.
+    $closed = $raw['dayoff'] || $raw['closed'] || !dry65_live_is_open_now();
     $full   = !$closed && $raw['full'];
 
     $remaining_sec = ($closed || $full) ? 0 : dry65_live_remaining_sec($raw);
@@ -444,6 +448,15 @@ function dry65_live_resolve() {
         $data['ring_num']   = ($remaining_min <= 0) ? '' : (string) dry65_live_ring_num($remaining_min);
         $data['footnote']   = t('Prikazano vreme je procena zasnovana na trenutnoj popunjenosti salona i ažurira se uživo kako se mesta oslobađaju i popunjavaju.');
         $data['wait_label'] = dry65_live_wait_label($remaining_min); // admin panel koristi
+    }
+
+    // Neradni dan — prepiši naslov + poruku (koristi zatvoreno stanje/izgled, bez countdown-a).
+    $data['dayoff'] = (bool) $raw['dayoff'];
+    if ($raw['dayoff']) {
+        $en = function_exists('dry65_is_en') && dry65_is_en();
+        $data['headline'] = $en ? 'Closed today' : 'Danas ne radimo';
+        $msg = ($en && $raw['dayoff_msg_en'] !== '') ? $raw['dayoff_msg_en'] : $raw['dayoff_msg'];
+        if ($msg !== '') $data['sub'] = $msg;
     }
 
     // Custom poruka (ako postoji) prepisuje default sub — ali ne za closed/full
@@ -1050,6 +1063,19 @@ add_action('admin_post_dry65_live_save_alert', function() {
     exit;
 });
 
+/* Snimanje „Danas ne radimo" (neradni dan) — zaseban switch + poruka (SR/EN). */
+add_action('admin_post_dry65_live_save_dayoff', function() {
+    if (!current_user_can(DRY65_LIVE_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_live_save_dayoff');
+
+    update_option('dry65_live_dayoff', isset($_POST['live_dayoff']) ? '1' : '0');
+    update_option('dry65_live_dayoff_msg',    isset($_POST['live_dayoff_msg'])    ? sanitize_textarea_field($_POST['live_dayoff_msg'])    : '');
+    update_option('dry65_live_dayoff_msg_en', isset($_POST['live_dayoff_msg_en']) ? sanitize_textarea_field($_POST['live_dayoff_msg_en']) : '');
+
+    wp_redirect(add_query_arg(['page' => 'dry65-live', 'saved' => '1'], admin_url('admin.php')));
+    exit;
+});
+
 function dry65_live_admin_page() {
     $raw   = dry65_live_get_raw();
     $st    = dry65_live_resolve();
@@ -1161,6 +1187,23 @@ function dry65_live_admin_page() {
                 <textarea name="live_alert_en" rows="2" style="width:100%;max-width:560px;display:block;background:#f6f7f7;" placeholder="🇬🇧 EN (prikazuje se na /en/live — prazno = koristi srpski)"><?php echo esc_textarea($raw['alert_en']); ?></textarea>
                 <p style="margin:4px 0 0;color:#888;font-size:12px;">Vidi se samo kad je „Prikaži traku“ uključeno i srpsko polje nije prazno.</p>
                 <button class="button button-primary" style="margin-top:16px;">Sačuvaj upozorenje</button>
+            </form>
+        </div>
+
+        <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;max-width:620px;margin-top:26px;">
+            <h2 style="margin-top:0;">🌙 Danas ne radimo (neradni dan)</h2>
+            <p style="color:#555;margin-top:4px;">Kad je uključeno, <code>/live</code> ne pokreće brojač — pokazuje „Danas ne radimo“ + tvoju poruku. Ima prednost nad radnim vremenom. <strong>Ostaje uključeno dok ga sam ne isključiš.</strong></p>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="max-width:560px;">
+                <input type="hidden" name="action" value="dry65_live_save_dayoff">
+                <?php wp_nonce_field('dry65_live_save_dayoff'); ?>
+                <label style="display:block;font-weight:600;margin:6px 0 8px;">
+                    <input type="checkbox" name="live_dayoff" value="1"<?php echo $raw['dayoff'] ? ' checked' : ''; ?> style="margin-right:6px;vertical-align:middle;">
+                    Uključi — danas ne radimo
+                </label>
+                <textarea name="live_dayoff_msg" rows="2" style="width:100%;max-width:560px;margin-bottom:6px;display:block;" placeholder="🇷🇸 npr. Vidimo se u ponedeljak u 8h."><?php echo esc_textarea($raw['dayoff_msg']); ?></textarea>
+                <textarea name="live_dayoff_msg_en" rows="2" style="width:100%;max-width:560px;display:block;background:#f6f7f7;" placeholder="🇬🇧 EN (prikazuje se na /en/live — prazno = koristi srpski)"><?php echo esc_textarea($raw['dayoff_msg_en']); ?></textarea>
+                <p style="margin:4px 0 0;color:#888;font-size:12px;">Naslov je automatski „Danas ne radimo“ (EN: „Closed today“). U poruku ide nastavak, npr. kad se vraćate.</p>
+                <button class="button button-primary" style="margin-top:16px;">Sačuvaj</button>
             </form>
         </div>
 
@@ -1325,6 +1368,9 @@ function dry65_live_ajax() {
         'wait_label'    => (string) $st['wait_label'],
         'message'       => (string) get_option('dry65_live_message', ''),
         'alert'         => (string) $st['alert'],
+        'dayoff'        => (bool) $st['dayoff'],
+        'dayoff_h'      => (string) $st['headline'],
+        'dayoff_s'      => (string) $st['sub'],
         'phone'         => $biz['phone_display'] ?? '060 6900655',
         'updated_ago_sec' => (int) $st['updated_ago_sec'],
         'stale'         => (bool) $st['stale'],

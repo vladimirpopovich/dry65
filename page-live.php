@@ -206,6 +206,9 @@ dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi wa
     chairsShow:   <?php echo get_option('dry65_live_chairs_show', '0') === '1' ? 'true' : 'false'; ?>,
     message:      <?php echo wp_json_encode(get_option('dry65_live_message', '')); ?>,
     alert:        <?php echo wp_json_encode($st['alert'], JSON_UNESCAPED_UNICODE); ?>,
+    dayoff:       <?php echo !empty($st['dayoff']) ? 'true' : 'false'; ?>,
+    dayoffH:      <?php echo wp_json_encode(!empty($st['dayoff']) ? $st['headline'] : '', JSON_UNESCAPED_UNICODE); ?>,
+    dayoffS:      <?php echo wp_json_encode(!empty($st['dayoff']) ? $st['sub'] : '', JSON_UNESCAPED_UNICODE); ?>,
     hoursText:    <?php echo wp_json_encode(dry65_live_hours_text()); ?>,
     phone:        <?php echo wp_json_encode($biz['phone_display']); ?>
   };
@@ -227,6 +230,7 @@ dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi wa
   var DRY65_WAITS = <?php echo wp_json_encode(dry65_live_allowed_waits()); ?>;
   var DRY65_TEXTS = <?php echo wp_json_encode(dry65_live_texts(), JSON_UNESCAPED_UNICODE); ?>;
   function copyText(min) {
+    if (state.dayoff) return [state.dayoffH, state.dayoffS];
     if (state.closed) return [<?php echo wp_json_encode(t('Zatvoreni smo')); ?>, state.hoursText];
     if (state.full)   return [state.fullH, state.fullS];
     for (var i = 0; i < DRY65_WAITS.length; i++) {
@@ -298,6 +302,9 @@ dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi wa
         state.remainingSec = d.remaining_sec;
         state.closed       = !!d.closed;
         state.full         = !!d.full;
+        state.dayoff       = !!d.dayoff;
+        if (typeof d.dayoff_h === 'string') state.dayoffH = d.dayoff_h;
+        if (typeof d.dayoff_s === 'string') state.dayoffS = d.dayoff_s;
         if (d.full_h) state.fullH = d.full_h;
         if (typeof d.full_s === 'string') state.fullS = d.full_s;
         state.message      = d.message || '';
