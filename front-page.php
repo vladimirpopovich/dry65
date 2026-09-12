@@ -70,7 +70,12 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
       <span class="mono" style="color:var(--oxblood);font-size:12px;letter-spacing:0.14em;font-weight:600;"><?php echo t('TRENUTNO AKTIVNE'); ?></span>
     </div>
 
-    <div class="offers-grid">
+    <?php $offers_scroll = count($offers) > 3; ?>
+    <div class="offers-slider-wrap">
+      <?php if ($offers_scroll): ?>
+        <button class="rs-arrow offers-prev" type="button" aria-label="<?php echo esc_attr(t('Prethodno')); ?>">‹</button>
+      <?php endif; ?>
+      <div class="offers-grid<?php echo $offers_scroll ? ' offers-slider' : ''; ?>"<?php echo $offers_scroll ? ' id="offers-slider" tabindex="0" role="region" aria-label="' . esc_attr(t('Aktuelne ponude (pomeranje strelicama)')) . '"' : ''; ?>>
       <?php foreach ($offers as $idx => $offer):
         $modal_id = 'offer-modal-' . $idx;
         $has_dates = (!empty($offer['start_date']) || !empty($offer['end_date']));
@@ -144,7 +149,11 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
           </div>
         </div>
       <?php endforeach; ?>
-    </div>
+      </div><!-- /.offers-grid -->
+      <?php if ($offers_scroll): ?>
+        <button class="rs-arrow offers-next" type="button" aria-label="<?php echo esc_attr(t('Sledeće')); ?>">›</button>
+      <?php endif; ?>
+    </div><!-- /.offers-slider-wrap -->
   </div>
 </section>
 <?php endif; ?>

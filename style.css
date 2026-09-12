@@ -558,6 +558,40 @@ html.lp-locked, body.lp-locked {
 @media (max-width: 600px) {
   .offers-grid { grid-template-columns: 1fr; }
 }
+
+/* Scroller varijanta (kada ima >3 ponude): 3 vidljive + strelice */
+.offers-slider-wrap { position: relative; }
+.offers-grid.offers-slider {
+  display: flex;
+  grid-template-columns: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 4px 4px 10px;
+}
+.offers-grid.offers-slider::-webkit-scrollbar { display: none; }
+.offers-slider > .offer-card {
+  flex: 0 0 calc((100% - 2 * clamp(20px, 2.5vw, 32px)) / 3);
+  scroll-snap-align: start;
+}
+.offers-prev { left: -22px; }
+.offers-next { right: -22px; }
+@media (max-width: 900px) {
+  .offers-slider > .offer-card { flex-basis: calc((100% - clamp(20px, 2.5vw, 32px)) / 2); }
+  .offers-prev { left: 0; }
+  .offers-next { right: 0; }
+}
+@media (max-width: 600px) {
+  .offers-slider-wrap { margin-inline: calc(-1 * var(--gutter)); }
+  .offers-grid.offers-slider {
+    padding-left: var(--gutter);
+    padding-right: 0;
+    gap: 12px;
+  }
+  .offers-slider > .offer-card { flex-basis: 85%; }
+  .offers-prev, .offers-next { display: none; }
+}
 .offer-card {
   display: flex;
   flex-direction: column;

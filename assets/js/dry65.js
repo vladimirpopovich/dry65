@@ -213,4 +213,20 @@
     if (next) next.addEventListener('click', () => rsTrack.scrollBy({ left:  step(), behavior: 'smooth' }));
   }
 
+  /* ---- Aktuelne ponude slider arrows ---- */
+  const ofTrack = document.getElementById('offers-slider');
+  if (ofTrack) {
+    const ofWrap = ofTrack.closest('.offers-slider-wrap');
+    const ofPrev = ofWrap && ofWrap.querySelector('.offers-prev');
+    const ofNext = ofWrap && ofWrap.querySelector('.offers-next');
+    const ofStep = function () {
+      const card = ofTrack.querySelector('.offer-card');
+      if (!card) return ofTrack.clientWidth * 0.8;
+      const gap = parseFloat(getComputedStyle(ofTrack).columnGap) || 24;
+      return card.offsetWidth + gap;
+    };
+    if (ofPrev) ofPrev.addEventListener('click', () => ofTrack.scrollBy({ left: -ofStep(), behavior: 'smooth' }));
+    if (ofNext) ofNext.addEventListener('click', () => ofTrack.scrollBy({ left:  ofStep(), behavior: 'smooth' }));
+  }
+
 })();
