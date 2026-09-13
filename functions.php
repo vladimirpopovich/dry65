@@ -451,6 +451,7 @@ function dry65_activate() {
         ['title' => 'Kontakt',  'slug' => 'kontakt',  'template' => 'page-kontakt.php',  'order' => 8],
         ['title' => 'Česta pitanja', 'slug' => 'faq',  'template' => 'page-faq.php',      'order' => 9],
         ['title' => 'Uživo',    'slug' => 'live',     'template' => 'page-live.php',     'order' => 10],
+        ['title' => 'Politika privatnosti', 'slug' => 'politika-privatnosti', 'template' => 'page-politika-privatnosti.php', 'order' => 11],
     ];
 
     foreach ($pages as $p) {
@@ -496,6 +497,30 @@ function dry65_activate() {
     flush_rewrite_rules();
 }
 add_action('after_switch_theme', 'dry65_activate');
+
+/* Sigurnosno kreiranje pravnih strana na produkciji (bez reaktivacije teme). Radi jednom. */
+add_action('admin_init', function() {
+    if (get_option('dry65_legal_pages_v') === '1') return;
+    $need = [
+        ['title' => 'Politika privatnosti', 'slug' => 'politika-privatnosti', 'template' => 'page-politika-privatnosti.php', 'order' => 11],
+    ];
+    foreach ($need as $p) {
+        if (get_page_by_path($p['slug'])) continue;
+        $id = wp_insert_post([
+            'post_title'  => $p['title'],
+            'post_name'   => $p['slug'],
+            'post_status' => 'publish',
+            'post_type'   => 'page',
+            'menu_order'  => $p['order'],
+            'post_content'=> '',
+        ]);
+        if ($id && !is_wp_error($id)) {
+            update_post_meta($id, '_wp_page_template', $p['template']);
+        }
+    }
+    update_option('dry65_legal_pages_v', '1');
+    flush_rewrite_rules(false);
+});
 
 /* ---- Nav helper ---- */
 function dry65_current_page_slug() {
