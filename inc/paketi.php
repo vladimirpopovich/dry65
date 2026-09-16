@@ -384,8 +384,77 @@ function dry65_pk_extend($id, $new_date, $note = '') {
     return true;
 }
 
+/* ============================================================
+   TIHO LOGOVANJE OČITAVANJA PEČATA (za buduću statistiku)
+   ------------------------------------------------------------
+   Zasebna, denormalizovana tabela: jedan red po svakom očitavanju
+   (feniranje / tretman / potrošnja vaučera / poništeno). Nosi i tir,
+   plan, kupca, radnicu i IZVOR (skener/kartica/dashboard) da dashboard
+   kasnije ne mora da džojnuje. Vreme = Beograd (isto kao /live logovi).
+   Prikaza nema — samo se skuplja istorija.
+   ============================================================ */
+if (!defined('DRY65_PK_STAMPLOG_DB')) define('DRY65_PK_STAMPLOG_DB', 1);
+
+function dry65_pk_stamp_log_table() { global $wpdb; return $wpdb->prefix . 'dry65_stamp_log'; }
+
+function dry65_pk_stamp_log_install() {
+    if ((int) get_option('dry65_pk_stamplog_db', 0) === DRY65_PK_STAMPLOG_DB) return;
+    global $wpdb;
+    $charset = $wpdb->get_charset_collate();
+    $t = dry65_pk_stamp_log_table();
+    $sql = "CREATE TABLE $t (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        logged_at DATETIME NOT NULL,
+        account_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        customer_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        code VARCHAR(20) NOT NULL DEFAULT '',
+        type VARCHAR(10) NOT NULL DEFAULT 'paket',
+        event VARCHAR(16) NOT NULL DEFAULT '',
+        delta INT NOT NULL DEFAULT 0,
+        balance_after INT NOT NULL DEFAULT 0,
+        tier VARCHAR(12) NOT NULL DEFAULT '',
+        plan VARCHAR(120) NOT NULL DEFAULT '',
+        source VARCHAR(12) NOT NULL DEFAULT '',
+        staff_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        staff_name VARCHAR(120) NOT NULL DEFAULT '',
+        PRIMARY KEY (id),
+        KEY logged_at (logged_at),
+        KEY account_id (account_id),
+        KEY event (event)
+    ) $charset;";
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
+    update_option('dry65_pk_stamplog_db', DRY65_PK_STAMPLOG_DB);
+}
+add_action('init', 'dry65_pk_stamp_log_install');
+
+/* Upiši jedno očitavanje u log. $acc = red naloga (pre ili posle promene, svejedno).
+   $event: feniranje | tretman | potrosnja | ponisteno. */
+function dry65_pk_stamp_log($acc, $event, $delta, $balance_after, $staff_name = '', $source = '') {
+    if (!is_object($acc)) return;
+    global $wpdb;
+    $tier = ($acc->type === 'paket' && function_exists('dry65_pk_card_theme')) ? dry65_pk_card_theme($acc)['tier'] : '';
+    $wpdb->insert(dry65_pk_stamp_log_table(), [
+        'logged_at'     => dry65_pk_now(),
+        'account_id'    => (int) $acc->id,
+        'customer_id'   => (int) ($acc->customer_id ?? 0),
+        'code'          => (string) $acc->code,
+        'type'          => (string) $acc->type,
+        'event'         => (string) $event,
+        'delta'         => (int) $delta,
+        'balance_after' => (int) $balance_after,
+        'tier'          => (string) $tier,
+        'plan'          => (string) $acc->plan,
+        'source'        => (string) $source,
+        'staff_id'      => get_current_user_id(),
+        'staff_name'    => (string) $staff_name,
+    ], ['%s','%d','%d','%s','%s','%s','%d','%d','%s','%s','%s','%d','%s']);
+    // Signal da se stanje naloga promenilo — wallet sloj (Google/Apple) se kači ovde.
+    do_action('dry65_stamp_changed', (int) $acc->id);
+}
+
 /* Primeni promenu (delta<0 = potrošnja). Klampuje na [0..]. Vrati novo stanje. */
-function dry65_pk_apply($id, $delta, $note = '', $staff_name = '') {
+function dry65_pk_apply($id, $delta, $note = '', $staff_name = '', $source = '') {
     global $wpdb;
     $acc = dry65_pk_get($id);
     if (!$acc) return null;
@@ -403,6 +472,7 @@ function dry65_pk_apply($id, $delta, $note = '', $staff_name = '') {
         'staff_name'    => $staff_name,
         'created_at'    => $now,
     ], ['%d','%d','%d','%s','%d','%s','%s']);
+    dry65_pk_stamp_log($acc, $acc->type === 'paket' ? 'feniranje' : 'potrosnja', $delta, $new, $staff_name, $source);
     return $new;
 }
 
@@ -412,7 +482,7 @@ function dry65_pk_reward_available($acc) {
 }
 
 /* Potroši jedini bonus: upiši datum + zabeleži u istoriju (ne dira broj feniranja). */
-function dry65_pk_use_reward($id, $staff_name = '') {
+function dry65_pk_use_reward($id, $staff_name = '', $source = '') {
     global $wpdb;
     $acc = dry65_pk_get($id);
     if (!$acc || $acc->type !== 'paket' || !empty($acc->reward_used_at)) return false;
@@ -427,6 +497,7 @@ function dry65_pk_use_reward($id, $staff_name = '') {
         'staff_name'    => $staff_name,
         'created_at'    => $now,
     ], ['%d','%d','%d','%s','%d','%s','%s']);
+    dry65_pk_stamp_log($acc, 'tretman', 0, (int) $acc->balance, $staff_name, $source);
     return true;
 }
 
@@ -511,6 +582,7 @@ function dry65_pk_undo($txn_id) {
     ], ['%d','%d','%d','%s','%d','%s','%d','%s']);
     // Označi original kao poništen.
     $wpdb->update($tt, ['reversed' => 1], ['id' => (int) $t->id], ['%d'], ['%d']);
+    dry65_pk_stamp_log($acc, 'ponisteno', -$delta, $new, '', 'dashboard');
     return true;
 }
 
@@ -1178,21 +1250,22 @@ add_action('admin_post_dry65_pk_spend', function () {
     if ($is_card && $worker === '' && dry65_pk_staff_all()) {
         wp_safe_redirect(add_query_arg('pinreq', '1', $return)); exit;
     }
+    $src = $is_card ? 'kartica' : 'dashboard'; // izvor očitavanja za statistiku
     if ($acc) {
         if ($acc->type === 'vaucer') {
             $amount = max(1, (int) ($_POST['amount'] ?? 0));
             $note   = sanitize_text_field(wp_unslash($_POST['note'] ?? ''));
-            dry65_pk_apply($id, -$amount, $note !== '' ? $note : 'Potrošnja', $worker);
+            dry65_pk_apply($id, -$amount, $note !== '' ? $note : 'Potrošnja', $worker, $src);
         } else {
             // Paket: act = feniranje | feniranje_tretman | tretman
             $act = sanitize_key($_POST['act'] ?? 'feniranje');
             if ($act === 'tretman') {
-                dry65_pk_use_reward($id, $worker);                          // samo bonus, ne dira feniranja
+                dry65_pk_use_reward($id, $worker, $src);                    // samo bonus, ne dira feniranja
             } elseif ($act === 'feniranje_tretman') {
-                if ((int) $acc->balance > 0) dry65_pk_apply($id, -1, 'Feniranje', $worker);
-                dry65_pk_use_reward($id, $worker);
+                if ((int) $acc->balance > 0) dry65_pk_apply($id, -1, 'Feniranje', $worker, $src);
+                dry65_pk_use_reward($id, $worker, $src);
             } else {
-                dry65_pk_apply($id, -1, 'Feniranje', $worker);              // jedan dolazak
+                dry65_pk_apply($id, -1, 'Feniranje', $worker, $src);        // jedan dolazak
             }
         }
     }
@@ -1431,6 +1504,9 @@ add_action('template_redirect', function () {
             </div>
 
             <?php if (!$can_staff): ?>
+            <?php if (function_exists("dry65_wallet_google_button") && ($gw = dry65_wallet_google_button($acc))): ?>
+            <div style="text-align:center;margin:16px 0 4px;"><?php echo $gw; ?></div>
+            <?php endif; ?>
             <p class="muted" style="text-align:center;margin:14px 0 0;font-size:13px;">Pokaži ovu karticu osoblju u salonu.</p>
             <?php elseif ($acc->type === 'vaucer'): ?>
             <p style="text-align:center;margin:14px 0 0;font-size:13px;"><a href="<?php echo esc_url(admin_url('admin.php?page=dry65-paketi&account=' . (int) $acc->id)); ?>" style="text-decoration:underline;">Vaučer se skida u dashboardu ↗</a></p>
@@ -1535,18 +1611,18 @@ add_action('wp_ajax_dry65_pk_scan', function () {
             if (!dry65_pk_reward_available($acc)) {
                 wp_send_json_error(['msg' => 'Tretman je već iskorišćen.', 'state' => dry65_pk_public_state($acc)], 400);
             }
-            dry65_pk_use_reward($acc->id, $worker);
+            dry65_pk_use_reward($acc->id, $worker, 'skener');
         } elseif ($act === 'feniranje_tretman') {
             if ((int) $acc->balance <= 0 && !dry65_pk_reward_available($acc)) {
                 wp_send_json_error(['msg' => 'Nema šta da se skine.', 'state' => dry65_pk_public_state($acc)], 400);
             }
-            if ((int) $acc->balance > 0)          dry65_pk_apply($acc->id, -1, 'Feniranje', $worker);
-            if (dry65_pk_reward_available($acc))   dry65_pk_use_reward($acc->id, $worker);
+            if ((int) $acc->balance > 0)          dry65_pk_apply($acc->id, -1, 'Feniranje', $worker, 'skener');
+            if (dry65_pk_reward_available($acc))   dry65_pk_use_reward($acc->id, $worker, 'skener');
         } else { // feniranje
             if ((int) $acc->balance <= 0) {
                 wp_send_json_error(['msg' => 'Paket je već završen (0 feniranja).', 'state' => dry65_pk_public_state($acc)], 400);
             }
-            dry65_pk_apply($acc->id, -1, 'Feniranje', $worker);
+            dry65_pk_apply($acc->id, -1, 'Feniranje', $worker, 'skener');
         }
         $acc = dry65_pk_get($acc->id);
     }
