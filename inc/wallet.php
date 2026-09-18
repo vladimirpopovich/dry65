@@ -88,9 +88,12 @@ function dry65_wallet_google_class_id() {
     return DRY65_GW_ISSUER_ID . '.' . DRY65_GW_CLASS;
 }
 
-/* Puni ID Loyalty objekta za nalog: ISSUER.CLASS-CODE (code je [A-Z2-9], bezbedan). */
+/* Puni ID Loyalty objekta. TRAJNA kartica: vezan za KUPCA (c{customer_id}), da se
+   ista instalirana kartica dopunjava kroz pakete. Ako nalog nema kupca — fallback na kod. */
 function dry65_wallet_google_object_id($acc) {
-    return DRY65_GW_ISSUER_ID . '.' . DRY65_GW_CLASS . '-' . $acc->code;
+    $cid = (int) ($acc->customer_id ?? 0);
+    $suffix = $cid > 0 ? ('c' . $cid) : $acc->code;
+    return DRY65_GW_ISSUER_ID . '.' . DRY65_GW_CLASS . '-' . $suffix;
 }
 
 /* Definicija Loyalty KLASE (šablon programa; ista za sve kartice). */
@@ -297,7 +300,14 @@ function dry65_wallet_google_patch($acc) {
 
     $object_id = dry65_wallet_google_object_id($acc);
     $url  = 'https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/' . rawurlencode($object_id);
+
+    // Ceo promenljivi deo (pečati + boja/hero/QR po tiru), da dopuna paketa osveži sve na kartici.
     $body = dry65_wallet_google_points($acc);
+    $body['accountName']        = $acc->name;
+    $body['hexBackgroundColor'] = dry65_wallet_bg($acc);
+    $body['barcode']            = ['type' => 'QR_CODE', 'value' => dry65_pk_card_url($acc->code), 'alternateText' => $acc->code];
+    $hero = dry65_wallet_hero($acc);
+    if ($hero) $body['heroImage'] = ['sourceUri' => ['uri' => $hero]];
 
     $resp = wp_remote_request($url, [
         'method'  => 'PATCH',

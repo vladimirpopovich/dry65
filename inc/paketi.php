@@ -332,6 +332,31 @@ function dry65_pk_customer_stats($customer_id) {
     return $s;
 }
 
+/* Objedinjena istorija korišćenja kupca: svi dolasci/tretmani/otvaranja kroz SVE njegove pakete. */
+function dry65_pk_customer_activity($customer_id) {
+    global $wpdb;
+    $t = dry65_pk_txn_table();
+    $a = dry65_pk_table();
+    return $wpdb->get_results($wpdb->prepare(
+        "SELECT tx.created_at, tx.delta, tx.note, tx.reversed, tx.staff_name,
+                ac.plan, ac.type, ac.code
+         FROM $t tx JOIN $a ac ON ac.id = tx.account_id
+         WHERE ac.customer_id = %d
+         ORDER BY tx.created_at DESC, tx.id DESC",
+        (int) $customer_id
+    ));
+}
+
+/* Kratka labela jedne aktivnosti u istoriji kupca. */
+function dry65_pk_activity_label($r) {
+    $note = (string) $r->note;
+    if (strpos($note, 'Poništeno') === 0)           return 'Poništeno';
+    if (strpos($note, 'Tretman iskorišćen') === 0)  return 'Tretman';
+    if ((int) $r->delta > 0)                          return $r->type === 'vaucer' ? 'Vaučer otvoren' : (($r->plan ?: 'Paket') . ' otvoren');
+    if ($r->type === 'vaucer')                        return 'Potrošnja ' . number_format(abs((int) $r->delta), 0, ',', '.') . ' din';
+    return 'Feniranje';
+}
+
 /* Kreiraj nalog + početnu transakciju. Vrati id ili 0. */
 function dry65_pk_create($name, $phone, $type, $initial, $expires_at = '', $note = '', $plan = '', $reward = '', $email = '', $customer_id = 0) {
     global $wpdb;
@@ -365,6 +390,8 @@ function dry65_pk_create($name, $phone, $type, $initial, $expires_at = '', $note
         'staff_id'      => get_current_user_id(),
         'created_at'    => $now,
     ], ['%d','%d','%d','%s','%d','%s']);
+    // Trajna wallet kartica: ako kupac već ima instaliranu karticu, dopuni je novim paketom (PATCH). Ako nema, 404 se tiho preskoči.
+    do_action('dry65_stamp_changed', $id);
     return $id;
 }
 
@@ -538,7 +565,8 @@ function dry65_pk_staff_add($name, $pin) {
     if ($name === '' || !preg_match('/^\d{4}$/', $pin)) return false;
     if (dry65_pk_staff_verify($pin) !== '') return false; // PIN već zauzet
     $all = dry65_pk_staff_all();
-    $all[] = ['id' => uniqid('r'), 'name' => $name, 'pin_hash' => password_hash($pin, PASSWORD_DEFAULT)];
+    // PIN se čuva i čitljivo (za prikaz adminu) i heširano (za proveru). PIN je oznaka „ko radi", ne lozinka.
+    $all[] = ['id' => uniqid('r'), 'name' => $name, 'pin' => $pin, 'pin_hash' => password_hash($pin, PASSWORD_DEFAULT)];
     update_option('dry65_pk_staff', $all);
     return true;
 }
@@ -737,7 +765,17 @@ function dry65_pk_staff_page() {
               <?php else: foreach ($staff as $w): ?>
                 <tr>
                   <td><?php echo esc_html($w['name']); ?></td>
-                  <td style="color:#999;">•••• <span style="font-size:12px;">(skriven)</span></td>
+                  <td>
+                    <?php if (current_user_can(DRY65_PK_ADMIN_CAP)): ?>
+                      <?php if (!empty($w['pin'])): ?>
+                        <strong style="letter-spacing:0.25em;font-size:16px;"><?php echo esc_html($w['pin']); ?></strong>
+                      <?php else: ?>
+                        <span style="color:#999;">•••• <span style="font-size:12px;">(dodaj ponovo da bi se video)</span></span>
+                      <?php endif; ?>
+                    <?php else: ?>
+                      <span style="color:#999;">••••</span>
+                    <?php endif; ?>
+                  </td>
                   <td style="text-align:right;">
                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Obrisati <?php echo esc_js($w['name']); ?>?');" style="display:inline;">
                       <input type="hidden" name="action" value="dry65_pk_staff_delete">
@@ -750,7 +788,7 @@ function dry65_pk_staff_page() {
               <?php endforeach; endif; ?>
             </tbody>
           </table>
-          <p style="color:#999;font-size:12px;max-width:520px;">PIN se ne prikazuje iz sigurnosti. Ako ga radnica zaboravi, obriši je i dodaj ponovo sa novim PIN-om.</p>
+          <p style="color:#999;font-size:12px;max-width:520px;"><?php echo current_user_can(DRY65_PK_ADMIN_CAP) ? 'PIN vidiš samo ti (administrator) — radnice ga ne vide u ovoj tabeli.' : 'PIN se ne prikazuje.'; ?> Radnice dodate ranije nemaju sačuvan čitljiv PIN; njih dodaj ponovo da bi se prikazao.</p>
         </div>
       </div>
     </div>
@@ -1097,23 +1135,49 @@ function dry65_pk_customer_detail($id) {
         <?php endforeach; ?>
       </div>
 
-      <h2>Paketi i vaučeri</h2>
-      <table class="widefat striped" style="max-width:860px;">
-        <thead><tr><th>Plan</th><th>Stanje</th><th>Tretman</th><th>Rok</th><th>Napravljen</th><th></th></tr></thead>
+      <h2>Paketi i vaučeri <span style="font-size:13px;color:#777;font-weight:400;">(<?php echo count($accs); ?> ukupno)</span></h2>
+      <table class="widefat striped" style="max-width:920px;">
+        <thead><tr><th>Plan</th><th>Stanje</th><th>Status</th><th>Tretman</th><th>Rok</th><th>Napravljen</th><th></th></tr></thead>
         <tbody>
-          <?php if (!$accs): ?><tr><td colspan="6" style="color:#777;">Još nema paketa. Dodaj ispod.</td></tr>
+          <?php if (!$accs): ?><tr><td colspan="7" style="color:#777;">Još nema paketa. Dodaj ispod.</td></tr>
           <?php else: foreach ($accs as $a):
             $exp = dry65_pk_is_expired($a); $done = $a->type === 'paket' && (int) $a->balance === 0;
+            if ($done)      { $stt = '<span style="color:#777;">Završen</span>'; }
+            elseif ($exp)   { $stt = '<span style="color:#a00;">Istekao</span>'; }
+            else            { $stt = '<span style="color:#1f7a4d;font-weight:600;">Aktivan</span>'; }
           ?>
           <tr>
             <td><?php echo esc_html($a->type === 'vaucer' ? 'Vaučer' : ($a->plan ?: 'Paket')); ?></td>
             <td><?php echo esc_html(dry65_pk_balance_text($a)); ?><?php if ($done) echo ' ✓'; ?></td>
+            <td><?php echo $stt; ?></td>
             <td><?php echo $a->type === 'paket' ? ($a->reward_used_at ? 'iskorišćen' : ($a->reward ? 'dostupan' : '—')) : '—'; ?></td>
             <td><?php echo $a->expires_at ? esc_html(mysql2date('d.m.Y.', $a->expires_at)) . ($exp ? ' (istekao)' : '') : '—'; ?></td>
             <td><?php echo esc_html(mysql2date('d.m.Y.', $a->created_at)); ?></td>
             <td><a class="button button-small" href="<?php echo esc_url(admin_url('admin.php?page=dry65-paketi&account=' . (int) $a->id)); ?>">Otvori</a></td>
           </tr>
           <?php endforeach; endif; ?>
+        </tbody>
+      </table>
+
+      <?php $activity = dry65_pk_customer_activity($id); ?>
+      <h2 style="margin-top:28px;">Istorija korišćenja</h2>
+      <table class="widefat striped" style="max-width:920px;">
+        <thead><tr><th style="width:150px;">Datum</th><th>Aktivnost</th><th>Paket</th><th>Radnica</th></tr></thead>
+        <tbody>
+          <?php
+          $shown = 0;
+          if ($activity) foreach ($activity as $r):
+            if ((int) $r->reversed === 1) continue; // poništene preskačemo (prikazujemo efektivno stanje)
+            $shown++;
+          ?>
+          <tr>
+            <td><?php echo esc_html(mysql2date('d.m.Y. H:i', $r->created_at)); ?></td>
+            <td><?php echo esc_html(dry65_pk_activity_label($r)); ?></td>
+            <td style="color:#666;"><?php echo esc_html($r->type === 'vaucer' ? 'Vaučer' : ($r->plan ?: 'Paket')); ?></td>
+            <td style="color:#666;"><?php echo esc_html($r->staff_name ?: '—'); ?></td>
+          </tr>
+          <?php endforeach; ?>
+          <?php if (!$shown): ?><tr><td colspan="4" style="color:#777;">Još nema aktivnosti.</td></tr><?php endif; ?>
         </tbody>
       </table>
 
