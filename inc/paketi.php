@@ -357,6 +357,35 @@ function dry65_pk_activity_label($r) {
     return 'Feniranje';
 }
 
+/* Izmeni ime/telefon/email kupca. Telefon je UNIQUE — proveri da nije zauzet. Vrati true ili poruku o grešci. */
+function dry65_pk_customer_update($id, $name, $phone, $email) {
+    global $wpdb;
+    $id = (int) $id;
+    if ($id <= 0) return 'Nepoznat kupac.';
+    $ct    = dry65_pk_cust_table();
+    $name  = sanitize_text_field($name);
+    $phone = sanitize_text_field($phone);
+    $email = $email ? sanitize_email($email) : '';
+    if ($phone !== '') {
+        $other = $wpdb->get_var($wpdb->prepare("SELECT id FROM $ct WHERE phone = %s AND id <> %d", $phone, $id));
+        if ($other) return 'Taj telefon već koristi drugi kupac.';
+    }
+    $wpdb->update($ct, [
+        'name' => $name, 'phone' => $phone, 'phone_norm' => dry65_pk_normalize_phone($phone), 'email' => $email,
+    ], ['id' => $id], ['%s','%s','%s','%s'], ['%d']);
+    return true;
+}
+
+add_action('admin_post_dry65_pk_customer_update', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_pk_customer_update');
+    $id  = (int) ($_POST['id'] ?? 0);
+    $res = dry65_pk_customer_update($id, $_POST['name'] ?? '', $_POST['phone'] ?? '', $_POST['email'] ?? '');
+    $arg = ($res === true) ? 'saved=1' : 'uerr=' . rawurlencode($res);
+    wp_redirect(admin_url('admin.php?page=dry65-paketi&customer=' . $id . '&' . $arg));
+    exit;
+});
+
 /* Obriši kupca + SVE njegove pakete, transakcije i log. Samo admin.
    Oslobađa telefon (UNIQUE) i email — briše i vezan WP nalog AKO je običan kupac
    (nikad osoblje/admin), da bi email bio potpuno slobodan za ponovnu registraciju. */
@@ -1157,6 +1186,22 @@ function dry65_pk_customer_detail($id) {
         &middot; Član od <?php echo esc_html(mysql2date('d.m.Y.', $c->created_at)); ?>
         <?php if ($c->source === 'web') echo ' &middot; <span style="color:#2271b1;">registrovao se online</span>'; ?>
       </p>
+
+      <?php if (isset($_GET['saved'])): ?><div class="notice notice-success is-dismissible"><p>Podaci sačuvani.</p></div><?php endif; ?>
+      <?php if (isset($_GET['uerr'])): ?><div class="notice notice-error is-dismissible"><p><?php echo esc_html(wp_unslash($_GET['uerr'])); ?></p></div><?php endif; ?>
+
+      <details style="max-width:520px;margin:2px 0 22px;">
+        <summary style="cursor:pointer;color:#2271b1;font-size:14px;">Izmeni ime / telefon / email</summary>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:16px 18px;margin-top:10px;display:grid;gap:10px;">
+          <input type="hidden" name="action" value="dry65_pk_customer_update">
+          <input type="hidden" name="id" value="<?php echo (int) $c->id; ?>">
+          <?php wp_nonce_field('dry65_pk_customer_update'); ?>
+          <label style="font-size:13px;color:#555;">Ime i prezime<br><input type="text" name="name" value="<?php echo esc_attr($c->name); ?>" style="width:100%;"></label>
+          <label style="font-size:13px;color:#555;">Telefon<br><input type="tel" name="phone" value="<?php echo esc_attr($c->phone); ?>" style="width:100%;"></label>
+          <label style="font-size:13px;color:#555;">Email<br><input type="email" name="email" value="<?php echo esc_attr($c->email); ?>" style="width:100%;"></label>
+          <p style="margin:4px 0 0;"><button type="submit" class="button button-primary">Sačuvaj</button></p>
+        </form>
+      </details>
 
       <div style="display:flex;gap:14px;flex-wrap:wrap;margin:16px 0 24px;">
         <?php
