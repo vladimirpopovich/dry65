@@ -81,7 +81,7 @@ function dry65_live_text_on($hex) {
 
 /* Osoblje koje može da radi (redosled prikaza). */
 function dry65_live_staff_all() {
-    return ['Jelena', 'Ema', 'Jovana', 'Nikola'];
+    return ['Jelena', 'Ema', 'Jovana', 'Nikola', 'Kristina'];
 }
 
 /* ---- Trenutni raw status iz opcija ---- */
