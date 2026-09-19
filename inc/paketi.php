@@ -754,32 +754,56 @@ function dry65_pk_qr_html($target, $cell = 5) {
 }
 
 /* Pošalji link kartice gostu na email (wp_mail). Vrati true/false. */
+/* HTML telo mejla sa karticom: link ka web kartici + „Dodaj u Google Wallet" (+ Apple kad bude). */
+function dry65_pk_card_email_html($acc, $url, $gw = '', $aw = '') {
+    $logo    = get_template_directory_uri() . '/assets/logo-square.png';
+    $name    = esc_html($acc->name);
+    $plan    = esc_html($acc->type === 'vaucer' ? 'Vaučer' : ($acc->plan ?: 'Paket'));
+    $stanje  = esc_html(dry65_pk_balance_text($acc));
+    $reward  = ($acc->type === 'paket' && !empty($acc->reward)) ? esc_html($acc->reward) : '';
+    $expires = !empty($acc->expires_at) ? esc_html(date_i18n('d.m.Y.', strtotime($acc->expires_at))) : '';
+    $btn = 'display:inline-block;padding:13px 24px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;text-decoration:none;';
+    ob_start(); ?>
+<div style="background:#f7f1e7;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#2a201a;">
+  <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px 26px;">
+    <div style="text-align:center;margin-bottom:16px;"><img src="<?php echo esc_url($logo); ?>" width="56" height="56" alt="Dry65" style="border-radius:50%;display:inline-block;"></div>
+    <p style="font-size:16px;margin:0 0 6px;">Poštovani/a <?php echo $name; ?>,</p>
+    <p style="font-size:15px;color:#555555;margin:0 0 18px;">Hvala što ste izabrali Dry65. Vaša kartica je spremna.</p>
+    <div style="background:#f7f1e7;border-radius:12px;padding:14px 16px;margin:0 0 22px;font-size:15px;line-height:1.5;">
+      <strong><?php echo $plan; ?></strong> &middot; <?php echo $stanje; ?><?php if ($reward) echo '<br>Po završetku dobijate: ' . $reward; ?><?php if ($expires) echo '<br>Važi do: ' . $expires; ?>
+    </div>
+    <div style="text-align:center;">
+      <a href="<?php echo esc_url($url); ?>" style="<?php echo $btn; ?>background:#b07a5a;color:#ffffff;margin:0 0 12px;">Otvori karticu</a><br>
+      <?php if ($gw): ?><a href="<?php echo esc_url($gw); ?>" style="<?php echo $btn; ?>background:#111111;color:#ffffff;margin:0 0 12px;">Dodaj u Google Wallet</a><br><?php endif; ?>
+      <?php if ($aw): ?><a href="<?php echo esc_url($aw); ?>" style="<?php echo $btn; ?>background:#000000;color:#ffffff;">Dodaj u Apple Wallet</a><br><?php endif; ?>
+    </div>
+    <p style="font-size:13px;color:#888888;text-align:center;margin:20px 0 0;line-height:1.5;">Na Androidu koristite Google Wallet<?php echo $aw ? ', na iPhone-u Apple Wallet' : ''; ?>. Karticu pokažite osoblju u salonu.</p>
+    <p style="font-size:12px;color:#aaaaaa;text-align:center;margin:16px 0 0;">Dry65, West 65, Novi Beograd</p>
+  </div>
+</div>
+<?php
+    return ob_get_clean();
+}
+
 function dry65_pk_send_email($acc) {
     if (empty($acc->email) || !is_email($acc->email)) return false;
-    $url = dry65_pk_card_url($acc->code);
-    $lines = [
-        'Poštovani/a ' . $acc->name . ',',
-        '',
-        'Hvala što ste izabrali Dry65.',
-        ($acc->type === 'vaucer' ? 'Vaučer' : ($acc->plan ?: 'Paket')) . ', ' . mb_strtolower(dry65_pk_status_label($acc)) . ': ' . dry65_pk_balance_text($acc) . '.',
-    ];
-    if ($acc->type === 'paket' && !empty($acc->reward)) $lines[] = 'Po završetku dobijate: ' . $acc->reward . '.';
-    if (!empty($acc->expires_at)) $lines[] = 'Važi do: ' . $acc->expires_at . '.';
-    $lines[] = '';
-    $lines[] = 'Vaše stanje uvek možete pogledati na linku:';
-    $lines[] = $url;
-    $lines[] = '';
-    $lines[] = 'Dry65, West 65, Novi Beograd.';
+    $url  = dry65_pk_card_url($acc->code);
+    $gw   = function_exists('dry65_wallet_google_save_url') ? dry65_wallet_google_save_url($acc) : '';
+    $aw   = function_exists('dry65_wallet_apple_pkpass_url') ? dry65_wallet_apple_pkpass_url($acc) : ''; // Apple: postaje aktivno kad se doda funkcija
+    $html = dry65_pk_card_email_html($acc, $url, $gw, $aw);
 
-    // Pošalji kao office@dry65.com (samo za ovaj mejl, ne diramo ostale)
+    // Pošalji kao office@dry65.com, HTML (samo za ovaj mejl, filtere odmah skidamo).
     $from = (function_exists('dry65_biz') && !empty(dry65_biz()['email'])) ? dry65_biz()['email'] : 'office@dry65.com';
-    $set_from = function () use ($from) { return $from; };
-    $set_name = function () { return 'Dry65'; };
+    $set_from  = function () use ($from) { return $from; };
+    $set_name  = function () { return 'Dry65'; };
+    $set_ctype = function () { return 'text/html'; };
     add_filter('wp_mail_from', $set_from);
     add_filter('wp_mail_from_name', $set_name);
-    $ok = wp_mail($acc->email, 'Vaša Dry65 kartica', implode("\n", $lines), ['Reply-To: Dry65 <' . $from . '>']);
+    add_filter('wp_mail_content_type', $set_ctype);
+    $ok = wp_mail($acc->email, 'Vaša Dry65 kartica', $html, ['Reply-To: Dry65 <' . $from . '>']);
     remove_filter('wp_mail_from', $set_from);
     remove_filter('wp_mail_from_name', $set_name);
+    remove_filter('wp_mail_content_type', $set_ctype);
     return $ok;
 }
 
@@ -2622,9 +2646,26 @@ add_action('admin_post_dry65_pk_kasa_create', function () {
     if (!$id) { wp_safe_redirect(add_query_arg('err', '1', $back)); exit; }
 
     $acc  = dry65_pk_get($id);
-    $args = ['done' => $acc->code];
-    if ($email && is_email($email)) $args['mail'] = dry65_pk_send_email($acc) ? '1' : '0';
-    wp_safe_redirect(add_query_arg($args, $back));
+    wp_safe_redirect(add_query_arg(['done' => $acc->code], $back));
+    exit;
+});
+
+/* /kasa: radnica šalje email sa karticom (dugme na ekranu posle pravljenja). */
+add_action('admin_post_dry65_pk_kasa_email', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_pk_kasa_email');
+    $back = home_url('/kasa/');
+    $acc  = dry65_pk_get_by_code(sanitize_text_field($_POST['code'] ?? ''));
+    if (!$acc) { wp_safe_redirect($back); exit; }
+    $email = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+    if ($email && is_email($email) && $email !== $acc->email) {
+        global $wpdb;
+        $wpdb->update(dry65_pk_table(), ['email' => $email], ['id' => (int) $acc->id], ['%s'], ['%d']);
+        if ((int) $acc->customer_id > 0) $wpdb->update(dry65_pk_cust_table(), ['email' => $email], ['id' => (int) $acc->customer_id], ['%s'], ['%d']);
+        $acc->email = $email;
+    }
+    $ok = dry65_pk_send_email($acc);
+    wp_safe_redirect(add_query_arg(['done' => $acc->code, 'mail' => $ok ? '1' : '0'], $back));
     exit;
 });
 
@@ -2701,6 +2742,14 @@ add_action('template_redirect', function () {
           <p class="muted" style="font-size:13px;color:#555;margin:6px 0 0;">Neka gost <strong>skenira ovaj QR svojim telefonom</strong> i doda karticu u Google Wallet.</p>
           <code style="display:block;background:#f0f0f1;padding:9px 10px;border-radius:6px;user-select:all;font-size:12px;word-break:break-all;margin-top:12px;"><?php echo esc_html($card_url); ?></code>
         </div>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:16px;background:#fff;border:1px solid var(--sage-line,#e5e5e0);border-radius:14px;padding:14px 16px;">
+          <input type="hidden" name="action" value="dry65_pk_kasa_email">
+          <input type="hidden" name="code" value="<?php echo esc_attr($acc->code); ?>">
+          <?php wp_nonce_field('dry65_pk_kasa_email'); ?>
+          <label style="font-size:13px;color:#555;">Pošalji karticu na email gosta<br>
+            <input type="email" name="email" value="<?php echo esc_attr($acc->email); ?>" placeholder="email@gosta.com" required style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;font-size:16px;margin:6px 0 10px;"></label>
+          <button type="submit" style="width:100%;cursor:pointer;border:0;border-radius:999px;padding:12px;font-size:15px;font-weight:600;background:var(--ink,#2a201a);color:#fff;">✉ Pošalji email sa karticom</button>
+        </form>
         <div style="display:flex;gap:10px;margin-top:14px;">
           <a href="<?php echo esc_url(home_url('/kasa/')); ?>" style="flex:1;text-align:center;cursor:pointer;border:0;border-radius:999px;padding:13px;font-size:15px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;text-decoration:none;">Nova kartica</a>
           <a href="<?php echo esc_url($card_url); ?>" style="flex:1;text-align:center;border:1px solid var(--sage-line,#ccc);border-radius:999px;padding:13px;font-size:15px;color:var(--ink,#333);text-decoration:none;">Otvori karticu</a>
