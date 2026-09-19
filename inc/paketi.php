@@ -357,6 +357,45 @@ function dry65_pk_activity_label($r) {
     return 'Feniranje';
 }
 
+/* Obriši kupca + SVE njegove pakete, transakcije i log. Samo admin.
+   Oslobađa telefon (UNIQUE) i email — briše i vezan WP nalog AKO je običan kupac
+   (nikad osoblje/admin), da bi email bio potpuno slobodan za ponovnu registraciju. */
+function dry65_pk_customer_delete($id) {
+    global $wpdb;
+    $id = (int) $id;
+    if ($id <= 0) return false;
+    $cust = dry65_pk_customer_get($id);
+    $at = dry65_pk_table();
+    $tt = dry65_pk_txn_table();
+    $lt = dry65_pk_stamp_log_table();
+    $ct = dry65_pk_cust_table();
+    $acc_ids = $wpdb->get_col($wpdb->prepare("SELECT id FROM $at WHERE customer_id = %d", $id));
+    if ($acc_ids) {
+        $in = implode(',', array_map('intval', $acc_ids));
+        $wpdb->query("DELETE FROM $tt WHERE account_id IN ($in)");
+    }
+    $wpdb->query($wpdb->prepare("DELETE FROM $lt WHERE customer_id = %d", $id));
+    $wpdb->delete($at, ['customer_id' => $id], ['%d']);
+    $wpdb->delete($ct, ['id' => $id], ['%d']);
+    // Oslobodi email: obriši vezan WP nalog, ali NIKAD osoblje/admina.
+    if ($cust && (int) $cust->wp_user_id > 0) {
+        $uid = (int) $cust->wp_user_id;
+        if (!user_can($uid, DRY65_PK_CAP) && !user_can($uid, DRY65_PK_ADMIN_CAP)) {
+            require_once ABSPATH . 'wp-admin/includes/user.php';
+            wp_delete_user($uid);
+        }
+    }
+    return true;
+}
+
+add_action('admin_post_dry65_pk_customer_delete', function () {
+    if (!current_user_can(DRY65_PK_ADMIN_CAP)) wp_die('Samo administrator može da briše kupce.');
+    check_admin_referer('dry65_pk_customer_delete');
+    dry65_pk_customer_delete((int) ($_POST['id'] ?? 0));
+    wp_redirect(admin_url('admin.php?page=dry65-kupci&deleted=1'));
+    exit;
+});
+
 /* Kreiraj nalog + početnu transakciju. Vrati id ili 0. */
 function dry65_pk_create($name, $phone, $type, $initial, $expires_at = '', $note = '', $plan = '', $reward = '', $email = '', $customer_id = 0) {
     global $wpdb;
@@ -1075,6 +1114,7 @@ function dry65_pk_customers_page() {
     ?>
     <div class="wrap">
       <h1>Kupci</h1>
+      <?php if (isset($_GET['deleted'])): ?><div class="notice notice-success is-dismissible"><p>Kupac obrisan.</p></div><?php endif; ?>
       <p style="color:#555;max-width:640px;">Osoba iznad paketa. Jedan kupac može kroz vreme imati više paketa; ovde vidiš njegovu istoriju i zbirove. Kupac se prepoznaje po telefonu.</p>
       <form method="get" style="margin:12px 0;">
         <input type="hidden" name="page" value="dry65-kupci">
@@ -1212,6 +1252,19 @@ function dry65_pk_customer_detail($id) {
         function u(){var v=t.value==='vaucer';pk.style.display=v?'none':'';vc.style.display=v?'':'none';}
         if(t){t.addEventListener('change',u);u();}})();
       </script>
+
+      <?php if (current_user_can(DRY65_PK_ADMIN_CAP)): ?>
+      <div style="margin-top:36px;border-top:1px solid #f0d5d5;padding-top:16px;max-width:520px;">
+        <h2 style="color:#b32d2e;margin:0 0 6px;font-size:15px;">Opasna zona</h2>
+        <p style="color:#777;font-size:13px;margin:0 0 10px;">Briše kupca <strong><?php echo esc_html($c->name ?: $c->phone); ?></strong> i <strong>sve njegove pakete i istoriju</strong>. Oslobađa telefon i email (briše i njegov WP nalog za prijavu ako ga ima), pa se mogu ponovo koristiti. Ne može da se poništi.</p>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Obrisati kupca <?php echo esc_js($c->name ?: $c->phone); ?> i SVE pakete + istoriju? Ovo se NE može poništiti.');">
+          <input type="hidden" name="action" value="dry65_pk_customer_delete">
+          <input type="hidden" name="id" value="<?php echo (int) $c->id; ?>">
+          <?php wp_nonce_field('dry65_pk_customer_delete'); ?>
+          <button type="submit" class="button" style="color:#b32d2e;border-color:#d9a5a5;">Obriši kupca</button>
+        </form>
+      </div>
+      <?php endif; ?>
     </div>
     <?php
 }
