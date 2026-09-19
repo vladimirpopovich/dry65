@@ -1353,12 +1353,13 @@ add_action('init', function () {
     add_rewrite_rule('^terms/?$', 'index.php?dry65_terms=1', 'top');
     add_rewrite_rule('^zaboravljena-lozinka/?$', 'index.php?dry65_forgot=1', 'top');
     add_rewrite_rule('^reset/?$', 'index.php?dry65_reset=1', 'top');
-    if (get_option('dry65_pk_rewrite_v') !== '7') {
+    add_rewrite_rule('^kasa/?$', 'index.php?dry65_kasa=1', 'top');
+    if (get_option('dry65_pk_rewrite_v') !== '8') {
         flush_rewrite_rules(false);
-        update_option('dry65_pk_rewrite_v', '7');
+        update_option('dry65_pk_rewrite_v', '8');
     }
 });
-add_filter('query_vars', function ($vars) { $vars[] = 'dry65_kartica'; $vars[] = 'dry65_skener'; $vars[] = 'dry65_registracija'; $vars[] = 'dry65_moja'; $vars[] = 'dry65_login'; $vars[] = 'dry65_privacy'; $vars[] = 'dry65_terms'; $vars[] = 'dry65_forgot'; $vars[] = 'dry65_reset'; return $vars; });
+add_filter('query_vars', function ($vars) { $vars[] = 'dry65_kartica'; $vars[] = 'dry65_skener'; $vars[] = 'dry65_registracija'; $vars[] = 'dry65_moja'; $vars[] = 'dry65_login'; $vars[] = 'dry65_privacy'; $vars[] = 'dry65_terms'; $vars[] = 'dry65_forgot'; $vars[] = 'dry65_reset'; $vars[] = 'dry65_kasa'; return $vars; });
 
 /* Boje kartice po planu (Essential/Signature/Premium). Premium = PRIVREMENO dok Vlada ne pošalje. */
 function dry65_pk_card_theme($acc) {
@@ -1748,9 +1749,10 @@ add_action('template_redirect', function () {
           </div>
 
           <p id="pk-scan-status" class="muted" style="text-align:center;margin:14px 0;font-size:14px;">Pokrećem kameru…</p>
-          <p style="text-align:center;margin:0 0 18px;">
+          <p style="text-align:center;margin:0 0 8px;">
             <button id="pk-scan-start" class="button" style="display:none;cursor:pointer;">Uključi kameru</button>
           </p>
+          <p style="text-align:center;margin:0 0 18px;"><a href="<?php echo esc_url(home_url('/kasa/')); ?>" style="font-size:14px;">+ Nova kartica / nov gost →</a></p>
 
           <!-- Rezultat: punch-kartica (tap krug = pečat) -->
           <style>
@@ -2474,6 +2476,323 @@ add_action('template_redirect', function () {
         <?php endif; ?>
       </div>
     </main>
+    <?php
+    dry65_pk_bare_foot();
+    exit;
+});
+
+/* ============================================================
+   /kasa — front-end alat za radnice (bez wp-admina)
+   ------------------------------------------------------------
+   Ulogovan salonski telefon + PIN radnice (isti kao /skener).
+   Radnica unese novog gosta (ili postojećeg po telefonu) i napravi
+   mu karticu; onda gost tu skenira QR i doda u Wallet.
+   ============================================================ */
+add_action('admin_post_dry65_pk_kasa_create', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_pk_kasa');
+    $back = home_url('/kasa/');
+    // PIN radnice (ako su radnice podešene, obavezan)
+    $worker = dry65_pk_staff_verify($_POST['pin'] ?? '');
+    if ($worker === '' && dry65_pk_staff_all()) { wp_safe_redirect(add_query_arg('pinreq', '1', $back)); exit; }
+
+    $name    = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
+    $phone   = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
+    $email   = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+    $type    = (($_POST['type'] ?? 'paket') === 'vaucer') ? 'vaucer' : 'paket';
+    $expires = sanitize_text_field($_POST['expires_at'] ?? '');
+    if ($expires === '') $expires = dry65_pk_default_expiry();
+    // Postojeći gost izabran iz pretrage -> veži na njega (bez duplikata). Inače nov po telefonu.
+    $cid = (int) ($_POST['customer_id'] ?? 0);
+    if ($cid > 0 && ($cust = dry65_pk_customer_get($cid))) {
+        if ($name === '')  $name  = $cust->name;
+        if ($phone === '') $phone = $cust->phone;
+        if ($email === '') $email = $cust->email;
+    } else {
+        if ($phone === '' && $name === '') { wp_safe_redirect(add_query_arg('err', '1', $back)); exit; }
+        $cid = dry65_pk_customer_get_or_create($name, $phone, $email, 'salon');
+    }
+    if ($type === 'vaucer') {
+        $amount = max(1, (int) ($_POST['amount'] ?? 0));
+        $id = dry65_pk_create($name, $phone, 'vaucer', $amount, $expires, '', '', '', $email, $cid);
+    } else {
+        $presets = dry65_pk_presets();
+        $preset  = sanitize_key($_POST['preset'] ?? 'signature');
+        $p = $presets[$preset] ?? $presets['signature'];
+        $id = dry65_pk_create($name, $phone, 'paket', (int) $p['sessions'], $expires, '', $p['name'], $p['reward'], $email, $cid);
+    }
+    if (!$id) { wp_safe_redirect(add_query_arg('err', '1', $back)); exit; }
+
+    $acc  = dry65_pk_get($id);
+    $args = ['done' => $acc->code];
+    if ($email && is_email($email)) $args['mail'] = dry65_pk_send_email($acc) ? '1' : '0';
+    wp_safe_redirect(add_query_arg($args, $back));
+    exit;
+});
+
+/* Pretraga postojećih gostiju za /kasa (ime ili telefon). */
+add_action('wp_ajax_dry65_pk_kasa_search', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_send_json_error([], 403);
+    check_ajax_referer('dry65_pk_scan', 'nonce');
+    $q = trim((string) ($_POST['q'] ?? ''));
+    if (function_exists('mb_strlen') ? mb_strlen($q) < 2 : strlen($q) < 2) { wp_send_json_success(['items' => []]); }
+    global $wpdb;
+    $ct = dry65_pk_cust_table();
+    $at = dry65_pk_table();
+    $like = '%' . $wpdb->esc_like($q) . '%';
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT c.id, c.name, c.phone, c.email,
+                (SELECT COUNT(*) FROM $at a WHERE a.customer_id = c.id) AS pkgs
+         FROM $ct c
+         WHERE c.name LIKE %s OR c.phone LIKE %s
+         ORDER BY c.name ASC LIMIT 8",
+        $like, $like
+    ));
+    $items = [];
+    foreach ((array) $rows as $r) {
+        $items[] = ['id' => (int) $r->id, 'name' => (string) $r->name, 'phone' => (string) $r->phone, 'email' => (string) $r->email, 'pkgs' => (int) $r->pkgs];
+    }
+    wp_send_json_success(['items' => $items]);
+});
+
+add_action('template_redirect', function () {
+    if (!get_query_var('dry65_kasa')) return;
+    if (!is_user_logged_in() || !current_user_can(DRY65_PK_CAP)) { auth_redirect(); exit; }
+    nocache_headers();
+    do_action('litespeed_control_set_nocache', 'dry65 kasa');
+    add_filter('wp_robots', 'wp_robots_no_robots');
+    add_filter('show_admin_bar', '__return_false');
+    status_header(200);
+
+    $done      = isset($_GET['done']) ? sanitize_text_field($_GET['done']) : '';
+    $acc       = $done ? dry65_pk_get_by_code($done) : null;
+    $has_staff = count(dry65_pk_staff_all()) > 0;
+    $nonce     = wp_create_nonce('dry65_pk_scan');
+    $ajax      = admin_url('admin-ajax.php');
+    $logo      = get_template_directory_uri() . '/assets/logo.svg';
+    dry65_pk_bare_head();
+    ?>
+    <main class="page-enter" style="min-height:100vh;padding:22px 16px calc(30px + env(safe-area-inset-bottom));">
+      <div style="display:flex;justify-content:center;align-items:center;width:100%;margin:0 0 18px;">
+        <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:40px;width:auto;">
+      </div>
+      <?php if (!$acc): ?>
+      <div id="kasa-live-wrap" style="display:none;text-align:center;max-width:440px;margin:0 auto 20px;">
+        <div id="kasa-live-ring" style="width:78px;height:78px;border-radius:50%;margin:0 auto 12px;background:#fff;border:4px solid #d0cfc7;display:flex;align-items:center;justify-content:center;box-sizing:border-box;">
+          <span id="kasa-live-num" style="font-size:24px;font-weight:600;color:#2a201a;line-height:1;"></span>
+        </div>
+        <div id="kasa-live-head" style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-size:clamp(28px,8vw,36px);font-weight:400;color:var(--ink,#2a201a);line-height:1.1;">Učitavam…</div>
+        <div id="kasa-live-wait" style="font-size:16px;color:var(--clay,#7a6553);margin-top:6px;"></div>
+      </div>
+      <?php endif; ?>
+      <div class="wrap" style="max-width:440px;margin:0 auto;">
+
+      <?php if ($acc): // ------- USPEH: kartica napravljena ------- ?>
+        <?php $card_url = dry65_pk_card_url($acc->code); ?>
+        <div style="background:#fff;border:1px solid var(--sage-line,#e5e5e0);border-radius:18px;padding:22px;text-align:center;">
+          <div style="color:#1f7a4d;font-weight:600;font-size:15px;">✓ Kartica napravljena</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;margin:4px 0 2px;"><?php echo esc_html($acc->name); ?></div>
+          <div class="muted" style="font-size:13px;color:#777;"><?php echo esc_html($acc->type === 'vaucer' ? 'Vaučer' : ($acc->plan ?: 'Paket')); ?> &middot; <?php echo esc_html(dry65_pk_balance_text($acc)); ?></div>
+          <?php if (isset($_GET['mail'])): ?>
+            <div style="margin-top:8px;font-size:13px;color:<?php echo $_GET['mail'] === '1' ? '#1f7a4d' : '#a00'; ?>;"><?php echo $_GET['mail'] === '1' ? 'Link poslat na email.' : 'Email nije poslat (proveri adresu).'; ?></div>
+          <?php endif; ?>
+
+          <div style="width:210px;height:210px;margin:16px auto 8px;background:#fff;border:1px solid var(--sage-line,#eee);border-radius:14px;padding:12px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;">
+            <?php echo dry65_pk_qr_html($card_url, 6); ?>
+          </div>
+          <p class="muted" style="font-size:13px;color:#555;margin:6px 0 0;">Neka gost <strong>skenira ovaj QR svojim telefonom</strong> i doda karticu u Google Wallet.</p>
+          <code style="display:block;background:#f0f0f1;padding:9px 10px;border-radius:6px;user-select:all;font-size:12px;word-break:break-all;margin-top:12px;"><?php echo esc_html($card_url); ?></code>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px;">
+          <a href="<?php echo esc_url(home_url('/kasa/')); ?>" style="flex:1;text-align:center;cursor:pointer;border:0;border-radius:999px;padding:13px;font-size:15px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;text-decoration:none;">Nova kartica</a>
+          <a href="<?php echo esc_url($card_url); ?>" style="flex:1;text-align:center;border:1px solid var(--sage-line,#ccc);border-radius:999px;padding:13px;font-size:15px;color:var(--ink,#333);text-decoration:none;">Otvori karticu</a>
+        </div>
+
+      <?php else: // ------- FORMA: nova/postojeća kartica ------- ?>
+        <?php if (isset($_GET['pinreq'])): ?><p style="text-align:center;color:#a00;font-weight:600;font-size:14px;">Unesi PIN pre pravljenja kartice.</p><?php endif; ?>
+        <?php if (isset($_GET['err'])): ?><p style="text-align:center;color:#a00;font-weight:600;font-size:14px;">Nije napravljeno — telefon i ime su potrebni.</p><?php endif; ?>
+
+        <!-- PIN gate -->
+        <div id="kasa-gate" style="display:none;background:#fff;border:1px solid var(--sage-line,#e5e5e0);border-radius:16px;padding:20px;text-align:center;max-width:320px;margin:0 auto 14px;">
+          <div class="mono" style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--clay,#b07a5a);">Ko radi?</div>
+          <p class="muted" style="margin:4px 0 12px;font-size:13px;color:#777;">Unesi svoj PIN.</p>
+          <input id="kasa-pin" type="password" inputmode="numeric" pattern="\d*" maxlength="4" autocomplete="off" style="width:150px;text-align:center;font-size:24px;letter-spacing:0.35em;padding:8px;border:1px solid var(--sage-line,#ccc);border-radius:10px;">
+          <p id="kasa-pin-status" class="muted" style="min-height:16px;margin:8px 0;font-size:13px;color:#a00;"></p>
+          <button type="button" id="kasa-pin-go" style="cursor:pointer;border:0;border-radius:999px;padding:10px 26px;font-size:15px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Prijavi se</button>
+        </div>
+
+        <!-- Forma -->
+        <div id="kasa-form-box" style="display:none;">
+          <div id="kasa-worker" style="text-align:center;font-size:13px;color:#555;margin-bottom:14px;">Radnica: <strong id="kasa-worker-name"></strong> &middot; <a href="#" id="kasa-change" style="font-size:13px;">promeni</a></div>
+
+          <!-- Izbor: nov ili postojeći nalog -->
+          <div id="kasa-choice" style="display:none;">
+            <button type="button" id="kasa-btn-new" style="width:100%;cursor:pointer;border:0;border-radius:14px;padding:22px;font-size:17px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;margin-bottom:12px;">+ Nov nalog</button>
+            <button type="button" id="kasa-btn-exist" style="width:100%;cursor:pointer;border:1px solid var(--sage-line,#ccc);border-radius:14px;padding:22px;font-size:17px;font-weight:600;background:#fff;color:var(--ink,#333);">Postojeći nalog</button>
+          </div>
+
+          <!-- Forma (nova ILI postojeća) -->
+          <form id="kasa-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:none;background:#fff;border:1px solid var(--sage-line,#e5e5e0);border-radius:16px;padding:18px 20px;">
+            <input type="hidden" name="action" value="dry65_pk_kasa_create">
+            <input type="hidden" name="pin" id="kasa-pin-hidden" value="">
+            <?php wp_nonce_field('dry65_pk_kasa'); ?>
+            <input type="hidden" name="customer_id" id="kasa-cid" value="">
+
+            <div style="margin:0 0 14px;overflow:hidden;"><a href="#" id="kasa-back" style="font-size:14px;">← nazad</a> <span id="kasa-mode-label" style="float:right;font-size:13px;color:#777;font-weight:600;"></span></div>
+
+            <!-- POSTOJEĆI: pretraga gosta -->
+            <div id="ident-existing" style="display:none;">
+              <div style="position:relative;margin:0 0 12px;">
+                <label style="font-size:13px;color:#555;">Pretraži gosta (ime ili telefon)<br>
+                  <input type="text" id="kasa-search" autocomplete="off" placeholder="npr. Sanda ili 06X…" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;font-size:16px;"></label>
+                <div id="kasa-results" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:30;background:#fff;border:1px solid var(--sage-line,#ccc);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,0.14);max-height:260px;overflow:auto;margin-top:4px;"></div>
+              </div>
+              <div id="kasa-picked" style="display:none;background:#f4efe9;border:1px solid var(--sage-line,#e0d5c8);border-radius:10px;padding:11px 12px;margin:0 0 12px;font-size:14px;">
+                <a href="#" id="kasa-picked-clear" style="float:right;font-size:13px;">promeni</a>
+                <strong id="kasa-picked-name"></strong>
+                <div id="kasa-picked-meta" style="color:#777;font-size:13px;margin-top:2px;"></div>
+              </div>
+            </div>
+
+            <!-- NOV: ime i prezime (+ opciono telefon/email) -->
+            <div id="ident-new" style="display:none;">
+              <p style="margin:0 0 10px;"><label style="font-size:13px;color:#555;">Ime i prezime <span style="color:#d63638;">*</span><br>
+                <input type="text" name="name" id="kasa-name" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;font-size:16px;"></label></p>
+              <p style="margin:0 0 10px;"><label style="font-size:13px;color:#555;">Telefon (opciono)<br>
+                <input type="tel" name="phone" id="kasa-phone" placeholder="06X XXX XXXX" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;font-size:16px;"></label></p>
+              <p style="margin:0 0 10px;"><label style="font-size:13px;color:#555;">Email (za slanje linka, opciono)<br>
+                <input type="email" name="email" id="kasa-email" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;font-size:16px;"></label></p>
+            </div>
+
+            <p style="margin:0 0 10px;"><label style="font-size:13px;color:#555;">Tip<br>
+              <select name="type" id="kasa-type" style="width:100%;padding:11px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;font-size:16px;">
+                <option value="paket">Paket (feniranja)</option>
+                <option value="vaucer">Vaučer (dinari)</option>
+              </select></label></p>
+            <div id="kasa-paket">
+              <p style="margin:0 0 10px;"><label style="font-size:13px;color:#555;">Plan<br>
+                <select name="preset" style="width:100%;padding:11px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;font-size:16px;">
+                  <?php foreach (dry65_pk_presets() as $k => $p): ?>
+                  <option value="<?php echo esc_attr($k); ?>"<?php echo $k === 'signature' ? ' selected' : ''; ?>><?php echo esc_html($p['name'] . ' — ' . $p['sessions'] . ' (' . $p['reward'] . ')'); ?></option>
+                  <?php endforeach; ?>
+                </select></label></p>
+            </div>
+            <div id="kasa-vaucer" style="display:none;">
+              <p style="margin:0 0 10px;"><label style="font-size:13px;color:#555;">Iznos (din)<br>
+                <input type="number" name="amount" min="0" step="1" value="12000" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;font-size:16px;"></label></p>
+            </div>
+            <p style="margin:0 0 12px;"><label style="font-size:13px;color:#555;">Ističe<br>
+              <input type="date" name="expires_at" value="<?php echo esc_attr(dry65_pk_default_expiry()); ?>" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--sage-line,#ccc);border-radius:10px;font-size:16px;"></label></p>
+            <button type="submit" style="width:100%;cursor:pointer;border:0;border-radius:999px;padding:14px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Napravi karticu</button>
+          </form>
+          </div>
+      <?php endif; ?>
+
+      </div>
+    </main>
+    <?php if (!$acc): ?>
+    <script>
+    (function(){
+      var HAS_STAFF=<?php echo $has_staff ? 'true' : 'false'; ?>;
+      var AJAX=<?php echo wp_json_encode($ajax); ?>, NONCE=<?php echo wp_json_encode($nonce); ?>;
+      var gate=document.getElementById('kasa-gate'), box=document.getElementById('kasa-form-box'),
+          nameEl=document.getElementById('kasa-worker-name'), pinHidden=document.getElementById('kasa-pin-hidden'),
+          pinIn=document.getElementById('kasa-pin'), pinGo=document.getElementById('kasa-pin-go'), pinSt=document.getElementById('kasa-pin-status'),
+          changeBtn=document.getElementById('kasa-change');
+      var WP=localStorage.getItem('dry65_pk_worker_pin')||'', WN=localStorage.getItem('dry65_pk_worker_name')||'';
+      var choiceEl=document.getElementById('kasa-choice'), formEl=document.getElementById('kasa-form'),
+          identNew=document.getElementById('ident-new'), identExist=document.getElementById('ident-existing'),
+          btnNew=document.getElementById('kasa-btn-new'), btnExist=document.getElementById('kasa-btn-exist'),
+          backEl=document.getElementById('kasa-back'), modeLabel=document.getElementById('kasa-mode-label'),
+          nameInput=document.getElementById('kasa-name'), liveWrap=document.getElementById('kasa-live-wrap');
+      function showChoice(){ if(choiceEl) choiceEl.style.display=''; if(formEl) formEl.style.display='none'; }
+      function showForm(){ pinHidden.value=WP; if(nameEl) nameEl.textContent=WN||'Radnica'; box.style.display=''; gate.style.display='none'; if(liveWrap) liveWrap.style.display='none'; showChoice(); }
+      function showGate(){ gate.style.display=''; box.style.display='none'; if(liveWrap) liveWrap.style.display='block'; setTimeout(function(){try{pinIn.focus();}catch(e){}},60); }
+      function decide(){ if(!HAS_STAFF){ showForm(); return; } if(WP){ showForm(); } else { showGate(); } }
+      function startNew(){ if(choiceEl) choiceEl.style.display='none'; if(formEl) formEl.style.display=''; if(identNew) identNew.style.display=''; if(identExist) identExist.style.display='none'; var c=document.getElementById('kasa-cid'); if(c) c.value=''; if(nameInput){ nameInput.required=true; setTimeout(function(){try{nameInput.focus();}catch(e){}},60);} if(modeLabel) modeLabel.textContent='Nov nalog'; }
+      function startExist(){ if(choiceEl) choiceEl.style.display='none'; if(formEl) formEl.style.display=''; if(identNew) identNew.style.display='none'; if(identExist) identExist.style.display=''; if(nameInput) nameInput.required=false; if(modeLabel) modeLabel.textContent='Postojeći nalog'; var s=document.getElementById('kasa-search'); if(s) setTimeout(function(){try{s.focus();}catch(e){}},60); }
+      if(btnNew) btnNew.addEventListener('click',startNew);
+      if(btnExist) btnExist.addEventListener('click',startExist);
+      if(backEl) backEl.addEventListener('click',function(e){ e.preventDefault(); showChoice(); });
+      if(formEl) formEl.addEventListener('submit',function(e){ var em=identExist&&identExist.style.display!=='none'; var c=document.getElementById('kasa-cid'); if(em&&(!c||!c.value)){ e.preventDefault(); alert('Izaberi gosta iz pretrage.'); } });
+      if(pinGo) pinGo.addEventListener('click', function(){
+        var p=(pinIn.value||'').replace(/\D/g,''); if(p.length<4){ pinSt.textContent='Unesi 4 cifre.'; return; }
+        pinGo.disabled=true; pinSt.textContent='Proveravam…';
+        var fd=new FormData(); fd.append('action','dry65_pk_pin'); fd.append('nonce',NONCE); fd.append('pin',p);
+        fetch(AJAX,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+          pinGo.disabled=false;
+          if(j&&j.success){ WP=p; WN=j.data.name; localStorage.setItem('dry65_pk_worker_pin',p); localStorage.setItem('dry65_pk_worker_name',WN); pinSt.textContent=''; showForm(); }
+          else { pinSt.textContent=(j&&j.data&&j.data.msg)||'Pogrešan PIN.'; pinIn.value=''; }
+        }).catch(function(){ pinGo.disabled=false; pinSt.textContent='Greška, probaj ponovo.'; });
+      });
+      if(changeBtn) changeBtn.addEventListener('click', function(e){ e.preventDefault(); WP=''; localStorage.removeItem('dry65_pk_worker_pin'); showGate(); });
+      var t=document.getElementById('kasa-type'), pk=document.getElementById('kasa-paket'), vc=document.getElementById('kasa-vaucer');
+      if(t){ function u(){var v=t.value==='vaucer'; pk.style.display=v?'none':''; vc.style.display=v?'':'none';} t.addEventListener('change',u); u(); }
+
+      // Pretraga postojećih gostiju -> izbor puni telefon/ime/email i veže customer_id
+      var sEl=document.getElementById('kasa-search'), rEl=document.getElementById('kasa-results'),
+          cid=document.getElementById('kasa-cid'), pick=document.getElementById('kasa-picked'),
+          pickName=document.getElementById('kasa-picked-name'), pickMeta=document.getElementById('kasa-picked-meta'),
+          pickClear=document.getElementById('kasa-picked-clear'),
+          fPhone=document.getElementById('kasa-phone'), fName=document.getElementById('kasa-name'), fEmail=document.getElementById('kasa-email');
+      var tmr=null;
+      function esc(s){ return (s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+      function hideRes(){ if(rEl){ rEl.style.display='none'; rEl.innerHTML=''; } }
+      function choose(it){
+        if(cid) cid.value=it.id;
+        if(fName) fName.value=it.name||''; if(fPhone) fPhone.value=it.phone||''; if(fEmail) fEmail.value=it.email||'';
+        if(pickName) pickName.textContent=it.name||'(bez imena)';
+        if(pickMeta) pickMeta.textContent=(it.phone||'')+(it.email?(' · '+it.email):'')+' · '+it.pkgs+' paketa do sada';
+        if(pick) pick.style.display=''; if(sEl) sEl.value=''; hideRes();
+      }
+      function clearPick(){ if(cid) cid.value=''; if(pick) pick.style.display='none'; if(fName) fName.value=''; if(fPhone) fPhone.value=''; if(fEmail) fEmail.value=''; }
+      if(pickClear) pickClear.addEventListener('click',function(e){ e.preventDefault(); clearPick(); if(sEl) sEl.focus(); });
+      if(sEl) sEl.addEventListener('input',function(){
+        var q=sEl.value.trim(); if(cid&&cid.value) clearPick();
+        if(tmr) clearTimeout(tmr);
+        if(q.length<2){ hideRes(); return; }
+        tmr=setTimeout(function(){
+          var fd=new FormData(); fd.append('action','dry65_pk_kasa_search'); fd.append('nonce',NONCE); fd.append('q',q);
+          fetch(AJAX,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+            if(!j||!j.success||!j.data.items.length){ rEl.innerHTML='<div style="padding:10px 12px;color:#999;font-size:13px;">Nema poklapanja — biće nov gost.</div>'; rEl.style.display=''; return; }
+            var items=j.data.items, html='';
+            items.forEach(function(it){ html+='<div class="kasa-res" data-id="'+it.id+'" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0ece6;"><strong>'+esc(it.name||'(bez imena)')+'</strong><div style="color:#777;font-size:12px;">'+esc(it.phone||'')+(it.email?(' · '+esc(it.email)):'')+' · '+it.pkgs+' paketa</div></div>'; });
+            rEl.innerHTML=html; rEl.style.display='';
+            [].forEach.call(rEl.querySelectorAll('.kasa-res'),function(el){ el.addEventListener('click',function(){ var id=+el.getAttribute('data-id'); var it=items.filter(function(x){return x.id===id;})[0]; if(it) choose(it); }); });
+          }).catch(function(){ hideRes(); });
+        },220);
+      });
+      document.addEventListener('click',function(e){ if(rEl&&!rEl.contains(e.target)&&e.target!==sEl) hideRes(); });
+
+      decide();
+    })();
+    </script>
+    <?php endif; ?>
+    <script>
+    (function(){
+      var ring=document.getElementById('kasa-live-ring'), num=document.getElementById('kasa-live-num'),
+          head=document.getElementById('kasa-live-head'), wait=document.getElementById('kasa-live-wait');
+      if(!ring) return;
+      var COLORS={free:'#84B052',lime:'#C9DB5B',yellow:'#F6D63B',orange:'#F0A73C',red:'#E8472B',closed:'#D0CFC7',full:'#D0CFC7'};
+      var AJAX=<?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>;
+      function poll(){
+        fetch(AJAX+'?action=dry65_live_get&lang=sr',{cache:'no-store',credentials:'same-origin'})
+          .then(function(r){return r.json();}).then(function(d){
+            if(!d||!d.tier) return;
+            var c=COLORS[d.tier]||'#d0cfc7';
+            if(ring) ring.style.borderColor=c;
+            if(head) head.textContent=d.headline||'';
+            if(wait) wait.textContent=d.closed?'':(d.wait_label||'');
+            if(num){
+              if(d.tier==='free'){ num.textContent='✓'; num.style.color=c; }
+              else if(d.closed||d.tier==='full'){ num.textContent='–'; num.style.color='#b0aea5'; }
+              else { var m=(d.wait_label||'').match(/\d+/); num.textContent=m?m[0]:''; num.style.color='#2a201a'; }
+            }
+          }).catch(function(){});
+      }
+      poll(); setInterval(poll,40000);
+    })();
+    </script>
     <?php
     dry65_pk_bare_foot();
     exit;
