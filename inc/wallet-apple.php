@@ -142,14 +142,22 @@ function dry65_wallet_apple_strip_png($acc, $scale = 2) {
     if (!$base) return '';
     $W = imagesx($base); $H = imagesy($base);
 
-    // centri pečat-krugova kao odnosi (izmereno iz baznih slika)
-    $xs = [0.13627, 0.30160, 0.46693, 0.63227];
-    $ys = $tier === 'signature' ? [0.26626, 0.74878] : [0.49675];
-    $centers = [];
-    foreach ($ys as $ry) foreach ($xs as $rx) $centers[] = [$rx, $ry];
+    // centri pečat-krugova i reward-a kao odnosi (izmereno iz baznih slika 750x288)
+    // Strip je 2.60:1 (Apple storeCard 375x144); pečati u jednom redu, reward dole u sredini.
+    if ($tier === 'signature') {
+        $centers = [
+            [0.0873, 0.4983], [0.2046, 0.4983], [0.3220, 0.4984], [0.4393, 0.4983],
+            [0.5567, 0.4983], [0.6740, 0.4983], [0.7913, 0.4984], [0.9087, 0.4984],
+        ];
+        $reward_center = [0.4980, 0.7855];
+    } else {
+        $centers = [
+            [0.2420, 0.4428], [0.4127, 0.4428], [0.5833, 0.4428], [0.7540, 0.4428],
+        ];
+        $reward_center = [0.4980, 0.7826];
+    }
 
-    // reward-krug (MASKA/INFUZIJA) — nagrada se NE zarađuje; žig ide preko kad je iskorišćena
-    $reward_center = $tier === 'signature' ? [0.86160, 0.50730] : [0.86093, 0.49512];
+    // nagrada se NE zarađuje; žig ide preko reward-kruga kad je iskorišćena
     $reward_used   = !empty($acc->reward_used_at);
 
     $mark = @imagecreatefrompng($dir . 'stamp-dry' . $sfx . '.png');
