@@ -398,6 +398,33 @@ if ($siblings): ?>
 <!-- FAQ (reusable, kategorija 'usluge') -->
 <?php if (function_exists('dry65_render_faq_section')) dry65_render_faq_section('usluge', t('Česta pitanja'), t('Najčešća pitanja o feniranju i stilizovanju u Dry65.')); ?>
 
+<!-- Schema: BreadcrumbList -->
+<?php
+$crumbs = [
+    ['name' => t('Početna'), 'url' => home_url('/')],
+    ['name' => t('Usluge'),  'url' => $usluge_url],
+];
+if ($parent) {
+    $crumbs[] = ['name' => dry65_svc_title($parent), 'url' => get_permalink($parent)];
+}
+$crumbs[] = ['name' => $title, 'url' => get_permalink($id)];
+
+$crumb_items = [];
+foreach ($crumbs as $i => $c) {
+    $crumb_items[] = [
+        '@type'    => 'ListItem',
+        'position' => $i + 1,
+        'name'     => $c['name'],
+        'item'     => $c['url'],
+    ];
+}
+?>
+<script type="application/ld+json"><?php echo wp_json_encode([
+    '@context'        => 'https://schema.org',
+    '@type'           => 'BreadcrumbList',
+    'itemListElement' => $crumb_items,
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
+
 <!-- Schema: Service -->
 <script type="application/ld+json"><?php echo wp_json_encode([
     '@context' => 'https://schema.org',

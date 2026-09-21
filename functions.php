@@ -159,6 +159,11 @@ function dry65_schema() {
             'latitude' => 44.8125,
             'longitude' => 20.4144,
         ],
+        'areaServed' => [
+            ['@type' => 'Place', 'name' => 'Novi Beograd'],
+            ['@type' => 'Place', 'name' => 'Zemun'],
+            ['@type' => 'Place', 'name' => 'Beograd'],
+        ],
         'openingHoursSpecification' => $hours_spec,
         'sameAs' => array_filter([
             $biz['instagram_url'] ?? '',
