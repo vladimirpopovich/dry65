@@ -14,7 +14,8 @@ require_once get_template_directory() . '/inc/menu-hub.php';
  require_once get_template_directory() . '/inc/en-sitemap.php'; // EN sitemap (/sitemap-en.xml)
 require_once get_template_directory() . '/inc/karijera-asistent.php'; // skriveni oglas /karijera/asistent (noindex)
 require_once get_template_directory() . '/inc/paketi.php';
-require_once get_template_directory() . '/inc/wallet.php'; // digitalni wallet (Apple/Google) — koristi paketi.php
+require_once get_template_directory() . '/inc/wallet.php'; // digitalni wallet (Google) — koristi paketi.php
+require_once get_template_directory() . '/inc/wallet-apple.php'; // Apple Wallet (.pkpass)
 require_once get_template_directory() . '/inc/seed-feniranje.php'; // jednokratni seed teksta (obrisati posle upotrebe)
 require_once get_template_directory() . '/inc/services-noindex.php'; // noindex + sitemap-exclude za nespremne kategorije (Stilizovanje/Nega)
 

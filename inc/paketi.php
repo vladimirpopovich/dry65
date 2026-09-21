@@ -1476,9 +1476,9 @@ add_action('init', function () {
     add_rewrite_rule('^zaboravljena-lozinka/?$', 'index.php?dry65_forgot=1', 'top');
     add_rewrite_rule('^reset/?$', 'index.php?dry65_reset=1', 'top');
     add_rewrite_rule('^kasa/?$', 'index.php?dry65_kasa=1', 'top');
-    if (get_option('dry65_pk_rewrite_v') !== '8') {
+    if (get_option('dry65_pk_rewrite_v') !== '10') {
         flush_rewrite_rules(false);
-        update_option('dry65_pk_rewrite_v', '8');
+        update_option('dry65_pk_rewrite_v', '10');
     }
 });
 add_filter('query_vars', function ($vars) { $vars[] = 'dry65_kartica'; $vars[] = 'dry65_skener'; $vars[] = 'dry65_registracija'; $vars[] = 'dry65_moja'; $vars[] = 'dry65_login'; $vars[] = 'dry65_privacy'; $vars[] = 'dry65_terms'; $vars[] = 'dry65_forgot'; $vars[] = 'dry65_reset'; $vars[] = 'dry65_kasa'; return $vars; });
@@ -1691,8 +1691,15 @@ add_action('template_redirect', function () {
             </div>
 
             <?php if (!$can_staff): ?>
-            <?php if (function_exists("dry65_wallet_google_button") && ($gw = dry65_wallet_google_button($acc))): ?>
-            <div style="text-align:center;margin:16px 0 4px;"><?php echo $gw; ?></div>
+            <?php
+              $gw = function_exists('dry65_wallet_google_button') ? dry65_wallet_google_button($acc) : '';
+              $aw = function_exists('dry65_wallet_apple_button')  ? dry65_wallet_apple_button($acc)  : '';
+            ?>
+            <?php if ($gw || $aw): ?>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin:16px 0 4px;">
+              <?php if ($gw) echo $gw; ?>
+              <?php if ($aw) echo $aw; ?>
+            </div>
             <?php endif; ?>
             <p class="muted" style="text-align:center;margin:14px 0 0;font-size:13px;">Pokaži ovu karticu osoblju u salonu.</p>
             <?php elseif ($acc->type === 'vaucer'): ?>
