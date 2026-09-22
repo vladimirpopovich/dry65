@@ -47,6 +47,9 @@ add_filter('wpseo_robots', function($robots) {
     if (is_category() || is_tag() || is_author() || is_date() || is_search()) {
         return 'noindex,follow';
     }
+    if (is_page('live')) {
+        return 'noindex,follow'; // /live i /en/live: dinamican status cekanja, nema search vrednost (crawlable za interne linkove)
+    }
     return $robots;
 }, 99);
 
