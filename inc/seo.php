@@ -235,10 +235,10 @@ add_filter('wpseo_opengraph_title', function($title) {
     $slug = dry65_seo_current_slug();
     $map  = dry65_seo_map();
     if ($slug && isset($map[$slug])) {
-        return $map[$slug]['title'];
+        return function_exists('t') ? t($map[$slug]['title']) : $map[$slug]['title'];
     }
     $svc = dry65_service_seo_title();
-    if ($svc) return $svc;
+    if ($svc) return function_exists('t') ? t($svc) : $svc;
     return $title;
 }, 99);
 
@@ -247,10 +247,10 @@ add_filter('wpseo_opengraph_desc', function($desc) {
     $slug = dry65_seo_current_slug();
     $map  = dry65_seo_map();
     if ($slug && isset($map[$slug])) {
-        return $map[$slug]['desc'];
+        return function_exists('t') ? t($map[$slug]['desc']) : $map[$slug]['desc'];
     }
     $svc = dry65_service_seo_desc();
-    if ($svc) return $svc;
+    if ($svc) return function_exists('t') ? t($svc) : $svc;
     return $desc;
 }, 99);
 
@@ -277,8 +277,18 @@ add_filter('wpseo_opengraph_image_size', function() {
 
 // og:site_name backup
 add_filter('wpseo_og_locale', function($locale) {
-    return $locale ?: 'sr_RS';
+    return (function_exists('dry65_is_en') && dry65_is_en()) ? 'en_US' : 'sr_RS';
 });
+
+/* ---- og:url na /en/ stranama vodi na /en/ URL (ne srpski) ---- */
+add_filter('wpseo_opengraph_url', function($url) {
+    return (function_exists('dry65_is_en') && dry65_is_en() && function_exists('dry65_prefix_en_url'))
+        ? dry65_prefix_en_url($url) : $url;
+}, 99);
+
+/* ---- Ukloni WordPress generator meta (skriva verziju) ---- */
+remove_action('wp_head', 'wp_generator');
+add_filter('the_generator', '__return_empty_string');
 
 /* ---- Direct og:image fallback u wp_head ----
    Nova Yoast verzija (27+) ne poziva wpseo_opengraph_image filter za sve stranice.
@@ -288,7 +298,7 @@ function dry65_ensure_og_image() {
     // Uvek dodaj og:image tagove; ako Yoast dodaje svoje, Facebook/social koristi prvi.
     // Za home i sve pages bez featured image, koristi default.
     $default_url = home_url('/wp-content/themes/dry65/assets/salon/s06.webp');
-    $default_alt = 'Dry65, feniranje bez zakazivanja u Novom Beogradu';
+    $default_alt = (function_exists('dry65_is_en') && dry65_is_en()) ? 'Dry65, walk-in blowout hair bar in New Belgrade' : 'Dry65, feniranje bez zakazivanja u Novom Beogradu';
 
     // Featured image ako postoji
     if (is_singular() && has_post_thumbnail()) {
@@ -328,10 +338,10 @@ add_filter('wpseo_twitter_title', function($title) {
     $slug = dry65_seo_current_slug();
     $map  = dry65_seo_map();
     if ($slug && isset($map[$slug])) {
-        return $map[$slug]['title'];
+        return function_exists('t') ? t($map[$slug]['title']) : $map[$slug]['title'];
     }
     $svc = dry65_service_seo_title();
-    if ($svc) return $svc;
+    if ($svc) return function_exists('t') ? t($svc) : $svc;
     return $title;
 }, 99);
 
@@ -340,10 +350,10 @@ add_filter('wpseo_twitter_description', function($desc) {
     $slug = dry65_seo_current_slug();
     $map  = dry65_seo_map();
     if ($slug && isset($map[$slug])) {
-        return $map[$slug]['desc'];
+        return function_exists('t') ? t($map[$slug]['desc']) : $map[$slug]['desc'];
     }
     $svc = dry65_service_seo_desc();
-    if ($svc) return $svc;
+    if ($svc) return function_exists('t') ? t($svc) : $svc;
     return $desc;
 }, 99);
 
