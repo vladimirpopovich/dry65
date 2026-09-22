@@ -76,25 +76,13 @@ function dry65_wallet_apple_passjson($acc) {
             'textAlignment' => 'PKTextAlignmentRight',
         ];
     }
-    // Diskretan red na licu (auxiliary, manji font): VAŽI DO levo, POKLON status desno.
-    $aux = [];
-    if ($is_paket) {
-        if (!empty($acc->expires_at)) {
-            $aux[] = ['key' => 'exp', 'label' => 'VAŽI DO', 'value' => date_i18n('d.m.Y.', strtotime($acc->expires_at))];
-        }
-        if ($reward) {
-            $aux[] = [
-                'key'           => 'gift',
-                'label'         => 'POKLON',
-                'value'         => empty($acc->reward_used_at) ? 'Dostupno' : 'Iskorišćeno',
-                'textAlignment' => 'PKTextAlignmentRight',
-            ];
-        }
-    }
-    // Poleđina: detalji + info (VAŽI DO je sada na licu, u auxiliary redu).
+    // TRETMAN i VAŽI DO idu na ZADNJU stranu (lice ostaje čisto: logo + pečati + ČLAN/PAKET + QR).
     $back = [];
     if ($is_paket && $reward) {
         $back[] = ['key' => 'reward', 'label' => 'Tretman', 'value' => empty($acc->reward_used_at) ? $reward : 'Iskorišćen'];
+    }
+    if (!empty($acc->expires_at)) {
+        $back[] = ['key' => 'exp', 'label' => 'Važi do', 'value' => date_i18n('d.m.Y.', strtotime($acc->expires_at))];
     }
     $back[] = ['key' => 'about', 'label' => 'Dry65', 'value' => 'West 65, Novi Beograd. Pokažite karticu osoblju u salonu.'];
     $back[] = ['key' => 'link',  'label' => 'Kartica', 'value' => $card_url];
@@ -123,7 +111,6 @@ function dry65_wallet_apple_passjson($acc) {
         'storeCard' => [
             'headerFields'    => $header,
             'secondaryFields' => $fields_secondary,
-            'auxiliaryFields' => $aux,
             'backFields'      => $back,
         ],
     ];
