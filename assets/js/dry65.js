@@ -156,7 +156,19 @@
   let lastFocusedTrigger = null;
 
   function openOfferModal(id) {
-    const modal = document.getElementById(id);
+    let modal = document.getElementById(id);
+    if (!modal) {
+      const tpl = document.querySelector('.offer-modal-tpl[data-offer-modal="' + id + '"]');
+      if (!tpl || !('content' in tpl)) return;
+      let host = document.getElementById('offer-modal-host');
+      if (!host) {
+        host = document.createElement('div');
+        host.id = 'offer-modal-host';
+        document.body.appendChild(host);
+      }
+      host.appendChild(tpl.content.cloneNode(true));
+      modal = document.getElementById(id);
+    }
     if (!modal) return;
     lastFocusedTrigger = document.activeElement;
     modal.hidden = false;
@@ -186,10 +198,9 @@
     });
   });
 
-  document.querySelectorAll('[data-offer-close]').forEach(function(el) {
-    el.addEventListener('click', function() {
-      closeOfferModal(el.closest('.offer-modal'));
-    });
+  document.addEventListener('click', function(e) {
+    const closer = e.target.closest('[data-offer-close]');
+    if (closer) closeOfferModal(closer.closest('.offer-modal'));
   });
 
   document.addEventListener('keydown', function(e) {

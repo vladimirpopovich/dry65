@@ -113,7 +113,8 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
           </div>
         </article>
 
-        <!-- MODAL / BOTTOM SHEET -->
+        <!-- MODAL / BOTTOM SHEET (u <template>: Google ne indeksira dupli tekst, JS klonira na otvaranje) -->
+        <template class="offer-modal-tpl" data-offer-modal="<?php echo esc_attr($modal_id); ?>">
         <div class="offer-modal" id="<?php echo esc_attr($modal_id); ?>" role="dialog" aria-modal="true" aria-labelledby="<?php echo esc_attr($modal_id); ?>-title" hidden>
           <div class="offer-modal-backdrop" data-offer-close></div>
           <div class="offer-modal-content" role="document">
@@ -148,6 +149,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
             </div>
           </div>
         </div>
+        </template>
       <?php endforeach; ?>
       </div><!-- /.offers-grid -->
       <?php if ($offers_scroll): ?>
