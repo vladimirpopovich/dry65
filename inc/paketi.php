@@ -2345,9 +2345,15 @@ add_action('template_redirect', function () {
             <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:12px 28px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;">Pronađi karticu</button>
           </form>
         <?php else: ?>
-          <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);"><?php echo esc_html($cust->name ?: 'Zdravo'); ?></h1>
-          <p class="lead" style="margin:12px 0 8px;">Trenutno nemaš aktivan paket.</p>
-          <p class="muted" style="font-size:14px;">Svrati u salon da ti otvorimo paket — pa će se ovde pojaviti tvoja kartica sa pečatima.</p>
+          <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Hvala<?php echo $cust->name ? ', ' . esc_html($cust->name) : ' na registraciji'; ?>!</h1>
+          <p class="lead" style="margin:12px 0 6px;">Sada si deo Dry65 kluba.</p>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.55;">Registracijom otvaraš vrata brojnim pogodnostima. Evo šta te čeka:</p>
+          <ul style="list-style:none;padding:0;margin:0 auto 20px;text-align:left;display:inline-block;font-size:15px;line-height:2;">
+            <li style="position:relative;padding-left:26px;"><span style="position:absolute;left:0;color:var(--clay,#b07a5a);font-weight:700;">✓</span>Pečat uz svako feniranje</li>
+            <li style="position:relative;padding-left:26px;"><span style="position:absolute;left:0;color:var(--clay,#b07a5a);font-weight:700;">✓</span>Poklon tretman na dar</li>
+            <li style="position:relative;padding-left:26px;"><span style="position:absolute;left:0;color:var(--clay,#b07a5a);font-weight:700;">✓</span>Kartica uvek uz tebe, u telefonu</li>
+          </ul>
+          <p class="muted" style="font-size:14px;">Svrati u salon da ti otvorimo prvi paket, pa će se ovde pojaviti tvoja kartica sa pečatima.</p>
         <?php endif; ?>
         <p style="margin-top:20px;font-size:13px;"><a href="<?php echo esc_url(wp_logout_url(home_url('/moja-kartica/'))); ?>">Odjavi se</a></p>
       </div>
