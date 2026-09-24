@@ -32,6 +32,7 @@ function dry65_slug_map() {
         'ambijent' => 'ambience',
         'kontakt'  => 'contact',
         'karijera' => 'careers',
+        'politika-privatnosti' => 'privacy-policy',
         // Usluge — kategorije
         'feniranje-na-cetke' => 'round-brush-blowout',
         'stilizovanje'       => 'styling',
@@ -292,6 +293,7 @@ function dry65_has_en_version() {
 /* ---- hreflang alternate + x-default (povezuje SR i EN verzije) ---- */
 add_action('wp_head', function () {
     if (is_admin() || is_404() || is_search()) return;
+    if (is_page('live')) return; // noindex strana (/live, /en/live) — bez hreflang, izbegava hreflang conflict
     if (!(is_front_page() || is_home() || is_page() || is_singular() || is_post_type_archive())) return;
 
     $sr = dry65_lang_url('sr');

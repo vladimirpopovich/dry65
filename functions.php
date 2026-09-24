@@ -156,8 +156,8 @@ function dry65_schema() {
         ],
         'geo' => [
             '@type' => 'GeoCoordinates',
-            'latitude' => 44.8125,
-            'longitude' => 20.4144,
+            'latitude' => 44.8122759,
+            'longitude' => 20.4001793,
         ],
         'areaServed' => [
             ['@type' => 'Place', 'name' => 'Novi Beograd'],
