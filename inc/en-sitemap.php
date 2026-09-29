@@ -4,8 +4,8 @@
    ------------------------------------------------------------
    Yoast ne zna za /en/ (virtuelne) strane, pa ih ovde izlistamo
    i dodamo u Yoast sitemap indeks. Prati mapu slug-ova (engleski
-   URL-ovi). Iskljucuje: karijera (SR-only), podesavanja, i
-   nespremne (noindex) usluge.
+   URL-ovi). Iskljucuje: karijera i politika-privatnosti (SR-only),
+   podesavanja, i nespremne (noindex) usluge.
    ============================================================ */
 
 if (!defined('ABSPATH')) exit;
@@ -18,7 +18,7 @@ function dry65_en_sitemap_urls() {
     // Pocetna (EN)
     $out[] = ['loc' => $base . '/en/', 'mod' => gmdate('c')];
 
-    $skip_pages = ['karijera', 'dry65-podesavanja'];
+    $skip_pages = ['karijera', 'politika-privatnosti', 'dry65-podesavanja'];
     $pages = get_posts([
         'post_type' => 'page', 'posts_per_page' => -1, 'post_status' => 'publish',
         'orderby' => 'menu_order', 'order' => 'ASC',

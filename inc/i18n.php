@@ -159,6 +159,15 @@ add_action('template_redirect', function () {
     if (dry65_is_en()) remove_action('template_redirect', 'redirect_canonical');
 }, 0);
 
+/* Strane bez EN verzije (npr. Karijera) ne smeju da zive na /en/ URL-u —
+   neprevedeni sadrzaj pod lang="en" pravi duplikat i hreflang gresku.
+   301 nazad na SR original. */
+add_action('template_redirect', function () {
+    if (!dry65_is_en() || dry65_has_en_version()) return;
+    wp_safe_redirect(dry65_lang_url('sr'), 301);
+    exit;
+}, 1);
+
 /* <html lang="..."> */
 add_filter('language_attributes', function ($output) {
     return dry65_is_en() ? 'lang="en"' : 'lang="sr"';
@@ -283,10 +292,11 @@ function dry65_localize_url($url) {
     return dry65_lang_url('en', $path) . $suffix;
 }
 
-/* Da li trenutna strana ima englesku verziju? (Karijera je samo SR) */
+/* Da li trenutna strana ima englesku verziju? (Karijera i Politika privatnosti su samo SR) */
 function dry65_has_en_version() {
     $p = dry65_current_path();
     if (preg_match('#^/karijera(/|$)#', $p)) return false;
+    if (preg_match('#^/politika-privatnosti(/|$)#', $p)) return false;
     return true;
 }
 
@@ -334,8 +344,18 @@ add_action('wp_head', function () {
 /* ---- 5) Switcher u navigaciji ---- */
 function dry65_lang_switcher() {
     $sr = dry65_lang_url('sr');
-    $en = dry65_lang_url('en');
     $cur = dry65_lang();
+    if (!dry65_has_en_version()) {
+        // Nema EN verzije (npr. Karijera) — prikazi samo SR, bez EN opcije
+        // koja bi vodila na neprevedenu/redirect-ovanu stranu.
+        ?>
+        <div class="lang-switch" role="group" aria-label="Jezik / Language">
+          <span class="lang-opt is-active" aria-current="true">SR</span>
+        </div>
+        <?php
+        return;
+    }
+    $en = dry65_lang_url('en');
     ?>
     <div class="lang-switch" role="group" aria-label="Jezik / Language">
       <a class="lang-opt<?php echo $cur === 'sr' ? ' is-active' : ''; ?>"

@@ -438,6 +438,14 @@ foreach ($crumbs as $i => $c) {
         'name'  => 'Dry65',
         'url'   => home_url('/'),
         '@id'   => home_url('/#business'),
+        'address' => [
+            '@type' => 'PostalAddress',
+            'streetAddress'   => 'Omladinskih Brigada 86Ž',
+            'addressLocality' => 'Novi Beograd',
+            'addressRegion'   => 'Beograd',
+            'postalCode'      => '11070',
+            'addressCountry'  => 'RS',
+        ],
     ],
     'url' => get_permalink($id),
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
