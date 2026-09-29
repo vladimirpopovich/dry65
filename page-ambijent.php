@@ -23,6 +23,19 @@ $ratios  = ['3/4','1/1','4/5','4/5','3/4','4/5','1/1','3/4','4/5'];
   </div>
 </section>
 
+<section class="section-sm">
+  <div class="wrap">
+    <div class="stack" style="max-width:720px;gap:16px;font-size:16px;line-height:1.7;color:var(--ink);">
+      <p><?php echo t('Prostor je osmišljen oko jedne jednostavne ideje – feniranje treba da bude brzo, prijatno i bez nepotrebnog čekanja. Radne stanice su raspoređene tako da svaka klijentkinja ima dovoljno prostora za sebe, dok je zona za pranje odvojena od dela za feniranje. Svetlo je toplo i prirodno kad god je to moguće, a drvo, lan i zemljane nijanse daju prostoru mirniji i prijatniji osećaj, bez klasičnog, hladnog salonskog utiska.'); ?></p>
+      <p><?php echo sprintf(
+        t('Nalazimo se u stambenom kompleksu West 65 na Novom Beogradu, na spoljnoj ivici kompleksa, u lokalu u lameli Ž. Lokaciju je najlakše pronaći preko %s, gde nas možeš precizno locirati i dobiti uputstva za dolazak.'),
+        '<a href="' . esc_url($biz['maps_url']) . '" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('Google Maps-a') . '</a>'
+      ); ?></p>
+      <p><?php echo t('Pošto radimo bez zakazivanja, u salonu je uvek živahno i nešto se dešava, ali smo prostor uredili tako da svaka klijentkinja može da se opusti i uživa u svom vremenu dok traje feniranje. Ambijent redovno osvežavamo, a najnovije fotografije i dešavanja iz salona možeš pratiti na Instagramu.'); ?></p>
+    </div>
+  </div>
+</section>
+
 <section class="section">
   <div class="wrap">
     <div style="column-count:3;column-gap:clamp(16px,2vw,26px);" class="masonry">

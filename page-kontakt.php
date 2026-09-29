@@ -21,8 +21,20 @@ $rows = [
       <?php echo t('Dry65 frizerski salon specijalizovan za feniranje'); ?>
     </h1>
     <p class="lead" style="margin-top:20px;max-width:680px;">
-      <?php echo t('Frizerski salon specijalizovan za feniranje, u West 65 mall-u na Novom Beogradu. Nema zakazivanja, samo dođi.'); ?>
+      <?php echo t('Frizerski salon specijalizovan za feniranje, na Novom Beogradu blizu West 65 mall-a. Nema zakazivanja, samo dođi.'); ?>
     </p>
+    <div class="stack" style="max-width:680px;margin-top:22px;gap:14px;font-size:16px;line-height:1.7;color:var(--ink);">
+      <p><?php echo t('Dry65 se nalazi na Novom Beogradu, u stambenom kompleksu West 65, na njegovoj spoljnoj ivici, u lokalu u lameli Ž. Salon je u blizini Airport City poslovne zone, a do nas se lako stiže i sa Bulevara Zorana Đinđića i Aerodromske ulice.'); ?></p>
+      <p><?php echo sprintf(
+        t('Pošto se salon nalazi na spoljnom delu kompleksa, a ne unutar samog West 65 mall-a, najlakše je da lokaciju i tačnu poziciju salona pronađeš preko %s. Tamo možeš dobiti i najpreciznija uputstva za dolazak.'),
+        '<a href="' . esc_url($biz['maps_url']) . '" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('Google Maps-a') . '</a>'
+      ); ?></p>
+      <p><?php echo sprintf(
+        t('Radimo isključivo bez zakazivanja, pa ako imaš pitanje pre dolaska, možeš nas kontaktirati telefonom, mejlom ili putem Instagram poruke. Za informaciju o trenutnoj gužvi možeš pogledati našu stranicu %1$s pre nego što kreneš. Za pitanja o poslu i otvorenim pozicijama pogledaj stranicu %2$s.'),
+        '<a href="' . esc_url(home_url('/live/')) . '" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('uživo') . '</a>',
+        '<a href="' . esc_url(get_permalink(get_page_by_path('karijera'))) . '" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('Karijera') . '</a>'
+      ); ?></p>
+    </div>
   </div>
 </section>
 
@@ -70,7 +82,7 @@ $rows = [
       <div style="margin-top:24px;padding:26px;background:var(--cream);border-radius:var(--radius-lg);">
         <h3 class="display" style="font-size:26px;"><?php echo t('Dolaziš kolima?'); ?></h3>
         <p class="muted" style="margin-top:10px;font-size:16px;">
-          <?php echo t('U West 65 Mall prvi sat parkiranja je besplatan. Iskoristi ga, mi smo samo nekoliko koraka od ulaza.'); ?>
+          <?php echo t('U kompleksu West 65 prvi sat parkiranja je besplatan. Iskoristi ga pre dolaska kod nas.'); ?>
         </p>
       </div>
     </div>

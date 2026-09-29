@@ -28,6 +28,14 @@ $stats = [
     <p class="lead" style="margin-top:14px;max-width:640px;font-size:15px;color:var(--muted);">
       <?php echo tk('onama.schwarzkopf', 'Radimo isključivo sa <a href="https://www.schwarzkopf-professional.com/" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">Schwarzkopf Professional</a> proizvodima, vodećim svetskim brendom za salonsku negu kose.'); ?>
     </p>
+    <div class="stack" style="max-width:640px;margin-top:22px;gap:16px;font-size:16px;line-height:1.7;color:var(--ink);">
+      <p><?php echo tk('onama.story1', 'Dry65 je nastao da reši jedan jednostavan problem, mnogo vremena odlazi na traženje termina za feniranje. Dodatni problem nastaje kada želiš samo da opereš i osušiš kosu. U klasičnim salonima često nije lako pronaći slobodan termin samo za feniranje, a kada ga pronađeš, moraš da prilagođavaš svoj raspored tuđem kalendaru.'); ?></p>
+      <p><?php echo sprintf(
+        tk('onama.story2', 'Zato smo napravili koncept koji funkcioniše drugačije. Kod nas nema zakazivanja, samo dođeš kada ti odgovara, a na %s možeš da pratiš trenutni status zauzetosti u salonu. Naš fokus su feniranje, nega kose i stilizovanje frizure, bez potrebe da nudimo veliki broj različitih usluga.'),
+        '<a href="' . esc_url(home_url('/live/')) . '" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">dry65.com/live</a>'
+      ); ?></p>
+      <p><?php echo tk('onama.story3', 'Taj fokus nam omogućava da budemo brzi, dosledni i da održimo visok kvalitet usluge, bez obzira na to ko te tog dana feniše. Cilj je jednostavan, da znaš šta možeš da očekuješ svaki put kada dođeš u Dry65.'); ?></p>
+    </div>
   </div>
 </section>
 

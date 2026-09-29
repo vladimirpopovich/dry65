@@ -50,6 +50,11 @@
     <FilesMatch "\.(css|js)$">
         Header set Cache-Control "public, max-age=2592000"
     </FilesMatch>
+
+    # HSTS — Semrush "subdomains don't support HSTS" fix.
+    # Sajt je vec HTTPS-only, ovo samo nalaze browserima da PAMTE to
+    # i ubuduce sami traze HTTPS (bez da ikad probaju HTTP).
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 </IfModule>
 
 # =============================================================

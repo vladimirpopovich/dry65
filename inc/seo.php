@@ -110,12 +110,12 @@ function dry65_seo_map() {
         'o-nama' => [
             // Fokus: "frizerski salon Novi Beograd"
             'title' => 'Frizerski salon Novi Beograd - O Dry65 blowout hair bar-u',
-            'desc'  => 'Dry65 je frizerski salon specijalizovan za feniranje, u West65 mall-u na Novom Beogradu. Walk-in koncept, bez zakazivanja - samo dođeš.',
+            'desc'  => 'Dry65 je frizerski salon specijalizovan za feniranje, na Novom Beogradu blizu West65 mall-a. Walk-in koncept, bez zakazivanja - samo dođeš.',
         ],
         'usluge' => [
             // Fokus: "frizerski salon West65" + tehnike stilizovanja
             'title' => 'Frizerski salon West65 - Feniranje, lokne, talasi | Dry65',
-            'desc'  => 'Profesionalno feniranje, stilizovanje (lokne, talasi, glatko, volumen) i Hair Mask tretmani. Frizerski salon Dry65 u West65 mall-u, Novi Beograd.',
+            'desc'  => 'Profesionalno feniranje, stilizovanje (lokne, talasi, glatko, volumen) i Hair Mask tretmani. Frizerski salon Dry65 blizu West65 mall-a, Novi Beograd.',
         ],
         'cenovnik' => [
             // Fokus: "cenovnik feniranja Novi Beograd" + cena od 1.400
@@ -125,17 +125,17 @@ function dry65_seo_map() {
         'paketi' => [
             // Fokus: "mesečni paket feniranja" + benefit
             'title' => 'Mesečni paket feniranja - 8 termina | Dry65 Novi Beograd',
-            'desc'  => 'Mesečni paket od 8 feniranja - idealno za žene koje feniraju 2-3 puta nedeljno. Frizerski salon u West65 mall-u na Novom Beogradu.',
+            'desc'  => 'Mesečni paket od 8 feniranja - idealno za žene koje feniraju 2-3 puta nedeljno. Frizerski salon na Novom Beogradu, blizu West65 mall-a.',
         ],
         'ambijent' => [
             // Fokus: "blowout hair bar Novi Beograd" + galerija
             'title' => 'Blowout hair bar Novi Beograd - Ambijent salona | Dry65',
-            'desc'  => 'Pogledaj ambijent Dry65 walk-in blowout hair bar-a u West65 mall-u na Novom Beogradu. Moderno opremljen frizerski salon za profesionalno feniranje.',
+            'desc'  => 'Pogledaj ambijent Dry65 walk-in blowout hair bar-a na Novom Beogradu, blizu West65 mall-a. Moderno opremljen frizerski salon za profesionalno feniranje.',
         ],
         'kontakt' => [
             // Fokus: "frizerski salon West65" + adresa/kontakt
             'title' => 'Kontakt - Frizerski salon West65, Novi Beograd | Dry65',
-            'desc'  => 'Dry65 frizerski salon: Omladinskih Brigada 86Ž, West65 mall, Novi Beograd. Telefon +381 60 6900655. Pon-Pet 8-20h, Sub 10-18h. Walk-in, bez zakazivanja.',
+            'desc'  => 'Dry65 frizerski salon: Omladinskih Brigada 86Ž, lamela Ž, Novi Beograd (blizu West65 mall-a). Telefon +381 60 6900655. Pon-Pet 8-20h, Sub 10-18h. Walk-in, bez zakazivanja.',
         ],
         'karijera' => [
             // Fokus: "posao frizer / salon Novi Beograd"
@@ -150,12 +150,12 @@ function dry65_seo_map() {
         'blog' => [
             // Fokus: "saveti za kosu" + edukativno
             'title' => 'Saveti za feniranje i negu kose | Blog Dry65 Novi Beograd',
-            'desc'  => 'Saveti o feniranju, nezi kose i stilizovanju iz Dry65 walk-in salona u West65 mall-u, Novi Beograd. Mali vodiči za zdraviju kosu.',
+            'desc'  => 'Saveti o feniranju, nezi kose i stilizovanju iz Dry65 walk-in salona na Novom Beogradu, blizu West65 mall-a. Mali vodiči za zdraviju kosu.',
         ],
         'live' => [
             // Fokus: "koliko cekam / guzva" — statican opis (bez live broja) da SERP snippet ostane stabilan
             'title' => 'Uživo - Koliko se čeka u Dry65? | Feniranje Novi Beograd',
-            'desc'  => 'Proveri trenutnu gužvu u Dry65 pre nego što kreneš. Uživo status čekanja za walk-in feniranje u West 65 mall-u, Novi Beograd.',
+            'desc'  => 'Proveri trenutnu gužvu u Dry65 pre nego što kreneš. Uživo status čekanja za walk-in feniranje na Novom Beogradu, blizu West 65 mall-a.',
         ],
     ];
 }
@@ -227,7 +227,7 @@ add_filter('wpseo_metadesc', function($desc) {
             return $excerpt;
         }
         // Ako je excerpt prekratak, dopuni sa brand tail-om
-        $tail = ' Dry65 blog, frizerski salon specijalizovan za feniranje na Novom Beogradu, u West65 mall-u.';
+        $tail = ' Dry65 blog, frizerski salon specijalizovan za feniranje na Novom Beogradu, blizu West65 mall-a.';
         return trim(($excerpt ?: '') . $tail);
     }
     return $desc;

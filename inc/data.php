@@ -419,7 +419,7 @@ function dry65_faqs_data() {
         // GENERALNA — za home + FAQ stranicu
         'zakazivanje' => [
             'q' => 'Da li treba da zakažem termin za feniranje u Dry65?',
-            'a' => 'Ne, Dry65 je walk-in salon. Samo dođete kad Vam odgovara, bez zakazivanja i bez pritiska. Nalazimo se u West 65 mall-u na Novom Beogradu.',
+            'a' => 'Ne, Dry65 je walk-in salon. Samo dođete kad Vam odgovara, bez zakazivanja i bez pritiska. Nalazimo se u lameli Ž kompleksa West 65 na Novom Beogradu, blizu West 65 mall-a.',
             'cats' => ['home', 'kontakt', 'faq'],
         ],
         'radno_vreme' => [
@@ -495,12 +495,12 @@ function dry65_faqs_data() {
         // LOKACIJA
         'lokacija' => [
             'q' => 'Gde se nalazi Dry65 salon?',
-            'a' => 'Omladinskih Brigada 86Ž, West 65 mall, Novi Beograd, blizu Airport City poslovne zone.',
+            'a' => 'Omladinskih Brigada 86Ž, lamela Ž, Novi Beograd, blizu West 65 mall-a i Airport City poslovne zone.',
             'cats' => ['home', 'kontakt', 'faq'],
         ],
         'parking' => [
             'q' => 'Da li ima parking?',
-            'a' => 'Da. U West 65 mall-u prvi sat parkiranja je besplatan. Salon je samo nekoliko koraka od glavnog ulaza.',
+            'a' => 'Da. U kompleksu West 65 prvi sat parkiranja je besplatan.',
             'cats' => ['kontakt', 'faq'],
         ],
 

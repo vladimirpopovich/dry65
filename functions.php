@@ -140,7 +140,7 @@ function dry65_schema() {
         '@type' => ['HairSalon', 'LocalBusiness'],
         '@id' => home_url('/#business'),
         'name' => $biz['name'],
-        'description' => t('Frizerski salon specijalizovan za feniranje, na Novom Beogradu u West65 mall-u. Walk-in blowout hair bar, bez zakazivanja - samo dođeš. Cene od 1.400 din. Otvoreni Pon-Pet 8-20h, Sub 10-18h.'),
+        'description' => t('Frizerski salon specijalizovan za feniranje, na Novom Beogradu blizu West65 mall-a. Walk-in blowout hair bar, bez zakazivanja - samo dođeš. Cene od 1.400 din. Otvoreni Pon-Pet 8-20h, Sub 10-18h.'),
         'url' => home_url('/'),
         'telephone' => $biz['phone'],
         'email' => $biz['email'],
@@ -268,7 +268,7 @@ add_action('template_redirect', function() {
     ?>
 # Dry65 — Walk-in Blowout Hair Bar
 
-> Dry65 je frizerski salon specijalizovan za feniranje, bez zakazivanja, u West 65 mall-u na Novom Beogradu, Srbija.
+> Dry65 je frizerski salon specijalizovan za feniranje, bez zakazivanja, u lameli Ž kompleksa West 65 na Novom Beogradu, Srbija, blizu West 65 mall-a.
 
 ## O nama
 
@@ -303,7 +303,7 @@ Feniranje na četke je osnovna profesionalna tehnika oblikovanja kose kojom se u
 - Walk-in koncept - bez zakazivanja, samo dođete
 - Schwarzkopf Professional proizvodi
 - Ambijent bez pritiska, sa svojim vremenom
-- Lokacija u West 65 mall-u (blizu Airport City)
+- Lokacija u lameli Ž kompleksa West 65 (blizu West 65 mall-a i Airport City)
 <?php $gm = dry65_google_meta(); $gm_total = $gm['total'] ?: 61; $gm_rating = $gm['rating'] ?: 5.0; ?>- <?php echo $gm_total; ?> Google recenzija sa <?php echo number_format($gm_rating, 1); ?> zvezdica prosekom
 - 100% odgovaranje na sve recenzije
 
@@ -330,7 +330,7 @@ Za planiranje dolaska tu je stranica uživo. Na <?php echo home_url('/live/'); ?
 
 ## Kontakt
 
-- Adresa: Omladinskih Brigada 86Ž, West 65 mall, Novi Beograd
+- Adresa: Omladinskih Brigada 86Ž, lamela Ž, Novi Beograd (blizu West 65 mall-a)
 - Telefon: <?php echo $biz['phone_display']; ?>
 
 - Email: <?php echo $biz['email']; ?>
@@ -419,8 +419,8 @@ add_action('wp_head', function() {
             [
                 '@type' => 'HowToStep',
                 'position' => 1,
-                'name' => 'Dođite u West 65 mall',
-                'text' => 'Dry65 se nalazi na adresi Omladinskih Brigada 86Ž, u West 65 mall-u na Novom Beogradu. Prvi sat parkiranja u mall-u je besplatan.',
+                'name' => 'Dođite do Dry65 (West 65, lamela Ž)',
+                'text' => 'Dry65 se nalazi na adresi Omladinskih Brigada 86Ž, u lameli Ž kompleksa West 65 na Novom Beogradu, blizu West 65 mall-a. Prvi sat parkiranja u kompleksu je besplatan.',
             ],
             [
                 '@type' => 'HowToStep',

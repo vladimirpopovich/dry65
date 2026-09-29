@@ -13,7 +13,7 @@ $faq_groups = [
         'items' => [
             [
                 'q' => 'Da li treba da zakažem termin za feniranje u Dry65?',
-                'a' => 'Ne, Dry65 je walk-in salon. Samo dođete kad Vam odgovara, bez zakazivanja, bez pritiska. Nalazimo se u West 65 mall-u na Novom Beogradu.',
+                'a' => 'Ne, Dry65 je walk-in salon. Samo dođete kad Vam odgovara, bez zakazivanja, bez pritiska. Nalazimo se u lameli Ž kompleksa West 65 na Novom Beogradu, blizu West 65 mall-a.',
             ],
             [
                 'q' => 'Koje je radno vreme Dry65 salona?',
@@ -76,11 +76,11 @@ $faq_groups = [
         'items' => [
             [
                 'q' => 'Gde se nalazi Dry65 salon?',
-                'a' => sprintf(t('Omladinskih Brigada 86Ž, West 65 mall, Novi Beograd, blizu Airport City poslovne zone. <a href="%s" target="_blank" rel="noopener">Otvori Google Maps</a>.'), esc_url($biz['maps_url'])),
+                'a' => sprintf(t('Omladinskih Brigada 86Ž, lamela Ž, Novi Beograd, blizu West 65 mall-a i Airport City poslovne zone. <a href="%s" target="_blank" rel="noopener">Otvori Google Maps</a>.'), esc_url($biz['maps_url'])),
             ],
             [
                 'q' => 'Da li ima parking?',
-                'a' => 'Da. U West 65 mall-u prvi sat parkiranja je besplatan. Salon je samo nekoliko koraka od glavnog ulaza.',
+                'a' => 'Da. U kompleksu West 65 prvi sat parkiranja je besplatan.',
             ],
             [
                 'q' => 'Kako doći javnim prevozom?',

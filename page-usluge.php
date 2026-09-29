@@ -15,6 +15,15 @@ $tpl  = get_template_directory_uri();
     <h1 class="display caps" style="font-size:clamp(30px,4.2vw,52px);margin-top:4px;max-width:28ch;line-height:1.0;letter-spacing:0.01em;">
       <?php echo t('Feniranje, stilizovanje i nega kose'); ?>
     </h1>
+    <div class="stack" style="max-width:720px;margin-top:22px;gap:16px;font-size:16px;line-height:1.7;color:var(--ink);">
+      <p><?php echo t('Feniranje je osnova svega što radimo. Možeš da biraš između različitih stilova, ravno, na talase, na lokne ili sa više volumena, u zavisnosti od toga kako želiš da ti kosa izgleda tog dana.'); ?></p>
+      <p><?php echo t('Pored feniranja, nudimo i tretmane nege kose. Želimo da brinemo o zdravlju tvoje kose, a tretmani su odlična dopuna feniranju i pomažu da kosa ostane negovana i duže zadrži oblik i stil.'); ?></p>
+      <p><?php echo t('Stilizovanje peglom i figarom takođe je deo naših usluga. Ako želiš da tvoja frizura bude još upečatljivija, stilizovanje toplim uređajima daje kosi izražajniji karakter, dodatnu definiciju i dugotrajniji efekat. Odlično je rešenje za proslave, posebne prilike i važne datume, ali i kada jednostavno želiš da izgledaš posebno tog dana. Stilizovanje može doprineti da frizura duže zadrži svoj oblik, čak i kod kose koja je tanja ili zahtevnija za oblikovanje.'); ?></p>
+      <p><?php echo sprintf(
+        t('Sve aktuelne cene i trajanje tretmana možeš pogledati na stranici %s. Ako nisi sigurna šta bi najbolje odgovaralo tvojoj kosi, slobodno pitaj naš tim u salonu, pomoći ćemo ti da izabereš ono što ti najviše odgovara. Za feniranje nije potrebno zakazivanje.'),
+        '<a href="' . esc_url(get_permalink(get_page_by_path('cenovnik'))) . '" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('Cenovnik') . '</a>'
+      ); ?></p>
+    </div>
   </div>
 </section>
 

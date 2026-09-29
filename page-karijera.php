@@ -40,7 +40,7 @@ $positions = [
         'offer' => [
             'Stimulativna zarada + procenti',
             'Edukacije i usavršavanja',
-            'Moderan salon u West65 mall-u',
+            'Moderan salon blizu West65 mall-a',
             'Stabilan tim i prijatna atmosfera',
         ],
     ],
@@ -83,6 +83,11 @@ $positions = [
     <p class="lead" style="margin-top:26px;max-width:680px;">
       Tražimo ljude sa energijom, strašću za rad i željom da rastu uz nas. Ako želiš da radiš u modernom walk-in blowout salonu na Novom Beogradu, uz tim koji se pazi, pogledaj naše otvorene pozicije.
     </p>
+    <div class="stack" style="max-width:680px;margin-top:22px;gap:14px;font-size:16px;line-height:1.7;color:var(--ink);">
+      <p>Dry65 raste, a sa njim raste i naš tim. Tražimo ljude koji žele da uče i razvijaju se u poslu feniranja, u brzom i dinamičnom okruženju u kojem se svakog dana susrećeš sa različitim klijentkinjama i različitim tipovima kose.</p>
+      <p>Prethodno iskustvo je dobrodošlo, ali nije uslov. Važnije nam je da imaš volju za rad, odgovoran odnos prema poslu i želju da učiš i napreduješ.</p>
+      <p>Salon radi od ponedeljka do petka od 8 do 20 časova, a subotom od 10 do 18 časova. Raspored smena dogovaramo unutar tima, tako da organizacija rada bude jasna i praktična za sve.</p>
+    </div>
   </div>
 </section>
 
