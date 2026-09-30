@@ -144,7 +144,7 @@ function dry65_seo_map() {
         'kontakt' => [
             // Fokus: "frizerski salon West65" + adresa/kontakt
             'title' => 'Kontakt - Frizerski salon West65, Novi Beograd | Dry65',
-            'desc'  => 'Dry65 frizerski salon: Omladinskih Brigada 86Ž, lamela Ž, Novi Beograd (blizu West65 mall-a). Telefon +381 60 6900655. Pon-Pet 8-20h, Sub 10-18h. Walk-in, bez zakazivanja.',
+            'desc'  => 'Dry65 frizerski salon: Omladinskih Brigada 86Ž, Novi Beograd, blizu West65 mall-a. Tel. +381 60 6900655. Pon-Pet 8-20h, Sub 10-18h. Bez zakazivanja.',
         ],
         'karijera' => [
             // Fokus: "posao frizer / salon Novi Beograd"
