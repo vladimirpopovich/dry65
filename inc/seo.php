@@ -53,6 +53,15 @@ add_filter('wpseo_robots', function($robots) {
     return $robots;
 }, 99);
 
+// Izbaci /live iz Yoast XML sitemap-a (noindex stranica ne treba da bude u sitemap-u)
+add_filter('wpseo_exclude_from_sitemap_by_post_ids', function ($excluded) {
+    $live = get_page_by_path('live', OBJECT, 'page');
+    if ($live) {
+        $excluded[] = (int) $live->ID;
+    }
+    return $excluded;
+});
+
 // Ukloni category/tag/author/date iz canonical calculation
 add_filter('wpseo_canonical', function($canonical) {
     if (is_category() || is_tag() || is_author() || is_date()) {

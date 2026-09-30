@@ -18,7 +18,7 @@ function dry65_en_sitemap_urls() {
     // Pocetna (EN)
     $out[] = ['loc' => $base . '/en/', 'mod' => gmdate('c')];
 
-    $skip_pages = ['karijera', 'politika-privatnosti', 'dry65-podesavanja'];
+    $skip_pages = ['karijera', 'politika-privatnosti', 'dry65-podesavanja', 'live'];
     $pages = get_posts([
         'post_type' => 'page', 'posts_per_page' => -1, 'post_status' => 'publish',
         'orderby' => 'menu_order', 'order' => 'ASC',
