@@ -86,8 +86,9 @@ function dry65_hero_preload() {
 }
 add_action('wp_head', 'dry65_hero_preload', 1);
 
-/* ---- Google Analytics 4 (gtag.js) ----
-   Async load, samo frontend, skip za logovane admine da ne merimo sebe. */
+/* ---- Google Analytics 4 + Google Ads (gtag.js) ----
+   Async load, samo frontend, skip za logovane admine da ne merimo sebe.
+   Jedan gtag.js load, dva config poziva (GA4 + Google Ads conversion tag). */
 function dry65_google_analytics() {
     if (is_admin()) return;
     if (is_user_logged_in() && current_user_can('manage_options')) return;
@@ -99,6 +100,7 @@ function dry65_google_analytics() {
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-LWNT24N69L');
+      gtag('config', 'AW-18483512541');
     </script>
     <?php
 }
