@@ -23,6 +23,17 @@ add_action('wp_head', function () {
     if (get_query_var('dry65_menu')) echo '<meta name="robots" content="noindex, follow">' . "\n";
 }, 1);
 
+/* Google Ads conversion: Page view na /menu (posle glavnog gtag-a, wp_head prioritet 5). */
+add_action('wp_head', function () {
+    if (!get_query_var('dry65_menu')) return;
+    ?>
+    <!-- Event snippet for Page view conversion page -->
+    <script>
+      gtag('event', 'conversion', {'send_to': 'AW-18483512541/i85VCObi_owdEN2J0O1E'});
+    </script>
+    <?php
+}, 6);
+
 add_action('template_redirect', function () {
     if (!get_query_var('dry65_menu')) return;
 
