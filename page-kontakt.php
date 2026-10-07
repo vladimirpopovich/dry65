@@ -25,16 +25,23 @@ $rows = [
     </p>
     <div class="stack" style="max-width:680px;margin-top:22px;gap:14px;font-size:16px;line-height:1.7;color:var(--ink);">
       <p><?php echo t('Dry65 se nalazi na Novom Beogradu, u stambenom kompleksu West 65, na njegovoj spoljnoj ivici, u lokalu u lameli Ž. Salon je u blizini Airport City poslovne zone, a do nas se lako stiže i sa Bulevara Zorana Đinđića i Aerodromske ulice.'); ?></p>
-      <p><?php echo sprintf(
-        t('Pošto se salon nalazi na spoljnom delu kompleksa, a ne unutar samog West 65 mall-a, najlakše je da lokaciju i tačnu poziciju salona pronađeš preko %s. Tamo možeš dobiti i najpreciznija uputstva za dolazak.'),
-        '<a href="' . esc_url($biz['maps_url']) . '" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('Google Maps-a') . '</a>'
-      ); ?></p>
-      <p><?php echo sprintf(
-        t('Radimo isključivo bez zakazivanja, pa ako imaš pitanje pre dolaska, možeš nas kontaktirati telefonom, mejlom ili putem Instagram poruke. Za informaciju o trenutnoj gužvi možeš pogledati našu stranicu %1$s pre nego što kreneš. Za pitanja o poslu i otvorenim pozicijama pogledaj stranicu %2$s.'),
-        '<a href="' . esc_url(home_url('/live/')) . '" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('uživo') . '</a>',
-        '<a href="' . esc_url(get_permalink(get_page_by_path('karijera'))) . '" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('Karijera') . '</a>'
-      ); ?></p>
+      <div class="readmore" id="readmore-kontakt">
+        <div class="readmore-inner stack" style="gap:14px;">
+          <p><?php echo sprintf(
+            t('Pošto se salon nalazi na spoljnom delu kompleksa, a ne unutar samog West 65 mall-a, najlakše je da lokaciju i tačnu poziciju salona pronađeš preko %s. Tamo možeš dobiti i najpreciznija uputstva za dolazak.'),
+            '<a href="' . esc_url($biz['maps_url']) . '" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('Google Maps-a') . '</a>'
+          ); ?></p>
+          <p><?php echo sprintf(
+            t('Radimo isključivo bez zakazivanja, pa ako imaš pitanje pre dolaska, možeš nas kontaktirati telefonom, mejlom ili putem Instagram poruke. Za informaciju o trenutnoj gužvi možeš pogledati našu stranicu %1$s pre nego što kreneš. Za pitanja o poslu i otvorenim pozicijama pogledaj stranicu %2$s.'),
+            '<a href="' . esc_url(home_url('/live/')) . '" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('uživo') . '</a>',
+            '<a href="' . esc_url(get_permalink(get_page_by_path('karijera'))) . '" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">' . t('Karijera') . '</a>'
+          ); ?></p>
+        </div>
+      </div>
     </div>
+    <button type="button" class="readmore-trigger" data-readmore-target="readmore-kontakt" data-more-label="<?php echo esc_attr(t('Pročitaj više')); ?>" data-less-label="<?php echo esc_attr(t('Prikaži manje')); ?>" aria-expanded="false" aria-controls="readmore-kontakt">
+      <span class="rm-label"><?php echo t('Pročitaj više'); ?></span> <span class="arrow">↓</span>
+    </button>
   </div>
 </section>
 

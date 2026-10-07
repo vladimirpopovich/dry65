@@ -1068,3 +1068,30 @@ body.offer-modal-open { overflow: hidden; }
 }
 .faq-a a { color: var(--oxblood); text-decoration: underline; text-underline-offset: 2px; }
 .faq-a a:hover { color: var(--ink); }
+
+/* ---- Read more (tekst je u HTML-u pri ucitavanju, toggle je samo CSS klasa) ---- */
+.readmore {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows .45s var(--ease);
+}
+.readmore.is-open { grid-template-rows: 1fr; }
+.readmore-inner { min-height: 0; }
+.readmore-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--clay);
+  cursor: pointer;
+}
+.readmore-trigger:hover { gap: 10px; }
+.readmore-trigger .arrow { transition: transform .25s var(--ease); }
+.readmore-trigger.is-open .arrow { transform: rotate(180deg); }

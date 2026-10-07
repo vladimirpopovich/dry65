@@ -240,4 +240,17 @@
     if (ofNext) ofNext.addEventListener('click', () => ofTrack.scrollBy({ left:  ofStep(), behavior: 'smooth' }));
   }
 
+  /* ---- Read more toggle (tekst ostaje u HTML-u, toggle je samo CSS klasa) ---- */
+  document.querySelectorAll('.readmore-trigger').forEach(function (btn) {
+    const target = document.getElementById(btn.dataset.readmoreTarget);
+    if (!target) return;
+    const label = btn.querySelector('.rm-label');
+    btn.addEventListener('click', function () {
+      const open = target.classList.toggle('is-open');
+      btn.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', open);
+      if (label) label.textContent = open ? btn.dataset.lessLabel : btn.dataset.moreLabel;
+    });
+  });
+
 })();

@@ -85,9 +85,16 @@ $positions = [
     </p>
     <div class="stack" style="max-width:680px;margin-top:22px;gap:14px;font-size:16px;line-height:1.7;color:var(--ink);">
       <p>Dry65 raste, a sa njim raste i naš tim. Tražimo ljude koji žele da uče i razvijaju se u poslu feniranja, u brzom i dinamičnom okruženju u kojem se svakog dana susrećeš sa različitim klijentkinjama i različitim tipovima kose.</p>
-      <p>Prethodno iskustvo je dobrodošlo, ali nije uslov. Važnije nam je da imaš volju za rad, odgovoran odnos prema poslu i želju da učiš i napreduješ.</p>
-      <p>Salon radi od ponedeljka do petka od 8 do 20 časova, a subotom od 10 do 18 časova. Raspored smena dogovaramo unutar tima, tako da organizacija rada bude jasna i praktična za sve.</p>
+      <div class="readmore" id="readmore-karijera">
+        <div class="readmore-inner stack" style="gap:14px;">
+          <p>Prethodno iskustvo je dobrodošlo, ali nije uslov. Važnije nam je da imaš volju za rad, odgovoran odnos prema poslu i želju da učiš i napreduješ.</p>
+          <p>Salon radi od ponedeljka do petka od 8 do 20 časova, a subotom od 10 do 18 časova. Raspored smena dogovaramo unutar tima, tako da organizacija rada bude jasna i praktična za sve.</p>
+        </div>
+      </div>
     </div>
+    <button type="button" class="readmore-trigger" data-readmore-target="readmore-karijera" data-more-label="Pročitaj više" data-less-label="Prikaži manje" aria-expanded="false" aria-controls="readmore-karijera">
+      <span class="rm-label">Pročitaj više</span> <span class="arrow">↓</span>
+    </button>
   </div>
 </section>
 
