@@ -544,14 +544,14 @@ function dry65_live_history_page() {
     $days  = isset($_GET['days']) ? max(1, min(90, (int) $_GET['days'])) : 14;
     $since = $until = '';
 
-    if ($mode === 'day' && !empty($_GET['date'])) {
-        $d = DateTime::createFromFormat('Y-m-d', sanitize_text_field($_GET['date']), $tz);
+    if ($mode === 'day' && !empty($_GET['date_day'])) {
+        $d = DateTime::createFromFormat('Y-m-d', sanitize_text_field($_GET['date_day']), $tz);
         if ($d) {
             $since = $d->format('Y-m-d 00:00:00');
             $until = (clone $d)->modify('+1 day')->format('Y-m-d 00:00:00');
         }
-    } elseif ($mode === 'week' && !empty($_GET['date'])) {
-        $d = DateTime::createFromFormat('Y-m-d', sanitize_text_field($_GET['date']), $tz);
+    } elseif ($mode === 'week' && !empty($_GET['date_week'])) {
+        $d = DateTime::createFromFormat('Y-m-d', sanitize_text_field($_GET['date_week']), $tz);
         if ($d) {
             $mon   = (clone $d)->modify('-' . ((int) $d->format('N') - 1) . ' days');
             $since = $mon->format('Y-m-d 00:00:00');
@@ -649,19 +649,41 @@ function dry65_live_history_page() {
     echo '</p>';
 
     // Izbor perioda — tačno određen dan / nedelja / proizvoljan opseg
-    $page_url  = admin_url('admin.php?page=dry65-live-istorija');
-    $def_date  = $today->format('Y-m-d');
-    $gv        = fn($k, $d = '') => isset($_GET[$k]) ? esc_attr(sanitize_text_field($_GET[$k])) : $d;
-    echo '<form method="get" style="margin:10px 0 4px;padding:10px 12px;background:#fff;border:1px solid #ccd0d4;max-width:700px;">';
+    $def_date   = $today->format('Y-m-d');
+    $gv         = fn($k, $d = '') => isset($_GET[$k]) ? esc_attr(sanitize_text_field($_GET[$k])) : $d;
+    $date_day   = $mode === 'day'  ? $gv('date_day', $def_date) : $def_date;
+    $date_week  = $mode === 'week' ? $gv('date_week', $def_date) : $def_date;
+    $range_from = $gv('from');
+    $range_to   = $gv('to');
+
+    echo '<form method="get" id="dry65-hist-filter" style="margin:10px 0 4px;padding:10px 12px;background:#fff;border:1px solid #ccd0d4;max-width:700px;">';
     echo '<input type="hidden" name="page" value="dry65-live-istorija">';
-    echo '<label style="margin-right:14px;"><input type="radio" name="mode" value="day"' . checked($mode, 'day', false) . '> Dan '
-       . '<input type="date" name="date" value="' . ($mode === 'day' ? $gv('date') : $def_date) . '"></label>';
-    echo '<label style="margin-right:14px;"><input type="radio" name="mode" value="week"' . checked($mode, 'week', false) . '> Nedelja (bilo koji dan u njoj) '
-       . '<input type="date" name="date" value="' . ($mode === 'week' ? $gv('date') : $def_date) . '"></label>';
-    echo '<label style="margin-right:14px;"><input type="radio" name="mode" value="range"' . checked($mode, 'range', false) . '> Period '
-       . '<input type="date" name="from" value="' . $gv('from') . '"> – <input type="date" name="to" value="' . $gv('to') . '"></label>';
+    echo '<label style="margin-right:10px;">Prikaz: <select name="mode" id="dry65-hist-mode">'
+       . '<option value="day"' . selected($mode, 'day', false) . '>Dan</option>'
+       . '<option value="week"' . selected($mode, 'week', false) . '>Nedelja</option>'
+       . '<option value="range"' . selected($mode, 'range', false) . '>Period</option>'
+       . '</select></label>';
+    echo '<span class="dry65-hist-field" data-mode="day" style="margin-right:14px;">'
+       . '<input type="date" name="date_day" value="' . $date_day . '"></span>';
+    echo '<span class="dry65-hist-field" data-mode="week" style="margin-right:14px;">(bilo koji dan u njoj) '
+       . '<input type="date" name="date_week" value="' . $date_week . '"></span>';
+    echo '<span class="dry65-hist-field" data-mode="range" style="margin-right:14px;">'
+       . '<input type="date" name="from" value="' . $range_from . '"> – <input type="date" name="to" value="' . $range_to . '"></span>';
     echo '<button type="submit" class="button button-primary">Prikaži</button>';
     echo '</form>';
+    echo '<script>(function(){
+        var sel = document.getElementById("dry65-hist-mode");
+        var fields = document.querySelectorAll("#dry65-hist-filter .dry65-hist-field");
+        function sync(){
+            fields.forEach(function(el){
+                var active = el.getAttribute("data-mode") === sel.value;
+                el.style.display = active ? "" : "none";
+                el.querySelectorAll("input").forEach(function(inp){ inp.disabled = !active; });
+            });
+        }
+        sel.addEventListener("change", sync);
+        sync();
+    })();</script>';
     echo '<p style="color:#666;font-size:12px;">Izabrano: <strong>' . esc_html(substr($since, 0, 10)) . '</strong> do <strong>' . esc_html((new DateTime($until, $tz))->modify('-1 day')->format('Y-m-d')) . '</strong> (uključivo).</p>';
 
     if (!$rows) { echo '<p><em>Nema podataka za izabrani period.</em></p></div>'; return; }
@@ -734,8 +756,8 @@ function dry65_live_history_page() {
         $avg   = $busy ? round(array_sum($busy) / count($busy), 1) : 0;
         $mx    = $waits ? max($waits) : 0;
         $stfavg = $stf_nonzero ? number_format(array_sum($stf_nonzero) / count($stf_nonzero), 1) : '—';
-        $first = substr($ev[0]['logged_at'], 11, 5);
-        $last  = substr($ev[count($ev) - 1]['logged_at'], 11, 5);
+        $first = isset($ev[0]['logged_at']) ? substr($ev[0]['logged_at'], 11, 5) : '';
+        $last  = isset($ev[count($ev) - 1]['logged_at']) ? substr($ev[count($ev) - 1]['logged_at'], 11, 5) : '';
         $dn    = $DN[(new DateTime($d, $tz))->format('l')];
         echo '<tr><td>' . esc_html($d) . '</td><td>' . esc_html($dn) . '</td><td>' . count($ev) . '</td><td>' . esc_html("$first–$last") . '</td><td>' . $avg . ' min</td><td>' . $mx . ' min</td><td>' . $stfavg . '</td></tr>';
     }
