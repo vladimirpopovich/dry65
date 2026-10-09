@@ -536,21 +536,51 @@ function dry65_live_history_page() {
     if (!current_user_can(DRY65_LIVE_CAP)) wp_die('Nemate dozvolu.');
     global $wpdb;
     $table = dry65_live_log_table();
-
-    $days  = isset($_GET['days']) ? max(1, min(90, (int) $_GET['days'])) : 14;
     $tz    = new DateTimeZone('Europe/Belgrade');
-    $since = (new DateTime('now', $tz))->modify('-' . ($days - 1) . ' days')->format('Y-m-d 00:00:00');
+    $today = new DateTime('now', $tz);
+
+    // ---- Filter: brzi preset (zadnjih N dana) ILI dan / nedelja / period (custom opseg) ----
+    $mode  = isset($_GET['mode']) ? sanitize_text_field($_GET['mode']) : 'preset';
+    $days  = isset($_GET['days']) ? max(1, min(90, (int) $_GET['days'])) : 14;
+    $since = $until = '';
+
+    if ($mode === 'day' && !empty($_GET['date'])) {
+        $d = DateTime::createFromFormat('Y-m-d', sanitize_text_field($_GET['date']), $tz);
+        if ($d) {
+            $since = $d->format('Y-m-d 00:00:00');
+            $until = (clone $d)->modify('+1 day')->format('Y-m-d 00:00:00');
+        }
+    } elseif ($mode === 'week' && !empty($_GET['date'])) {
+        $d = DateTime::createFromFormat('Y-m-d', sanitize_text_field($_GET['date']), $tz);
+        if ($d) {
+            $mon   = (clone $d)->modify('-' . ((int) $d->format('N') - 1) . ' days');
+            $since = $mon->format('Y-m-d 00:00:00');
+            $until = (clone $mon)->modify('+7 days')->format('Y-m-d 00:00:00');
+        }
+    } elseif ($mode === 'range' && !empty($_GET['from']) && !empty($_GET['to'])) {
+        $f = DateTime::createFromFormat('Y-m-d', sanitize_text_field($_GET['from']), $tz);
+        $t = DateTime::createFromFormat('Y-m-d', sanitize_text_field($_GET['to']), $tz);
+        if ($f && $t && $f <= $t) {
+            $since = $f->format('Y-m-d 00:00:00');
+            $until = (clone $t)->modify('+1 day')->format('Y-m-d 00:00:00');
+        }
+    }
+    if ($since === '') {
+        $mode  = 'preset';
+        $since = (clone $today)->modify('-' . ($days - 1) . ' days')->format('Y-m-d 00:00:00');
+        $until = (clone $today)->modify('+1 day')->format('Y-m-d 00:00:00');
+    }
 
     $rows = $wpdb->get_results($wpdb->prepare(
-        "SELECT logged_at, wait, closed, is_full, staff FROM {$table} WHERE logged_at >= %s ORDER BY logged_at ASC",
-        $since
+        "SELECT logged_at, wait, closed, is_full, staff FROM {$table} WHERE logged_at >= %s AND logged_at < %s ORDER BY logged_at ASC",
+        $since, $until
     ), ARRAY_A);
 
     // ---- Posete /live po satu (dana u istom periodu) ----
     $vtable = dry65_live_visit_table();
     $vrows  = $wpdb->get_results($wpdb->prepare(
-        "SELECT bucket, visitors FROM {$vtable} WHERE bucket >= %s ORDER BY bucket ASC",
-        $since
+        "SELECT bucket, visitors FROM {$vtable} WHERE bucket >= %s AND bucket < %s ORDER BY bucket ASC",
+        $since, $until
     ), ARRAY_A);
     $visits_by_hour = array_fill(8, 12, 0);
     $visits_total   = 0;
@@ -609,14 +639,30 @@ function dry65_live_history_page() {
     echo '<div class="wrap"><h1>Live istorija</h1>';
     echo '<p style="color:#666;">Popular times = vremenski ponderisano (status važi dok se ne promeni), radno vreme 08–20h, beogradsko vreme.</p>';
 
-    // Izbor perioda
+    // Izbor perioda — brzi presetovi (poslednjih N dana, do danas)
     echo '<p>';
     foreach ([7, 14, 30, 90] as $d) {
         $url = admin_url('admin.php?page=dry65-live-istorija&days=' . $d);
-        $st  = $d === $days ? 'font-weight:700;text-decoration:none;' : '';
-        echo '<a href="' . esc_url($url) . '" class="button ' . ($d === $days ? 'button-primary' : '') . '" style="margin-right:6px;' . $st . '">' . $d . ' dana</a>';
+        $active = ($mode === 'preset' && $d === $days);
+        echo '<a href="' . esc_url($url) . '" class="button ' . ($active ? 'button-primary' : '') . '" style="margin-right:6px;">' . $d . ' dana</a>';
     }
     echo '</p>';
+
+    // Izbor perioda — tačno određen dan / nedelja / proizvoljan opseg
+    $page_url  = admin_url('admin.php?page=dry65-live-istorija');
+    $def_date  = $today->format('Y-m-d');
+    $gv        = fn($k, $d = '') => isset($_GET[$k]) ? esc_attr(sanitize_text_field($_GET[$k])) : $d;
+    echo '<form method="get" style="margin:10px 0 4px;padding:10px 12px;background:#fff;border:1px solid #ccd0d4;max-width:700px;">';
+    echo '<input type="hidden" name="page" value="dry65-live-istorija">';
+    echo '<label style="margin-right:14px;"><input type="radio" name="mode" value="day"' . checked($mode, 'day', false) . '> Dan '
+       . '<input type="date" name="date" value="' . ($mode === 'day' ? $gv('date') : $def_date) . '"></label>';
+    echo '<label style="margin-right:14px;"><input type="radio" name="mode" value="week"' . checked($mode, 'week', false) . '> Nedelja (bilo koji dan u njoj) '
+       . '<input type="date" name="date" value="' . ($mode === 'week' ? $gv('date') : $def_date) . '"></label>';
+    echo '<label style="margin-right:14px;"><input type="radio" name="mode" value="range"' . checked($mode, 'range', false) . '> Period '
+       . '<input type="date" name="from" value="' . $gv('from') . '"> – <input type="date" name="to" value="' . $gv('to') . '"></label>';
+    echo '<button type="submit" class="button button-primary">Prikaži</button>';
+    echo '</form>';
+    echo '<p style="color:#666;font-size:12px;">Izabrano: <strong>' . esc_html(substr($since, 0, 10)) . '</strong> do <strong>' . esc_html((new DateTime($until, $tz))->modify('-1 day')->format('Y-m-d')) . '</strong> (uključivo).</p>';
 
     if (!$rows) { echo '<p><em>Nema podataka za izabrani period.</em></p></div>'; return; }
 
@@ -696,6 +742,81 @@ function dry65_live_history_page() {
     echo '</tbody></table>';
 
     echo '<p style="color:#999;font-size:12px;margin-top:18px;">Napomena: „Prosek ekipe" počinje da se puni od kada se broj frizera loguje. Stariji zapisi od pre te izmene mogu imati 0.</p>';
+
+    /* ============================================================
+       SIROVI KLIKOVI (bez vremenskog ponderisanja)
+       Tabele iznad "rastežu" svaki klik do sledećeg (status važi dok
+       se ne promeni) — ako je pauza između klikova duga, taj jedan
+       klik oboji ceo sat/dan prosekom, pa se čini manje tačno.
+       Ovde se broji SAMO ono što je stvarno kliknuto: tačan trenutak,
+       tačna vrednost čekanja, tačan broj zaposlenih iz rasporeda
+       u tom trenutku — bez interpolacije. ============================================================ */
+    echo '<h2 style="margin-top:34px;">Sirovi klikovi po satu (bez ponderisanja)</h2>';
+    echo '<p style="color:#666;">Samo stvarni klikovi (promena statusa), grupisani po satu kad su se desili. „Prosek zaposlenih" je prost prosek preko tih klikova — ne vremenski razvučen.</p>';
+
+    $rh_n = $rh_staffsum = array_fill(8, 12, 0);
+    $rh_staffmin = $rh_staffmax = array_fill(8, 12, null);
+    $rb_labels = ['Zatvoreno', 'Popunjeno', 'Slobodno (0)', 'Kratko (1-10)', 'Srednje (11-30)', 'Dugo (31+)'];
+    $rh_dist = [];
+    foreach ($rb_labels as $bl) for ($h = 8; $h < 20; $h++) $rh_dist[$h][$bl] = 0;
+
+    foreach ($rows as $r) {
+        $h = (int) substr($r['logged_at'], 11, 2);
+        if ($h < 8 || $h >= 20) continue;
+        $w   = (int) $r['wait'];
+        $cl  = (int) $r['closed'];
+        $fl  = (int) $r['is_full'];
+        $stf = (int) $r['staff'];
+
+        $rh_n[$h]++;
+        $rh_staffsum[$h] += $stf;
+        $rh_staffmin[$h]  = ($rh_staffmin[$h] === null) ? $stf : min($rh_staffmin[$h], $stf);
+        $rh_staffmax[$h]  = ($rh_staffmax[$h] === null) ? $stf : max($rh_staffmax[$h], $stf);
+
+        $bl = $cl ? 'Zatvoreno' : ($fl ? 'Popunjeno' : ($w == 0 ? 'Slobodno (0)' : ($w <= 10 ? 'Kratko (1-10)' : ($w <= 30 ? 'Srednje (11-30)' : 'Dugo (31+)'))));
+        $rh_dist[$h][$bl]++;
+    }
+
+    echo '<table class="widefat striped" style="max-width:980px;"><thead><tr><th>Sat</th><th>Broj klikova</th><th>Prosek zaposlenih (klik)</th><th>Min–Max zaposlenih</th><th>Raspodela klikova</th></tr></thead><tbody>';
+    for ($h = 8; $h < 20; $h++) {
+        if ($rh_n[$h] <= 0) continue;
+        $avg_stf = $rh_staffsum[$h] / $rh_n[$h];
+        $dist_str = [];
+        foreach ($rb_labels as $bl) if ($rh_dist[$h][$bl] > 0) $dist_str[] = $bl . ': ' . $rh_dist[$h][$bl];
+        echo '<tr><td><strong>' . sprintf('%02d', $h) . 'h</strong></td>';
+        echo '<td>' . $rh_n[$h] . '</td>';
+        echo '<td>' . number_format($avg_stf, 1) . '</td>';
+        echo '<td>' . $rh_staffmin[$h] . '–' . $rh_staffmax[$h] . '</td>';
+        echo '<td style="color:#555;">' . esc_html(implode(' · ', $dist_str)) . '</td></tr>';
+    }
+    echo '</tbody></table>';
+
+    // ---- Sirovo po danu u nedelji ----
+    echo '<h2 style="margin-top:28px;">Sirovo po danu u nedelji</h2>';
+    echo '<p style="color:#666;">Svi klikovi u izabranom periodu, grupisani po danu u nedelji (bez obzira na datum) — za poređenje koji dani najčešće traže pojačanje.</p>';
+
+    $wd_order = ['Monday' => 'Ponedeljak', 'Tuesday' => 'Utorak', 'Wednesday' => 'Sreda', 'Thursday' => 'Četvrtak', 'Friday' => 'Petak', 'Saturday' => 'Subota', 'Sunday' => 'Nedelja'];
+    $wd_n = $wd_waitsum = $wd_staffsum = $wd_busy_n = [];
+    foreach ($wd_order as $lbl) { $wd_n[$lbl] = $wd_busy_n[$lbl] = 0; $wd_waitsum[$lbl] = $wd_staffsum[$lbl] = 0.0; }
+
+    foreach ($rows as $r) {
+        $dt  = new DateTime($r['logged_at'], $tz);
+        $lbl = $wd_order[$dt->format('l')];
+        $w   = (int) $r['wait'];
+        $wd_n[$lbl]++;
+        $wd_staffsum[$lbl] += (int) $r['staff'];
+        if (!$r['closed'] && !$r['is_full'] && $w > 0) { $wd_waitsum[$lbl] += $w; $wd_busy_n[$lbl]++; }
+    }
+
+    echo '<table class="widefat striped" style="max-width:720px;"><thead><tr><th>Dan</th><th>Broj klikova</th><th>Prosek čekanja (kad &gt;0, raw)</th><th>Prosek zaposlenih (raw)</th></tr></thead><tbody>';
+    foreach ($wd_order as $lbl) {
+        if ($wd_n[$lbl] <= 0) continue;
+        $avg_w   = $wd_busy_n[$lbl] > 0 ? number_format($wd_waitsum[$lbl] / $wd_busy_n[$lbl], 1) . ' min' : '—';
+        $avg_stf = number_format($wd_staffsum[$lbl] / $wd_n[$lbl], 1);
+        echo '<tr><td><strong>' . esc_html($lbl) . '</strong></td><td>' . $wd_n[$lbl] . '</td><td>' . $avg_w . '</td><td>' . $avg_stf . '</td></tr>';
+    }
+    echo '</tbody></table>';
+
     echo '</div>';
 }
 
