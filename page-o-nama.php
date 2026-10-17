@@ -38,6 +38,7 @@ $stats = [
             '<a href="' . esc_url(home_url('/live/')) . '" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">dry65.com/live</a>'
           ); ?></p>
           <p><?php echo tk('onama.story3', 'Taj fokus nam omogućava da budemo brzi, dosledni i da održimo visok kvalitet usluge, bez obzira na to ko te tog dana feniše. Cilj je jednostavan, da znaš šta možeš da očekuješ svaki put kada dođeš u Dry65.'); ?></p>
+          <p><?php echo tk('onama.mission', 'Cilj je jednostavan, da feniranje Beograd i feniranje Novi Beograd prestanu da budu pretraga, a postanu samo jedna reč: Dry65.'); ?></p>
         </div>
       </div>
     </div>

@@ -388,10 +388,13 @@ function dry65_aw_rest_serials($request) {
 function dry65_aw_rest_latest($request) {
     $serial = $request['serial'];
     if (!dry65_aw_check_auth($request, $serial)) return new WP_REST_Response(null, 401);
-    $acc = dry65_aw_acc_from_serial($serial);
-    if (!$acc) return new WP_REST_Response(null, 404);
-    $path = dry65_wallet_apple_build($acc);
-    if (!$path) return new WP_REST_Response(null, 500);
+    // Filter prvo: serijske koje NISU lični nalog (npr. b2b "be{id}") grade sopstveni .pkpass.
+    $path = apply_filters('dry65_aw_pkpass_path_for_serial', null, $serial);
+    if (!$path) {
+        $acc = dry65_aw_acc_from_serial($serial);
+        if ($acc) $path = dry65_wallet_apple_build($acc);
+    }
+    if (!$path) return new WP_REST_Response(null, 404);
     nocache_headers();
     header('Content-Type: application/vnd.apple.pkpass');
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', time()) . ' GMT');
