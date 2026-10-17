@@ -17,7 +17,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
      ====================================================== -->
 <section style="position:relative;overflow:hidden;" class="bg-paper2">
   <div class="wrap" style="padding-top:clamp(24px,3vw,48px);padding-bottom:clamp(40px,6vw,72px);">
-    <div style="display:grid;grid-template-columns:1.05fr 0.95fr;gap:clamp(28px,4vw,56px);align-items:center;" class="hero-grid">
+    <div style="display:grid;grid-template-columns:1.05fr 0.95fr;gap:clamp(28px,4vw,56px);align-items:start;" class="hero-grid">
 
       <div>
         <h1 class="display caps" style="font-size:clamp(32px,4.8vw,64px);margin:0;line-height:1.04;letter-spacing:0.005em;color:var(--ink);font-weight:300;">
