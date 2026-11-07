@@ -57,16 +57,21 @@ add_action('wp_enqueue_scripts', 'dry65_scripts');
 function dry65_head_fonts() {
     $tpl = get_template_directory_uri();
     // Preload ključnih fontova (telo + glavni naslovi) da su spremni pre iscrtavanja
-    foreach (['hanken-grotesk-400-latin', 'hanken-grotesk-400-latin-ext', 'cormorant-garamond-300-latin'] as $f) {
+    // hanken-grotesk-600-latin: <strong> u hero lead-u + dugmad; bez preload-a stizao kasno i pomerao hero (CLS)
+    foreach (['hanken-grotesk-400-latin', 'hanken-grotesk-400-latin-ext', 'hanken-grotesk-600-latin', 'cormorant-garamond-300-latin'] as $f) {
         echo '<link rel="preload" href="' . esc_url($tpl . '/assets/fonts/' . $f . '.woff2') . '" as="font" type="font/woff2" crossorigin>' . "\n";
     }
-    // @font-face UGRAĐEN u head (ne eksterni fajl) — LiteSpeed ne može da ga odloži, pa nema FOUT skoka
+    // @font-face UGRAĐEN u head (ne eksterni fajl).
+    // data-no-optimize="1" je OBAVEZAN: bez njega LiteSpeed (CSS Combine + Load CSS Async) izvlači ovaj
+    // <style> u asinhroni CSS, pa prvi prikaz nema fontove ni fallback mere -> tekst se preslaguje i hero skače.
     static $css = null;
     if ($css === null) {
         $raw = @file_get_contents(get_template_directory() . '/assets/fonts/fonts.css');
         $css = $raw ? str_replace('url(fonts/', 'url(' . $tpl . '/assets/fonts/', $raw) : '';
+        // fonts.css sadrži i "… Fallback" @font-face (Georgia/Arial sa size-adjust izmerenim prema pravim fontovima),
+        // da zamena fallback -> pravi font ne menja prelom redova u hero-u.
     }
-    if ($css) echo '<style id="dry65-fonts">' . $css . '</style>' . "\n";
+    if ($css) echo '<style id="dry65-fonts" data-no-optimize="1">' . $css . '</style>' . "\n";
 }
 add_action('wp_head', 'dry65_head_fonts', 1);
 

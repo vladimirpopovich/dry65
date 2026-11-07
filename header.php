@@ -8,7 +8,7 @@
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
 
-<style>
+<style data-no-optimize="1">
   .nav-inner { position: relative; }
   /* Chip — desktop: poslednji element u meniju (skroz desno, u toku) */
   .nav-live {

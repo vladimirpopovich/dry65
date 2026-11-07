@@ -171,12 +171,12 @@ function dry65_seo_map() {
 
 /* ---- Helper: vrati current page slug (ili 'home') ---- */
 function dry65_seo_current_slug() {
-    if (is_front_page() || is_home()) return 'home';
+    if (is_front_page()) return 'home';
+    if (is_home() || is_post_type_archive('post')) return 'blog';
     if (is_page()) {
         global $post;
         return $post ? $post->post_name : null;
     }
-    if (is_post_type_archive('post') || is_home()) return 'blog';
     return null;
 }
 
