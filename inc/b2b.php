@@ -1197,21 +1197,30 @@ add_action('template_redirect', function () {
         if ($emp && (int) $emp->company_id !== (int) $co->id) $emp = null; // samo svoji zaposleni
         $name  = mb_substr(sanitize_text_field(wp_unslash($_POST['emp_name'] ?? '')), 0, 120);
         $email = sanitize_email(wp_unslash($_POST['emp_email'] ?? ''));
+        $is_vau = dry65_b2b_type($co) === 'vauceri';
+        $vamt   = max(0, min(1000000, (int) ($_POST['emp_amount'] ?? 0)));
         if ($act === 'add' && $name !== '') {
-            $new_id = dry65_b2b_employee_create($co->id, $name, $email);
+            $new_id = dry65_b2b_employee_create($co->id, $name, $email, $is_vau ? $vamt : null);
             $msg = 'dodat';
             if ($new_id && is_email($email)) $msg = dry65_b2b_employee_send_email(dry65_b2b_employee_get($new_id), $co) ? 'dodat_poslato' : 'dodat';
             if ($new_id && dry65_b2b_type($co) === 'vauceri') {
                 // Novi vaučer utiče na fakturisanje: javi salonu.
                 $biz = function_exists('dry65_biz') ? dry65_biz() : ['email' => 'office@dry65.com'];
                 wp_mail($biz['email'], 'B2B: ' . $co->name . ' dodao zaposlenog (vaučer)', $co->name . ' je u panelu dodao zaposlenog: ' . $name
-                    . "\nIznos vaučera: " . dry65_b2b_din($co->company_amount)
+                    . "\nIznos vaučera: " . dry65_b2b_din($vamt)
                     . "\n\nPregled: " . admin_url('admin.php?page=dry65-b2b&company=' . (int) $co->id));
             }
         } elseif ($act === 'edit' && $emp && $name !== '') {
             $wpdb->update(dry65_b2b_emp_table(), ['name' => $name, 'email' => is_email($email) ? $email : ''], ['id' => (int) $emp->id], ['%s','%s'], ['%d']);
             dry65_b2b_wallet_sync_queue((int) $emp->id); // ime je na Wallet kartici
             $msg = 'sacuvano';
+            if ($is_vau && $vamt > 0) {
+                dry65_b2b_employee_topup(dry65_b2b_employee_get($emp->id), $vamt);
+                $biz = function_exists('dry65_biz') ? dry65_biz() : ['email' => 'office@dry65.com'];
+                wp_mail($biz['email'], 'B2B: ' . $co->name . ' dopunio vaučer', $co->name . ' je u panelu dopunio vaučer zaposlenom ' . $name . ' za ' . dry65_b2b_din($vamt)
+                    . "\n\nPregled: " . admin_url('admin.php?page=dry65-b2b&company=' . (int) $co->id));
+                $msg = 'dopunjeno';
+            }
         } elseif ($act === 'send' && $emp) {
             $msg = dry65_b2b_employee_send_email($emp, $co) ? 'poslato' : 'nema_email';
         } elseif ($act === 'remove' && $emp) {
@@ -1307,20 +1316,24 @@ add_action('template_redirect', function () {
           $btn    = 'cursor:pointer;border:0;border-radius:999px;padding:11px 22px;font-size:14px;font-weight:600;background:var(--oxblood,#783332);color:#fff;';
           $btn2   = 'cursor:pointer;border:0;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;background:#fff;color:var(--ink,#111C1D);box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);';
           $zmsg   = ['dodat' => 'Zaposleni dodat. Pošaljite mu link kartice ili dodajte email.', 'dodat_poslato' => 'Zaposleni dodat, kartica je poslata mejlom.',
-                     'sacuvano' => 'Sačuvano.', 'poslato' => 'Kartica je poslata mejlom.', 'nema_email' => 'Mejl nije poslat, unesite ispravan email.', 'uklonjen' => 'Zaposleni uklonjen.'];
+                     'sacuvano' => 'Sačuvano.', 'dopunjeno' => 'Sačuvano, vaučer je dopunjen.', 'poslato' => 'Kartica je poslata mejlom.', 'nema_email' => 'Mejl nije poslat, unesite ispravan email.', 'uklonjen' => 'Zaposleni uklonjen.'];
           $z = sanitize_key($_GET['z'] ?? '');
         ?>
         <h2 id="zaposleni" style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;scroll-margin-top:20px;">Zaposleni (<?php echo count($emps); ?>)</h2>
         <?php if (isset($zmsg[$z])): ?><p style="margin:8px 0 12px;font-weight:600;color:<?php echo $z === 'nema_email' ? '#a00' : 'var(--ink)'; ?>;"><?php echo esc_html($zmsg[$z]); ?></p><?php endif; ?>
         <div style="background:#fff;box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);border-radius:16px;padding:18px 20px;margin:10px 0 26px;">
-          <form method="post" action="<?php echo esc_url($form_action); ?>" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;" class="b2b-add">
+          <?php $vau = dry65_b2b_type($co) === 'vauceri'; $cols = $vau ? '1fr 1fr 150px auto' : '1fr 1fr auto'; ?>
+          <form method="post" action="<?php echo esc_url($form_action); ?>" style="display:grid;grid-template-columns:<?php echo $cols; ?>;gap:10px;align-items:end;" class="b2b-add">
             <input type="hidden" name="dry65_b2b_emp_nonce" value="<?php echo esc_attr($nonce); ?>">
             <input type="hidden" name="emp_act" value="add">
             <label style="font-size:13px;">Ime i prezime<input type="text" name="emp_name" required maxlength="120" style="<?php echo $inp; ?>margin-top:4px;"></label>
             <label style="font-size:13px;">Email (šaljemo karticu)<input type="email" name="emp_email" style="<?php echo $inp; ?>margin-top:4px;"></label>
+            <?php if ($vau): ?>
+            <label style="font-size:13px;">Iznos vaučera (din)<input type="number" name="emp_amount" min="1" step="1" inputmode="numeric" required value="<?php echo (int) $co->company_amount ?: ''; ?>" style="<?php echo $inp; ?>margin-top:4px;"></label>
+            <?php endif; ?>
             <button type="submit" style="<?php echo $btn; ?>">Dodaj</button>
           </form>
-          <p class="muted" style="font-size:12.5px;margin:8px 0 0;">Zaposleni dobija karticu mejlom i dodaje je u Apple ili Google Wallet. Na kasi pokazuje karticu.<?php if (dry65_b2b_type($co) === 'vauceri'): ?> Novi zaposleni dobija vaučer od <?php echo esc_html(dry65_b2b_din($co->company_amount)); ?>.<?php endif; ?></p>
+          <p class="muted" style="font-size:12.5px;margin:8px 0 0;">Zaposleni dobija karticu mejlom i dodaje je u Apple ili Google Wallet. Na kasi pokazuje karticu.</p>
 
           <?php if ($emps): ?>
           <div style="margin-top:14px;">
@@ -1347,12 +1360,13 @@ add_action('template_redirect', function () {
                 </div>
               </div>
               <details style="margin-top:8px;">
-                <summary style="cursor:pointer;font-size:13px;color:var(--clay,#b07a5a);">Izmeni ime ili email</summary>
-                <form method="post" action="<?php echo esc_url($form_action); ?>" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:8px;align-items:end;" class="b2b-add">
+                <summary style="cursor:pointer;font-size:13px;color:var(--clay,#b07a5a);"><?php echo $vau ? 'Izmeni ili dopuni vaučer' : 'Izmeni ime ili email'; ?></summary>
+                <form method="post" action="<?php echo esc_url($form_action); ?>" style="display:grid;grid-template-columns:<?php echo $cols; ?>;gap:8px;margin-top:8px;align-items:end;" class="b2b-add">
                   <input type="hidden" name="dry65_b2b_emp_nonce" value="<?php echo esc_attr($nonce); ?>">
                   <input type="hidden" name="emp_act" value="edit"><input type="hidden" name="emp_id" value="<?php echo (int) $e->id; ?>">
                   <input type="text" name="emp_name" value="<?php echo esc_attr($e->name); ?>" required maxlength="120" style="<?php echo $inp; ?>">
                   <input type="email" name="emp_email" value="<?php echo esc_attr($e->email); ?>" placeholder="Email" style="<?php echo $inp; ?>">
+                  <?php if ($vau): ?><input type="number" name="emp_amount" min="1" step="1" inputmode="numeric" placeholder="Dopuna (din)" style="<?php echo $inp; ?>"><?php endif; ?>
                   <button type="submit" style="<?php echo $btn; ?>">Sačuvaj</button>
                 </form>
               </details>
