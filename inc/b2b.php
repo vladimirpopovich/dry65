@@ -1053,9 +1053,12 @@ add_action('template_redirect', function () {
 /* ============================================================
    WP-ADMIN — „B2B Firme"
    ============================================================ */
+// Prioritet 9: meni mora da postoji PRE nego što WP doda „Prijave" (CPT, prioritet 10),
+// inače Prijave preuzmu link „B2B Firme" i lista firmi nestane iz menija.
 add_action('admin_menu', function () {
     add_menu_page('B2B Firme', 'B2B Firme', DRY65_PK_CAP, 'dry65-b2b', 'dry65_b2b_admin_page', 'dashicons-building', 5);
-});
+    add_submenu_page('dry65-b2b', 'B2B Firme', 'Firme', DRY65_PK_CAP, 'dry65-b2b', 'dry65_b2b_admin_page');
+}, 9);
 
 function dry65_b2b_admin_page() {
     if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
