@@ -57,29 +57,24 @@ add_action('wp_enqueue_scripts', 'dry65_scripts');
 function dry65_head_fonts() {
     $tpl = get_template_directory_uri();
 
-    // KRITIČNI fontovi = samo ono što se vidi na prvom ekranu (izmereno na mobilnom hero-u):
-    // h1 Cormorant 300, lead Hanken 400 (+ext za š/ž), <strong>/dugmad/nav chip Hanken 600 (+ext za „Mesečni").
-    // Oni se preload-uju i deklarišu odmah. SVI OSTALI (Cormorant 400/600/italic, Hanken 500, Inter, ostali -ext)
-    // deklarišu se tek posle window load-a: inače ~160 KB fontova visokog prioriteta otima protok hero slici (LCP).
-    // Do tada tekst koristi "… Fallback" lica čije su mere podešene na prave fontove, pa zamena ne pravi CLS.
+    // Fontovi su VARIJABILNI: jedan fajl po porodici+subsetu pokriva sve debljine (fonts.css ima raspon font-weight).
+    // KRITIČNI = ono što se vidi na prvom ekranu (izmereno): Cormorant latin (h1), Hanken latin + latin-ext
+    // (lead 400, strong/dugmad/nav 500-600, š/ž/č). Preload-uju se i deklarišu odmah.
+    // OSTALI (Cormorant latin-ext i italic, Inter) deklarišu se tek posle window load-a, da ne otimaju protok
+    // hero slici (LCP). Do tada tekst koristi "… Fallback" lica sa podešenim merama, pa zamena ne pravi CLS.
     $critical = [
         'cormorant-garamond-300-latin',
         'hanken-grotesk-400-latin',
         'hanken-grotesk-400-latin-ext',
-        'hanken-grotesk-600-latin',
-        'hanken-grotesk-600-latin-ext',
     ];
-    // Podstrane: h1 je .display.caps = Cormorant 600 (sa š/č/đ), a /live/ h1 je 300 sa „đ" -> i to je prvi ekran
-    // $now = deklariše se odmah (preload samo $critical). Na podstranama prvi ekran koristi i Hanken 500 / Cormorant 400
-    // (proveren /kontakt, /usluge, /cenovnik, /live) -> odmah ali bez preload-a, da ne bi bilo CLS-a.
-    $now = $critical;
+    // Podstrane: h1 je .display.caps = Cormorant 600 sa š/č/đ -> i latin-ext je prvi ekran
     if (!is_front_page()) {
-        array_push($critical, 'cormorant-garamond-600-latin', 'cormorant-garamond-600-latin-ext', 'cormorant-garamond-300-latin-ext');
-        $now = array_merge($critical, ['hanken-grotesk-500-latin', 'hanken-grotesk-500-latin-ext', 'cormorant-garamond-400-latin', 'cormorant-garamond-400-latin-ext']);
+        $critical[] = 'cormorant-garamond-300-latin-ext';
     }
-    // Desktop (>=1081px, gde je meni vidljiv): nav linkovi su Hanken 500, a na širokim ekranima i Cormorant 300 sa š/č.
-    // Deklarišu se odmah samo kroz @media; na mobilnom (meni sakriven) ostaju kasni.
-    $now_desktop = ['hanken-grotesk-500-latin', 'cormorant-garamond-300-latin-ext'];
+    $now = $critical;
+    // Desktop (>=1081px): na širokim ekranima je i Cormorant sa š/č u prvom ekranu.
+    // Deklariše se odmah samo kroz @media; na mobilnom ostaje kasan.
+    $now_desktop = ['cormorant-garamond-300-latin-ext'];
     foreach ($critical as $f) {
         echo '<link rel="preload" href="' . esc_url($tpl . '/assets/fonts/' . $f . '.woff2') . '" as="font" type="font/woff2" crossorigin>' . "\n";
     }
