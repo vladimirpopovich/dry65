@@ -1060,7 +1060,7 @@ function dry65_pk_admin_detail($id) {
           <p style="color:#666;font-size:12.5px;margin-top:0;">Pošalji gostu ovaj link ili stavi QR na karticu. Samo za gledanje — gost ne može da menja.</p>
           <code style="display:block;background:#f0f0f1;padding:10px 12px;border-radius:6px;user-select:all;font-size:13px;word-break:break-all;"><?php echo esc_html($url); ?></code>
           <div style="margin-top:12px;width:150px;"><?php echo dry65_pk_qr_html($url, 4); ?></div>
-          <p style="color:#666;font-size:12px;margin-top:6px;">QR za štampu na kartici / wallet. Osoblje ga skenira (ulogovano) → otvara karticu → dugme „− 1 feniranje".</p>
+          <p style="color:#666;font-size:12px;margin-top:6px;">QR za štampu na kartici / wallet. Osoblje ga skenira (ulogovano), otvara karticu i skida feniranje ili, za vaučer, unosi iznos.</p>
           <p style="margin-top:8px;"><a class="button" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener">Otvori karticu ↗</a></p>
 
           <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:14px;border-top:1px solid #eee;padding-top:12px;">
@@ -1665,6 +1665,20 @@ add_action('template_redirect', function () {
               <?php else: ?>
               <div class="mono" style="letter-spacing:0.1em;text-transform:uppercase;font-size:12px;color:<?php echo $th['sub']; ?>;">Preostalo</div>
               <div style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-size:clamp(30px,8vw,46px);margin-top:2px;line-height:1;"><?php echo esc_html(number_format((int) $acc->balance, 0, ',', '.')); ?> din</div>
+              <?php if ($can_staff && (int) $acc->balance > 0 && !$exp): ?>
+              <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:20px auto 0;max-width:280px;display:grid;gap:10px;text-align:left;">
+                <input type="hidden" name="action" value="dry65_pk_spend">
+                <input type="hidden" name="id" value="<?php echo (int) $acc->id; ?>">
+                <input type="hidden" name="return" value="<?php echo esc_url($card_url); ?>">
+                <input type="hidden" name="pin" class="pk-card-pin" value="">
+                <?php wp_nonce_field('dry65_pk_spend'); ?>
+                <label style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:<?php echo $th['sub']; ?>;">Iznos za skidanje (din)
+                  <input type="number" name="amount" min="1" max="<?php echo (int) $acc->balance; ?>" step="1" inputmode="numeric" required style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:12px 14px;border:1px solid rgba(17,28,29,0.18);border-radius:12px;font-size:20px;text-align:center;background:#fff;color:#2a201a;">
+                </label>
+                <input type="text" name="note" placeholder="Napomena (opciono), npr. Feniranje" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1px solid rgba(17,28,29,0.18);border-radius:12px;font-size:15px;background:#fff;color:#2a201a;">
+                <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:13px 20px;font-size:16px;font-weight:600;background:#fff;color:#2a201a;box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);">Skini iznos</button>
+              </form>
+              <?php endif; ?>
               <?php endif; ?>
 
               <?php if (isset($_GET['sk'])): ?><p style="margin:16px 0 0;font-weight:600;">Skinuto. Novo stanje je gore.</p><?php endif; ?>
@@ -1702,8 +1716,6 @@ add_action('template_redirect', function () {
             </div>
             <?php endif; ?>
             <p class="muted" style="text-align:center;margin:14px 0 0;font-size:13px;">Pokaži ovu karticu osoblju u salonu.</p>
-            <?php elseif ($acc->type === 'vaucer'): ?>
-            <p style="text-align:center;margin:14px 0 0;font-size:13px;"><a href="<?php echo esc_url(admin_url('admin.php?page=dry65-paketi&account=' . (int) $acc->id)); ?>" style="text-decoration:underline;">Vaučer se skida u dashboardu ↗</a></p>
             <?php endif; ?>
 
             <p class="muted" style="text-align:center;margin-top:22px;font-size:14px;">Dry65, West 65, Novi Beograd.</p>
@@ -1790,7 +1802,7 @@ add_action('wp_ajax_dry65_pk_scan', function () {
 
     if ($mode === 'spend') {
         if ($acc->type !== 'paket') {
-            wp_send_json_error(['msg' => 'Ovo je vaučer — skida se u dashboardu (unosi se iznos).', 'state' => dry65_pk_public_state($acc)], 400);
+            wp_send_json_error(['msg' => 'Ovo je vaučer. Otvori karticu i unesi iznos za skidanje.', 'state' => dry65_pk_public_state($acc)], 400);
         }
         if (dry65_pk_is_expired($acc)) {
             wp_send_json_error(['msg' => 'Kartica je istekla.', 'state' => dry65_pk_public_state($acc)], 400);
@@ -1921,7 +1933,7 @@ add_action('template_redirect', function () {
     <script src="<?php echo esc_url(get_template_directory_uri() . '/assets/js/html5-qrcode.min.js'); ?>"></script>
     <script>
     (function(){
-      var AJAX=<?php echo wp_json_encode($ajax); ?>, NONCE=<?php echo wp_json_encode($nonce); ?>;
+      var AJAX=<?php echo wp_json_encode($ajax); ?>, NONCE=<?php echo wp_json_encode($nonce); ?>, CARD_BASE=<?php echo wp_json_encode(home_url("/kartica/")); ?>;
       var HAS_STAFF=<?php echo count(dry65_pk_staff_all()) ? 'true' : 'false'; ?>;
       var pinGate=document.getElementById('pk-pin-gate'), pinInput=document.getElementById('pk-pin-input'),
           pinStatus=document.getElementById('pk-pin-status'), pinGo=document.getElementById('pk-pin-go'),
@@ -1962,7 +1974,8 @@ add_action('template_redirect', function () {
         resPlan.textContent=state.plan;
         resName.textContent=state.name;
         if(state.type!=='paket'){
-          resPunch.innerHTML='<p class="muted" style="margin:0;">Vaučer '+escapeHtml(state.text)+' — skida se u dashboardu (unosi se iznos).</p>';
+          resPunch.innerHTML='<p class="muted" style="margin:0 0 12px;">Vaučer: '+escapeHtml(state.text)+'</p>'
+            +'<a href="'+CARD_BASE+encodeURIComponent(state.code)+'/" style="display:inline-block;border-radius:999px;padding:12px 26px;font-size:15px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;text-decoration:none;">Skini iznos</a>';
           resHint.textContent=''; return;
         }
         var lock=!!state.expired, h='';

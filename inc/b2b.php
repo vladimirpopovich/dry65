@@ -24,7 +24,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-if (!defined('DRY65_B2B_DB')) define('DRY65_B2B_DB', 2);
+if (!defined('DRY65_B2B_DB')) define('DRY65_B2B_DB', 3);
 
 /* ---- Tabele ---- */
 function dry65_b2b_table()     { global $wpdb; return $wpdb->prefix . 'dry65_b2b_companies'; }
@@ -60,6 +60,7 @@ function dry65_b2b_install() {
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         company_id BIGINT UNSIGNED NOT NULL,
         name VARCHAR(190) NOT NULL DEFAULT '',
+        email VARCHAR(190) NOT NULL DEFAULT '',
         code VARCHAR(20) NOT NULL,
         status VARCHAR(10) NOT NULL DEFAULT 'active',
         created_at DATETIME NOT NULL,
@@ -349,20 +350,57 @@ function dry65_b2b_update($id, $name, $contact_email, $initial, $price_rsd, $sta
 }
 
 /* ---- Zaposleni ---- */
-function dry65_b2b_employee_create($company_id, $name) {
+function dry65_b2b_employee_create($company_id, $name, $email = '') {
     global $wpdb;
     $co = dry65_b2b_get($company_id);
     $name = sanitize_text_field($name);
+    $email = sanitize_email($email);
     if (!$co || $name === '') return 0;
     $code = dry65_b2b_gen_code();
     $ok = $wpdb->insert(dry65_b2b_emp_table(), [
         'company_id' => (int) $company_id,
         'name'       => $name,
+        'email'      => is_email($email) ? $email : '',
         'code'       => $code,
         'status'     => 'active',
         'created_at' => dry65_b2b_now(),
-    ], ['%d','%s','%s','%s','%s']);
+    ], ['%d','%s','%s','%s','%s','%s']);
     return $ok ? (int) $wpdb->insert_id : 0;
+}
+
+/* Mejl zaposlenom sa linkom ka B2B kartici (na kartici su Apple/Google Wallet dugmad). */
+function dry65_b2b_employee_send_email($employee, $co) {
+    if (!$employee || !$co || empty($employee->email) || !is_email($employee->email)) return false;
+    $url  = dry65_b2b_card_url($employee->code, $co->name);
+    $logo = get_template_directory_uri() . '/assets/logo-square.png';
+    $btn  = 'display:inline-block;padding:13px 24px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;text-decoration:none;background:#b07a5a;color:#ffffff;';
+    ob_start(); ?>
+<div style="background:#f7f1e7;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#2a201a;">
+  <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px 26px;">
+    <div style="text-align:center;margin-bottom:16px;"><img src="<?php echo esc_url($logo); ?>" width="56" height="56" alt="Dry65" style="border-radius:50%;display:inline-block;"></div>
+    <p style="font-size:16px;margin:0 0 6px;">Zdravo <?php echo esc_html($employee->name); ?>,</p>
+    <p style="font-size:15px;color:#555555;margin:0 0 18px;line-height:1.5;"><?php echo esc_html($co->name); ?> vam je obezbedio/la feniranje u Dry65 salonu. Vaša kartica je spremna: otvorite je i dodajte u Apple ili Google Wallet.</p>
+    <div style="text-align:center;margin:0 0 6px;">
+      <a href="<?php echo esc_url($url); ?>" style="<?php echo $btn; ?>">Otvori karticu</a>
+    </div>
+    <p style="font-size:13px;color:#888888;text-align:center;margin:20px 0 0;line-height:1.5;">Ne treba zakazivanje. Dođite kad vam odgovara i pokažite karticu na kasi.</p>
+    <p style="font-size:12px;color:#aaaaaa;text-align:center;margin:16px 0 0;">Dry65, West 65, Novi Beograd</p>
+  </div>
+</div>
+<?php
+    $html = ob_get_clean();
+    $from = (function_exists('dry65_biz') && !empty(dry65_biz()['email'])) ? dry65_biz()['email'] : 'office@dry65.com';
+    $set_from  = function () use ($from) { return $from; };
+    $set_name  = function () { return 'Dry65'; };
+    $set_ctype = function () { return 'text/html'; };
+    add_filter('wp_mail_from', $set_from);
+    add_filter('wp_mail_from_name', $set_name);
+    add_filter('wp_mail_content_type', $set_ctype);
+    $ok = wp_mail($employee->email, 'Vaša Dry65 kartica (' . $co->name . ')', $html, ['Reply-To: Dry65 <' . $from . '>']);
+    remove_filter('wp_mail_from', $set_from);
+    remove_filter('wp_mail_from_name', $set_name);
+    remove_filter('wp_mail_content_type', $set_ctype);
+    return $ok;
 }
 function dry65_b2b_employee_delete($id) {
     global $wpdb;
@@ -959,6 +997,12 @@ add_action('template_redirect', function () {
     }
 
     $company_id = is_user_logged_in() ? dry65_b2b_user_company_id(get_current_user_id()) : 0;
+    // Admin pregled: /b2b/?firma=ID prikazuje panel te firme tačno kako ga firma vidi (samo čitanje).
+    $admin_preview = false;
+    if (isset($_GET['firma']) && current_user_can(DRY65_PK_CAP)) {
+        $company_id = (int) $_GET['firma'];
+        $admin_preview = true;
+    }
     $co = $company_id ? dry65_b2b_get($company_id) : null;
 
     status_header(200);
@@ -1001,12 +1045,18 @@ add_action('template_redirect', function () {
         uasort($per_emp, function ($a, $b) { return $b['count'] - $a['count']; });
       ?>
       <div class="wrap" style="max-width:720px;margin:0 auto;">
+        <?php if ($admin_preview): ?>
+          <div style="background:#fff;box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);border-radius:12px;padding:10px 14px;margin-bottom:20px;font-size:13px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <span><strong>Pregled kao admin.</strong> Ovako panel vidi firma.</span>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=dry65-b2b&company=' . (int) $co->id)); ?>">Nazad u wp-admin</a>
+          </div>
+        <?php endif; ?>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
           <div>
             <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:26px;width:auto;display:block;margin-bottom:8px;">
             <h1 class="display caps" style="font-size:clamp(22px,3.4vw,30px);margin:0;"><?php echo esc_html($co->name); ?></h1>
           </div>
-          <a href="<?php echo esc_url(home_url('/b2b/?logout=1')); ?>" style="font-size:13px;">Odjavi se</a>
+          <?php if (!$admin_preview): ?><a href="<?php echo esc_url(home_url('/b2b/?logout=1')); ?>" style="font-size:13px;">Odjavi se</a><?php endif; ?>
         </div>
 
         <div style="background:#33302c;color:#efe1d2;border-radius:20px;padding:22px 24px;margin-bottom:22px;">
@@ -1126,7 +1176,8 @@ function dry65_b2b_admin_detail($id) {
       <p><a href="<?php echo esc_url(admin_url('admin.php?page=dry65-b2b')); ?>">← Sve firme</a></p>
       <h1><?php echo esc_html($co->name); ?></h1>
       <?php if (isset($_GET['saved'])): ?><div class="notice notice-success is-dismissible"><p>Sačuvano.</p></div><?php endif; ?>
-      <?php if (isset($_GET['emp_added'])): ?><div class="notice notice-success is-dismissible"><p>Zaposleni dodat.</p></div><?php endif; ?>
+      <?php if (isset($_GET['emp_added'])): ?><div class="notice notice-success is-dismissible"><p>Zaposleni dodat<?php echo isset($_GET['mail']) ? ($_GET['mail'] === '1' ? ', kartica poslata mejlom.' : '. Mejl NIJE poslat, proveri email adresu.') : '.'; ?></p></div><?php endif; ?>
+      <?php if (isset($_GET['emp_sent'])): ?><?php if ($_GET['emp_sent'] === '1'): ?><div class="notice notice-success is-dismissible"><p>Kartica poslata mejlom.</p></div><?php else: ?><div class="notice notice-error is-dismissible"><p>Mejl nije poslat, proveri email adresu.</p></div><?php endif; ?><?php endif; ?>
       <?php if (isset($_GET['access_sent'])): ?><div class="notice notice-success is-dismissible"><p>Pristup kreiran/osvežen — mejl za lozinku poslat.</p></div><?php endif; ?>
       <?php if (isset($_GET['access_err'])): ?><div class="notice notice-error is-dismissible"><p>Taj email je već vezan za drugu firmu.</p></div><?php endif; ?>
       <?php if (isset($_GET['logo_saved'])): ?><div class="notice notice-success is-dismissible"><p>Logo sačuvan.</p></div><?php endif; ?>
@@ -1181,6 +1232,7 @@ function dry65_b2b_admin_detail($id) {
 
           <hr>
           <h2>Pristup dashboardu (/b2b)</h2>
+          <p><a class="button" href="<?php echo esc_url(home_url('/b2b/?firma=' . (int) $co->id)); ?>" target="_blank" rel="noopener">Pogledaj panel firme</a></p>
           <?php if ($wp_user): ?>
             <p>Login: <strong><?php echo esc_html($wp_user->user_email); ?></strong></p>
           <?php else: ?>
@@ -1206,7 +1258,8 @@ function dry65_b2b_admin_detail($id) {
               <input type="hidden" name="action" value="dry65_b2b_employee_add">
               <input type="hidden" name="company_id" value="<?php echo (int) $co->id; ?>">
               <?php wp_nonce_field('dry65_b2b_employee_add'); ?>
-              <input type="text" name="name" placeholder="Ime zaposlenog" required class="regular-text">
+              <input type="text" name="name" placeholder="Ime zaposlenog" required style="flex:1;min-width:0;">
+              <input type="email" name="email" placeholder="Email (šaljemo karticu)" style="flex:1;min-width:0;">
               <button type="submit" class="button">Dodaj</button>
             </form>
             <table class="widefat striped">
@@ -1217,7 +1270,17 @@ function dry65_b2b_admin_detail($id) {
                 <?php else: foreach ($employees as $e): ?>
                 <tr>
                   <td><?php echo esc_html($e->name); ?></td>
-                  <td><input type="text" readonly value="<?php echo esc_url(dry65_b2b_card_url($e->code, $co->name)); ?>" style="width:100%;" onclick="this.select();"></td>
+                  <td>
+                    <input type="text" readonly value="<?php echo esc_url(dry65_b2b_card_url($e->code, $co->name)); ?>" style="width:100%;" onclick="this.select();">
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:6px;margin-top:6px;">
+                      <input type="hidden" name="action" value="dry65_b2b_employee_send">
+                      <input type="hidden" name="id" value="<?php echo (int) $e->id; ?>">
+                      <input type="hidden" name="company_id" value="<?php echo (int) $co->id; ?>">
+                      <?php wp_nonce_field('dry65_b2b_employee_send'); ?>
+                      <input type="email" name="email" value="<?php echo esc_attr($e->email ?? ''); ?>" placeholder="Email zaposlenog" required style="flex:1;min-width:0;">
+                      <button type="submit" class="button button-small"><?php echo !empty($e->email) ? 'Pošalji ponovo' : 'Pošalji karticu'; ?></button>
+                    </form>
+                  </td>
                   <td>
                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline;" onsubmit="return confirm('Obriši zaposlenog <?php echo esc_js($e->name); ?>?');">
                       <input type="hidden" name="action" value="dry65_b2b_employee_delete">
@@ -1231,7 +1294,7 @@ function dry65_b2b_admin_detail($id) {
                 <?php endforeach; endif; ?>
               </tbody>
             </table>
-            <p class="description">Link se šalje zaposlenom (mejl/WhatsApp) — na njemu dodaje karticu u Apple/Google Wallet. Nema fizičke kartice.</p>
+            <p class="description">Kad uneseš email, kartica se odmah šalje zaposlenom. Link možeš poslati i ručno (WhatsApp). Na kartici zaposleni dodaje karticu u Apple/Google Wallet.</p>
           </div>
 
           <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;">
@@ -1317,9 +1380,36 @@ add_action('admin_post_dry65_b2b_employee_add', function () {
     if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
     check_admin_referer('dry65_b2b_employee_add');
     $company_id = (int) ($_POST['company_id'] ?? 0);
-    $name = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
-    if ($name !== '') dry65_b2b_employee_create($company_id, $name);
-    wp_redirect(admin_url('admin.php?page=dry65-b2b&company=' . $company_id . '&emp_added=1'));
+    $name  = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
+    $email = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+    $mail  = '';
+    if ($name !== '') {
+        $emp_id = dry65_b2b_employee_create($company_id, $name, $email);
+        if ($emp_id && $email !== '') {
+            $mail = dry65_b2b_employee_send_email(dry65_b2b_employee_get($emp_id), dry65_b2b_get($company_id)) ? '1' : '0';
+        }
+    }
+    wp_redirect(admin_url('admin.php?page=dry65-b2b&company=' . $company_id . '&emp_added=1' . ($mail !== '' ? '&mail=' . $mail : '')));
+    exit;
+});
+
+add_action('admin_post_dry65_b2b_employee_send', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_b2b_employee_send');
+    global $wpdb;
+    $id = (int) ($_POST['id'] ?? 0);
+    $company_id = (int) ($_POST['company_id'] ?? 0);
+    $email = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+    $emp = dry65_b2b_employee_get($id);
+    $ok = false;
+    if ($emp && (int) $emp->company_id === $company_id && is_email($email)) {
+        if ($email !== ($emp->email ?? '')) {
+            $wpdb->update(dry65_b2b_emp_table(), ['email' => $email], ['id' => $id], ['%s'], ['%d']);
+            $emp = dry65_b2b_employee_get($id);
+        }
+        $ok = dry65_b2b_employee_send_email($emp, dry65_b2b_get($company_id));
+    }
+    wp_redirect(admin_url('admin.php?page=dry65-b2b&company=' . $company_id . '&emp_sent=' . ($ok ? '1' : '0')));
     exit;
 });
 
