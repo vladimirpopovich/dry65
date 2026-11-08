@@ -2532,7 +2532,7 @@ add_action('template_redirect', function () {
                     add_filter('wp_mail_from_name', $set_name);
                     wp_mail($email, 'Dry65 — promena lozinke', implode("\n", [
                         'Poštovani,', '',
-                        'Zatražena je promena lozinke za tvoj Dry65 Club nalog.',
+                        get_user_meta($user->ID, 'dry65_b2b_company_id', true) ? 'Zatražena je promena lozinke za Dry65 B2B panel vaše firme.' : 'Zatražena je promena lozinke za tvoj Dry65 Club nalog.',
                         'Klikni na link da postaviš novu lozinku:', $link, '',
                         'Ako nisi ti tražio/la ovo, samo ignoriši poruku.', '',
                         'Dry65, West 65, Novi Beograd.',
@@ -2603,7 +2603,8 @@ add_action('template_redirect', function () {
         <?php if ($done): ?>
           <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Lozinka promenjena</h1>
           <p class="lead" style="margin:12px 0 18px;">Sad se možeš prijaviti novom lozinkom.</p>
-          <a href="<?php echo esc_url(home_url('/login/')); ?>" style="display:inline-block;cursor:pointer;border-radius:999px;padding:12px 30px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;text-decoration:none;">Prijavi se</a>
+          <?php $dest = (!is_wp_error($user) && $user && get_user_meta($user->ID, 'dry65_b2b_company_id', true)) ? home_url('/b2b/') : home_url('/login/'); // B2B firma ide na svoj panel ?>
+          <a href="<?php echo esc_url($dest); ?>" style="display:inline-block;cursor:pointer;border-radius:999px;padding:12px 30px;font-size:16px;font-weight:600;background:var(--clay,#b07a5a);color:#fff;text-decoration:none;">Prijavi se</a>
         <?php elseif (is_wp_error($user)): ?>
           <h1 class="display caps" style="font-size:clamp(24px,4vw,34px);">Link ne važi</h1>
           <p class="lead" style="margin:12px 0 18px;">Link za promenu lozinke je istekao ili je već iskorišćen.</p>

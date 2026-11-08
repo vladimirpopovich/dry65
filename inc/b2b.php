@@ -1180,11 +1180,47 @@ add_action('template_redirect', function () {
     $company_id = is_user_logged_in() ? dry65_b2b_user_company_id(get_current_user_id()) : 0;
     // Admin pregled: /b2b/?firma=ID prikazuje panel te firme tačno kako ga firma vidi (samo čitanje).
     $admin_preview = false;
-    if (isset($_GET['firma']) && current_user_can(DRY65_PK_CAP)) {
+    if (isset($_GET['firma']) && current_user_can(DRY65_PK_ADMIN_CAP)) { // samo administrator, ne nalog osoblja
         $company_id = (int) $_GET['firma'];
         $admin_preview = true;
     }
     $co = $company_id ? dry65_b2b_get($company_id) : null;
+
+    // Firma sama upravlja zaposlenima (dodaj / izmeni / pošalji karticu / ukloni). PRG: posle akcije redirect.
+    if ($co && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['dry65_b2b_emp_nonce'])
+        && wp_verify_nonce($_POST['dry65_b2b_emp_nonce'], 'dry65_b2b_emp_' . (int) $co->id)) {
+        global $wpdb;
+        $back = $admin_preview ? home_url('/b2b/?firma=' . (int) $co->id) : home_url('/b2b/');
+        $act  = sanitize_key($_POST['emp_act'] ?? '');
+        $msg  = '';
+        $emp  = isset($_POST['emp_id']) ? dry65_b2b_employee_get((int) $_POST['emp_id']) : null;
+        if ($emp && (int) $emp->company_id !== (int) $co->id) $emp = null; // samo svoji zaposleni
+        $name  = mb_substr(sanitize_text_field(wp_unslash($_POST['emp_name'] ?? '')), 0, 120);
+        $email = sanitize_email(wp_unslash($_POST['emp_email'] ?? ''));
+        if ($act === 'add' && $name !== '') {
+            $new_id = dry65_b2b_employee_create($co->id, $name, $email);
+            $msg = 'dodat';
+            if ($new_id && is_email($email)) $msg = dry65_b2b_employee_send_email(dry65_b2b_employee_get($new_id), $co) ? 'dodat_poslato' : 'dodat';
+            if ($new_id && dry65_b2b_type($co) === 'vauceri') {
+                // Novi vaučer utiče na fakturisanje: javi salonu.
+                $biz = function_exists('dry65_biz') ? dry65_biz() : ['email' => 'office@dry65.com'];
+                wp_mail($biz['email'], 'B2B: ' . $co->name . ' dodao zaposlenog (vaučer)', $co->name . ' je u panelu dodao zaposlenog: ' . $name
+                    . "\nIznos vaučera: " . dry65_b2b_din($co->company_amount)
+                    . "\n\nPregled: " . admin_url('admin.php?page=dry65-b2b&company=' . (int) $co->id));
+            }
+        } elseif ($act === 'edit' && $emp && $name !== '') {
+            $wpdb->update(dry65_b2b_emp_table(), ['name' => $name, 'email' => is_email($email) ? $email : ''], ['id' => (int) $emp->id], ['%s','%s'], ['%d']);
+            dry65_b2b_wallet_sync_queue((int) $emp->id); // ime je na Wallet kartici
+            $msg = 'sacuvano';
+        } elseif ($act === 'send' && $emp) {
+            $msg = dry65_b2b_employee_send_email($emp, $co) ? 'poslato' : 'nema_email';
+        } elseif ($act === 'remove' && $emp) {
+            dry65_b2b_employee_delete($emp->id);
+            $msg = 'uklonjen';
+        }
+        wp_safe_redirect(add_query_arg('z', $msg, $back) . '#zaposleni');
+        exit;
+    }
 
     status_header(200);
     dry65_pk_bare_head();
@@ -1195,7 +1231,19 @@ add_action('template_redirect', function () {
           <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:32px;width:auto;margin:0 auto 26px;display:block;">
           <h1 class="display caps" style="font-size:clamp(26px,4vw,38px);margin:2px 0 22px;">B2B Panel</h1>
           <?php if ($err): ?><p style="color:#a00;margin:0 0 12px;"><?php echo esc_html($err); ?></p><?php endif; ?>
-          <?php if (is_user_logged_in()): ?>
+          <?php if (is_user_logged_in() && current_user_can(DRY65_PK_ADMIN_CAP)): // administrator: izbor bilo koje firme ?>
+            <p class="muted" style="margin:0 0 14px;">Administrator: izaberi firmu.</p>
+            <div style="display:grid;gap:10px;text-align:left;">
+              <?php $all = dry65_b2b_all(); if (!$all): ?><p class="muted">Još nema firmi.</p><?php endif; ?>
+              <?php foreach ($all as $f): $ft = dry65_b2b_type($f); ?>
+              <a href="<?php echo esc_url(home_url('/b2b/?firma=' . (int) $f->id)); ?>" style="display:flex;justify-content:space-between;gap:10px;background:#fff;border-radius:14px;padding:14px 16px;text-decoration:none;color:var(--ink,#111C1D);box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);">
+                <strong><?php echo esc_html($f->name); ?></strong>
+                <span class="muted" style="font-size:13px;white-space:nowrap;"><?php echo esc_html(['mesecni-paket' => 'Paket', 'sufinansiranje' => 'Deo firma', 'vauceri' => 'Vaučeri'][$ft]); ?><?php echo $f->status !== 'active' ? ', pauzirana' : ''; ?></span>
+              </a>
+              <?php endforeach; ?>
+            </div>
+            <p style="margin-top:18px;font-size:13px;"><a href="<?php echo esc_url(admin_url('admin.php?page=dry65-b2b')); ?>">B2B Firme u wp-adminu</a></p>
+          <?php elseif (is_user_logged_in()): ?>
             <p class="muted">Ovaj nalog nema pristup B2B panelu.</p>
             <p style="margin-top:10px;"><a href="<?php echo esc_url(home_url('/b2b/?logout=1')); ?>">Odjavi se</a></p>
           <?php else: ?>
@@ -1227,8 +1275,11 @@ add_action('template_redirect', function () {
       <div class="wrap" style="max-width:720px;margin:0 auto;">
         <?php if ($admin_preview): ?>
           <div style="background:#fff;box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);border-radius:12px;padding:10px 14px;margin-bottom:20px;font-size:13px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-            <span><strong>Pregled kao admin.</strong> Ovako panel vidi firma.</span>
-            <a href="<?php echo esc_url(admin_url('admin.php?page=dry65-b2b&company=' . (int) $co->id)); ?>">Nazad u wp-admin</a>
+            <span><strong>Pregled kao admin.</strong> Ovako panel vidi firma. Izmene zaposlenih ovde važe i za firmu.</span>
+            <span style="display:flex;gap:14px;flex-wrap:wrap;">
+              <a href="<?php echo esc_url(home_url('/b2b/')); ?>">Sve firme</a>
+              <a href="<?php echo esc_url(admin_url('admin.php?page=dry65-b2b&company=' . (int) $co->id)); ?>">Firma u wp-adminu</a>
+            </span>
           </div>
         <?php endif; ?>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
@@ -1248,10 +1299,74 @@ add_action('template_redirect', function () {
         </div>
         <?php endif; ?>
 
+        <?php
+          $emps   = dry65_b2b_employees($co->id);
+          $nonce  = wp_create_nonce('dry65_b2b_emp_' . (int) $co->id);
+          $form_action = $admin_preview ? home_url('/b2b/?firma=' . (int) $co->id) : home_url('/b2b/');
+          $inp    = 'width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid rgba(17,28,29,0.18);border-radius:12px;font-size:15px;background:#fff;';
+          $btn    = 'cursor:pointer;border:0;border-radius:999px;padding:11px 22px;font-size:14px;font-weight:600;background:var(--oxblood,#783332);color:#fff;';
+          $btn2   = 'cursor:pointer;border:0;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;background:#fff;color:var(--ink,#111C1D);box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);';
+          $zmsg   = ['dodat' => 'Zaposleni dodat. Pošaljite mu link kartice ili dodajte email.', 'dodat_poslato' => 'Zaposleni dodat, kartica je poslata mejlom.',
+                     'sacuvano' => 'Sačuvano.', 'poslato' => 'Kartica je poslata mejlom.', 'nema_email' => 'Mejl nije poslat, unesite ispravan email.', 'uklonjen' => 'Zaposleni uklonjen.'];
+          $z = sanitize_key($_GET['z'] ?? '');
+        ?>
+        <h2 id="zaposleni" style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;scroll-margin-top:20px;">Zaposleni (<?php echo count($emps); ?>)</h2>
+        <?php if (isset($zmsg[$z])): ?><p style="margin:8px 0 12px;font-weight:600;color:<?php echo $z === 'nema_email' ? '#a00' : 'var(--ink)'; ?>;"><?php echo esc_html($zmsg[$z]); ?></p><?php endif; ?>
+        <div style="background:#fff;box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);border-radius:16px;padding:18px 20px;margin:10px 0 26px;">
+          <form method="post" action="<?php echo esc_url($form_action); ?>" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;" class="b2b-add">
+            <input type="hidden" name="dry65_b2b_emp_nonce" value="<?php echo esc_attr($nonce); ?>">
+            <input type="hidden" name="emp_act" value="add">
+            <label style="font-size:13px;">Ime i prezime<input type="text" name="emp_name" required maxlength="120" style="<?php echo $inp; ?>margin-top:4px;"></label>
+            <label style="font-size:13px;">Email (šaljemo karticu)<input type="email" name="emp_email" style="<?php echo $inp; ?>margin-top:4px;"></label>
+            <button type="submit" style="<?php echo $btn; ?>">Dodaj</button>
+          </form>
+          <p class="muted" style="font-size:12.5px;margin:8px 0 0;">Zaposleni dobija karticu mejlom i dodaje je u Apple ili Google Wallet. Na kasi pokazuje karticu.<?php if (dry65_b2b_type($co) === 'vauceri'): ?> Novi zaposleni dobija vaučer od <?php echo esc_html(dry65_b2b_din($co->company_amount)); ?>.<?php endif; ?></p>
+
+          <?php if ($emps): ?>
+          <div style="margin-top:14px;">
+            <?php foreach ($emps as $e): ?>
+            <div style="border-top:1px solid var(--sage-line,#eee);padding:12px 0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                <div>
+                  <div style="font-weight:600;"><?php echo esc_html($e->name); ?></div>
+                  <div class="muted" style="font-size:13px;"><?php echo $e->email ? esc_html($e->email) : 'Bez emaila'; ?><?php if (dry65_b2b_type($co) === 'vauceri'): ?> · vaučer <?php echo esc_html(dry65_b2b_din($e->balance)); ?><?php endif; ?></div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <?php if ($e->email): ?>
+                  <form method="post" action="<?php echo esc_url($form_action); ?>">
+                    <input type="hidden" name="dry65_b2b_emp_nonce" value="<?php echo esc_attr($nonce); ?>">
+                    <input type="hidden" name="emp_act" value="send"><input type="hidden" name="emp_id" value="<?php echo (int) $e->id; ?>">
+                    <button type="submit" style="<?php echo $btn2; ?>">Pošalji karticu</button>
+                  </form>
+                  <?php endif; ?>
+                  <form method="post" action="<?php echo esc_url($form_action); ?>" onsubmit="return confirm('Ukloniti <?php echo esc_js($e->name); ?>? Kartica prestaje da važi.');">
+                    <input type="hidden" name="dry65_b2b_emp_nonce" value="<?php echo esc_attr($nonce); ?>">
+                    <input type="hidden" name="emp_act" value="remove"><input type="hidden" name="emp_id" value="<?php echo (int) $e->id; ?>">
+                    <button type="submit" style="<?php echo $btn2; ?>">Ukloni</button>
+                  </form>
+                </div>
+              </div>
+              <details style="margin-top:8px;">
+                <summary style="cursor:pointer;font-size:13px;color:var(--clay,#b07a5a);">Izmeni ime ili email</summary>
+                <form method="post" action="<?php echo esc_url($form_action); ?>" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:8px;align-items:end;" class="b2b-add">
+                  <input type="hidden" name="dry65_b2b_emp_nonce" value="<?php echo esc_attr($nonce); ?>">
+                  <input type="hidden" name="emp_act" value="edit"><input type="hidden" name="emp_id" value="<?php echo (int) $e->id; ?>">
+                  <input type="text" name="emp_name" value="<?php echo esc_attr($e->name); ?>" required maxlength="120" style="<?php echo $inp; ?>">
+                  <input type="email" name="emp_email" value="<?php echo esc_attr($e->email); ?>" placeholder="Email" style="<?php echo $inp; ?>">
+                  <button type="submit" style="<?php echo $btn; ?>">Sačuvaj</button>
+                </form>
+              </details>
+            </div>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
+        </div>
+        <style>@media (max-width:600px){ .b2b-add{ grid-template-columns:1fr !important; } }</style>
+
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0 12px;">
-          <a href="<?php echo esc_url($prev); ?>" style="font-size:14px;">Prethodni mesec</a>
-          <h2 style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;margin:0;"><?php echo esc_html(dry65_b2b_month_label($ym)); ?></h2>
-          <?php if (!$is_now): ?><a href="<?php echo esc_url($next); ?>" style="font-size:14px;">Sledeći mesec</a><?php else: ?><span style="width:110px;"></span><?php endif; ?>
+          <a href="<?php echo esc_url($prev); ?>" style="font-size:14px;white-space:nowrap;min-width:72px;">Prethodni</a>
+          <h2 style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;margin:0;text-align:center;white-space:nowrap;"><?php echo esc_html(dry65_b2b_month_label($ym)); ?></h2>
+          <?php if (!$is_now): ?><a href="<?php echo esc_url($next); ?>" style="font-size:14px;white-space:nowrap;min-width:72px;text-align:right;">Sledeći</a><?php else: ?><span style="min-width:72px;"></span><?php endif; ?>
         </div>
 
         <div style="background:#fff;box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);border-radius:16px;padding:18px 20px;margin-bottom:22px;">
@@ -1410,7 +1525,10 @@ function dry65_b2b_admin_page() {
                   else echo esc_html(dry65_b2b_din($r->company_amount)) . ' po zaposlenom';
                 ?></td>
                 <td><?php echo $r->status === 'active' ? 'Aktivna' : 'Pauzirana'; ?></td>
-                <td><a class="button button-small" href="<?php echo esc_url(admin_url('admin.php?page=dry65-b2b&company=' . $r->id)); ?>">Otvori</a></td>
+                <td>
+                  <a class="button button-small" href="<?php echo esc_url(admin_url('admin.php?page=dry65-b2b&company=' . $r->id)); ?>">Otvori</a>
+                  <?php if (current_user_can(DRY65_PK_ADMIN_CAP)): ?><a class="button button-small" href="<?php echo esc_url(home_url('/b2b/?firma=' . (int) $r->id)); ?>" target="_blank" rel="noopener">Panel</a><?php endif; ?>
+                </td>
               </tr>
               <?php endforeach; endif; ?>
             </tbody>
@@ -1498,7 +1616,7 @@ function dry65_b2b_admin_detail($id) {
 
           <hr>
           <h2>Pristup dashboardu (/b2b)</h2>
-          <p><a class="button" href="<?php echo esc_url(home_url('/b2b/?firma=' . (int) $co->id)); ?>" target="_blank" rel="noopener">Pogledaj panel firme</a></p>
+          <?php if ($is_admin): ?><p><a class="button" href="<?php echo esc_url(home_url('/b2b/?firma=' . (int) $co->id)); ?>" target="_blank" rel="noopener">Pogledaj panel firme</a></p><?php endif; ?>
           <?php if ($wp_user): ?>
             <p>Login: <strong><?php echo esc_html($wp_user->user_email); ?></strong></p>
           <?php else: ?>
