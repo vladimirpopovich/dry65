@@ -117,12 +117,20 @@ function dry65_b2b_prijava_handle() {
     }
     $lines[] = '';
     $lines[] = 'Pregled u wp-admin: ' . admin_url('post.php?post=' . $post_id . '&action=edit');
+    // Pošiljalac NIJE office@ (inače Gmail prikazuje „me" jer je from = to), nego noreply@ sa jasnim imenom.
+    // Odgovor ide direktno firmi preko Reply-To.
+    $set_from = function () { return 'noreply@dry65.com'; };
+    $set_name = function () { return 'Registracija firme na Dry65'; };
+    add_filter('wp_mail_from', $set_from, 99);
+    add_filter('wp_mail_from_name', $set_name, 99);
     wp_mail(
         $biz['email'],
-        'Nova B2B prijava: ' . $d['company'],
+        'Registracija firme na Dry65: ' . $d['company'],
         implode("\n", $lines),
         ['Reply-To: ' . $d['contact'] . ' <' . $d['email'] . '>']
     );
+    remove_filter('wp_mail_from', $set_from, 99);
+    remove_filter('wp_mail_from_name', $set_name, 99);
 
     $go('ok');
 }
