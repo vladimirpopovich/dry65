@@ -24,7 +24,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-if (!defined('DRY65_B2B_DB')) define('DRY65_B2B_DB', 3);
+if (!defined('DRY65_B2B_DB')) define('DRY65_B2B_DB', 4);
 
 /* ---- Tabele ---- */
 function dry65_b2b_table()     { global $wpdb; return $wpdb->prefix . 'dry65_b2b_companies'; }
@@ -43,6 +43,8 @@ function dry65_b2b_install() {
         name VARCHAR(190) NOT NULL DEFAULT '',
         contact_email VARCHAR(190) NOT NULL DEFAULT '',
         price_rsd INT NOT NULL DEFAULT 0,
+        model VARCHAR(20) NOT NULL DEFAULT 'mesecni-paket',
+        company_amount INT NOT NULL DEFAULT 0,
         initial INT NOT NULL DEFAULT 0,
         balance INT NOT NULL DEFAULT 0,
         cycle_start DATE NOT NULL,
@@ -62,6 +64,8 @@ function dry65_b2b_install() {
         name VARCHAR(190) NOT NULL DEFAULT '',
         email VARCHAR(190) NOT NULL DEFAULT '',
         code VARCHAR(20) NOT NULL,
+        initial INT NOT NULL DEFAULT 0,
+        balance INT NOT NULL DEFAULT 0,
         status VARCHAR(10) NOT NULL DEFAULT 'active',
         created_at DATETIME NOT NULL,
         PRIMARY KEY (id),
@@ -75,6 +79,7 @@ function dry65_b2b_install() {
         employee_name VARCHAR(190) NOT NULL DEFAULT '',
         delta INT NOT NULL DEFAULT 0,
         balance_after INT NOT NULL DEFAULT 0,
+        amount INT NOT NULL DEFAULT 0,
         note VARCHAR(190) NOT NULL DEFAULT '',
         staff_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
         staff_name VARCHAR(120) NOT NULL DEFAULT '',
@@ -93,6 +98,64 @@ add_action('init', 'dry65_b2b_install');
 /* ---- Osnovni helperi ---- */
 function dry65_b2b_now()   { return function_exists('dry65_pk_now') ? dry65_pk_now() : current_time('mysql'); }
 function dry65_b2b_today() { return (new DateTime('now', new DateTimeZone('Europe/Belgrade')))->format('Y-m-d'); }
+/* ---- Tip saradnje (isti ključevi kao u online prijavi sa /za-firme/) ----
+   mesecni-paket  = zajednički mesečni fond feniranja po fiksnoj ceni; kartica skida 1 feniranje
+   sufinansiranje = firma plaća dogovoreni iznos po feniranju (company_amount), zaposleni doplaćuje
+                    razliku na kasi; QR samo beleži dolazak, bez limita; faktura = dolasci × iznos
+   vauceri        = svaki zaposleni ima svoj vaučer u dinarima (employees.balance); skida se iznos */
+function dry65_b2b_types() {
+    return [
+        'mesecni-paket'  => '1. Mesečni paket (fiksna cena, zajednički fond)',
+        'sufinansiranje' => '2. Deo firma, ostatak zaposleni',
+        'vauceri'        => '3. Digitalni vaučeri (iznos po zaposlenom)',
+    ];
+}
+function dry65_b2b_type($co) {
+    $t = is_object($co) && !empty($co->model) ? $co->model : 'mesecni-paket';
+    return isset(dry65_b2b_types()[$t]) ? $t : 'mesecni-paket';
+}
+/* Srpska množina: 1 dolazak, 2 do 4 dolaska, 5+ dolazaka (11 do 14 su uvek „mnogo"). */
+function dry65_b2b_plural($n, $one, $few, $many) {
+    $n = abs((int) $n); $d = $n % 10; $dd = $n % 100;
+    if ($d === 1 && $dd !== 11) return $n . ' ' . $one;
+    if ($d >= 2 && $d <= 4 && ($dd < 12 || $dd > 14)) return $n . ' ' . $few;
+    return $n . ' ' . $many;
+}
+function dry65_b2b_visits($n) { return dry65_b2b_plural($n, 'dolazak', 'dolaska', 'dolazaka'); }
+function dry65_b2b_fens($n)   { return dry65_b2b_plural($n, 'feniranje', 'feniranja', 'feniranja'); }
+function dry65_b2b_din($n) { return number_format((int) $n, 0, ',', '.') . ' din'; }
+
+/* Obračun za mesec (YYYY-MM): svi dolasci/potrošnje zaposlenih, bez poništenih. */
+function dry65_b2b_month_report($co, $ym) {
+    global $wpdb;
+    if (!preg_match('/^\d{4}-\d{2}$/', (string) $ym)) $ym = substr(dry65_b2b_today(), 0, 7);
+    $from = $ym . '-01 00:00:00';
+    $to   = (new DateTime($ym . '-01'))->modify('+1 month')->format('Y-m-d') . ' 00:00:00';
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM " . dry65_b2b_txn_table() . " WHERE company_id=%d AND employee_id>0 AND delta<0 AND reversed=0
+         AND created_at >= %s AND created_at < %s ORDER BY created_at ASC",
+        (int) $co->id, $from, $to
+    ));
+    $per = [];
+    $sum = 0;
+    foreach ($rows as $r) {
+        $k = (int) $r->employee_id;
+        if (!isset($per[$k])) $per[$k] = ['name' => $r->employee_name, 'count' => 0, 'sum' => 0];
+        $per[$k]['count']++;
+        $per[$k]['sum'] += (int) $r->amount;
+        $sum += (int) $r->amount;
+    }
+    uasort($per, function ($a, $b) { return $b['count'] - $a['count']; });
+    return ['ym' => $ym, 'rows' => $rows, 'per' => $per, 'count' => count($rows), 'sum' => $sum];
+}
+function dry65_b2b_month_label($ym) {
+    $m = ['01'=>'januar','02'=>'februar','03'=>'mart','04'=>'april','05'=>'maj','06'=>'jun','07'=>'jul','08'=>'avgust','09'=>'septembar','10'=>'oktobar','11'=>'novembar','12'=>'decembar'];
+    return ($m[substr($ym, 5, 2)] ?? '') . ' ' . substr($ym, 0, 4) . '.';
+}
+function dry65_b2b_month_shift($ym, $n) {
+    return (new DateTime($ym . '-01'))->modify(($n >= 0 ? '+' : '') . (int) $n . ' month')->format('Y-m');
+}
+
 function dry65_b2b_cycle_end($start) {
     return (new DateTime($start, new DateTimeZone('Europe/Belgrade')))->modify('+1 month')->format('Y-m-d');
 }
@@ -294,17 +357,21 @@ function dry65_b2b_ensure_hero($co) {
 /* ---- CRUD firme ---- */
 
 /* Fond je slobodan broj (30/60/90 su samo predlog u formi — biće i drugih vrsta ponuda). */
-function dry65_b2b_create($name, $contact_email, $initial, $price_rsd, $note = '') {
+function dry65_b2b_create($name, $contact_email, $initial, $price_rsd, $note = '', $model = 'mesecni-paket', $company_amount = 0) {
     global $wpdb;
     $name = sanitize_text_field($name);
     if ($name === '') return 0;
-    $initial = max(1, (int) $initial);
+    $model = isset(dry65_b2b_types()[$model]) ? $model : 'mesecni-paket';
+    $is_fond = $model === 'mesecni-paket';
+    $initial = $is_fond ? max(1, (int) $initial) : 0;
     $start = dry65_b2b_today();
     $end   = dry65_b2b_cycle_end($start);
     $ok = $wpdb->insert(dry65_b2b_table(), [
         'name'          => $name,
         'contact_email' => sanitize_email($contact_email),
         'price_rsd'     => max(0, (int) $price_rsd),
+        'model'         => $model,
+        'company_amount'=> max(0, (int) $company_amount),
         'initial'       => $initial,
         'balance'       => $initial,
         'cycle_start'   => $start,
@@ -313,10 +380,10 @@ function dry65_b2b_create($name, $contact_email, $initial, $price_rsd, $note = '
         'note'          => $note,
         'created_at'    => dry65_b2b_now(),
         'created_by'    => get_current_user_id(),
-    ], ['%s','%s','%d','%d','%d','%s','%s','%s','%s','%s','%d']);
+    ], ['%s','%s','%d','%s','%d','%d','%d','%s','%s','%s','%s','%s','%d']);
     if (!$ok) return 0;
     $id = (int) $wpdb->insert_id;
-    $wpdb->insert(dry65_b2b_txn_table(), [
+    if ($is_fond) $wpdb->insert(dry65_b2b_txn_table(), [
         'company_id' => $id, 'employee_id' => 0, 'employee_name' => '',
         'delta' => $initial, 'balance_after' => $initial,
         'note' => 'Fond otvoren', 'staff_id' => get_current_user_id(), 'staff_name' => '',
@@ -325,24 +392,34 @@ function dry65_b2b_create($name, $contact_email, $initial, $price_rsd, $note = '
     return $id;
 }
 
-function dry65_b2b_update($id, $name, $contact_email, $initial, $price_rsd, $status, $note) {
+function dry65_b2b_update($id, $name, $contact_email, $initial, $price_rsd, $status, $note, $model = null, $company_amount = null) {
     global $wpdb;
     $co = dry65_b2b_get($id);
     if (!$co) return false;
-    $initial = max(1, (int) $initial);
+    $old_model = dry65_b2b_type($co);
+    $model = ($model !== null && isset(dry65_b2b_types()[$model])) ? $model : $old_model;
     $data = [
-        'name'          => sanitize_text_field($name),
-        'contact_email' => sanitize_email($contact_email),
-        'price_rsd'     => max(0, (int) $price_rsd),
-        'status'        => in_array($status, ['active', 'paused'], true) ? $status : 'active',
-        'note'          => $note,
+        'name'           => sanitize_text_field($name),
+        'contact_email'  => sanitize_email($contact_email),
+        'price_rsd'      => max(0, (int) $price_rsd),
+        'status'         => in_array($status, ['active', 'paused'], true) ? $status : 'active',
+        'note'           => $note,
+        'model'          => $model,
+        'company_amount' => $company_amount !== null ? max(0, (int) $company_amount) : (int) $co->company_amount,
     ];
-    $fmt = ['%s','%s','%d','%s','%s'];
-    if ($initial !== (int) $co->initial) {
-        $diff = $initial - (int) $co->initial;
-        $data['initial'] = $initial;
-        $data['balance'] = max(0, min($initial, (int) $co->balance + $diff));
-        $fmt[] = '%d'; $fmt[] = '%d';
+    $fmt = ['%s','%s','%d','%s','%s','%s','%d'];
+    if ($model === 'mesecni-paket') {
+        $initial = max(1, (int) $initial);
+        if ($old_model !== 'mesecni-paket') {          // prelazak na fond: puni fond od danas
+            $data['initial'] = $initial; $data['balance'] = $initial;
+            $data['cycle_start'] = dry65_b2b_today(); $data['cycle_end'] = dry65_b2b_cycle_end(dry65_b2b_today());
+            $fmt = array_merge($fmt, ['%d','%d','%s','%s']);
+        } elseif ($initial !== (int) $co->initial) {
+            $diff = $initial - (int) $co->initial;
+            $data['initial'] = $initial;
+            $data['balance'] = max(0, min($initial, (int) $co->balance + $diff));
+            $fmt[] = '%d'; $fmt[] = '%d';
+        }
     }
     $wpdb->update(dry65_b2b_table(), $data, ['id' => (int) $id], $fmt, ['%d']);
     do_action('dry65_b2b_balance_changed', (int) $id);
@@ -350,22 +427,53 @@ function dry65_b2b_update($id, $name, $contact_email, $initial, $price_rsd, $sta
 }
 
 /* ---- Zaposleni ---- */
-function dry65_b2b_employee_create($company_id, $name, $email = '') {
+function dry65_b2b_employee_create($company_id, $name, $email = '', $voucher = null) {
     global $wpdb;
     $co = dry65_b2b_get($company_id);
     $name = sanitize_text_field($name);
     $email = sanitize_email($email);
     if (!$co || $name === '') return 0;
+    // Vaučer model: svaki zaposleni dobija svoj iznos (podrazumevano iznos firme).
+    $amt = dry65_b2b_type($co) === 'vauceri' ? max(0, (int) ($voucher !== null && $voucher !== '' ? $voucher : $co->company_amount)) : 0;
     $code = dry65_b2b_gen_code();
     $ok = $wpdb->insert(dry65_b2b_emp_table(), [
         'company_id' => (int) $company_id,
         'name'       => $name,
         'email'      => is_email($email) ? $email : '',
         'code'       => $code,
+        'initial'    => $amt,
+        'balance'    => $amt,
         'status'     => 'active',
         'created_at' => dry65_b2b_now(),
-    ], ['%d','%s','%s','%s','%s','%s']);
-    return $ok ? (int) $wpdb->insert_id : 0;
+    ], ['%d','%s','%s','%s','%d','%d','%s','%s']);
+    if (!$ok) return 0;
+    $emp_id = (int) $wpdb->insert_id;
+    if ($amt > 0) {
+        $wpdb->insert(dry65_b2b_txn_table(), [
+            'company_id' => (int) $company_id, 'employee_id' => $emp_id, 'employee_name' => $name,
+            'delta' => $amt, 'balance_after' => $amt, 'amount' => 0,
+            'note' => 'Vaučer izdat', 'staff_id' => get_current_user_id(), 'staff_name' => '',
+            'created_at' => dry65_b2b_now(),
+        ], ['%d','%d','%s','%d','%d','%d','%s','%d','%s','%s']);
+    }
+    return $emp_id;
+}
+
+/* Dopuna vaučera zaposlenom (dodaje iznos na stanje). */
+function dry65_b2b_employee_topup($employee, $amount) {
+    global $wpdb;
+    $amount = (int) $amount;
+    if (!$employee || $amount <= 0) return false;
+    $new = (int) $employee->balance + $amount;
+    $wpdb->update(dry65_b2b_emp_table(), ['balance' => $new, 'initial' => (int) $employee->initial + $amount], ['id' => (int) $employee->id], ['%d','%d'], ['%d']);
+    $wpdb->insert(dry65_b2b_txn_table(), [
+        'company_id' => (int) $employee->company_id, 'employee_id' => (int) $employee->id, 'employee_name' => $employee->name,
+        'delta' => $amount, 'balance_after' => $new, 'amount' => 0,
+        'note' => 'Vaučer dopunjen', 'staff_id' => get_current_user_id(), 'staff_name' => '',
+        'created_at' => dry65_b2b_now(),
+    ], ['%d','%d','%s','%d','%d','%d','%s','%d','%s','%s']);
+    dry65_b2b_wallet_sync_queue((int) $employee->id);
+    return true;
 }
 
 /* Mejl zaposlenom sa linkom ka B2B kartici (na kartici su Apple/Google Wallet dugmad). */
@@ -407,37 +515,59 @@ function dry65_b2b_employee_delete($id) {
     $wpdb->delete(dry65_b2b_emp_table(), ['id' => (int) $id], ['%d']);
 }
 
-/* ---- Trošenje (BLOKIRA se na 0 — nema overage-a) ---- */
-function dry65_b2b_spend($employee, $staff_name = '', $source = '') {
+/* ---- Trošenje po tipu saradnje ----
+   mesecni-paket:  -1 iz zajedničkog fonda firme (BLOKIRA na 0, nema overage-a)
+   sufinansiranje: beleži dolazak (delta -1), amount = iznos firme; bez limita
+   vauceri:        skida $amount din sa vaučera zaposlenog (ne ispod 0)            */
+function dry65_b2b_spend($employee, $staff_name = '', $source = '', $amount = 0) {
     if (!is_object($employee)) return ['ok' => false, 'msg' => 'Nepoznata kartica.'];
     $co = dry65_b2b_get($employee->company_id);
     if (!$co) return ['ok' => false, 'msg' => 'Nepoznata firma.'];
     if ($co->status !== 'active') return ['ok' => false, 'msg' => 'Firma nije aktivna.'];
-    if ((int) $co->balance <= 0) return ['ok' => false, 'msg' => 'Nema preostalih feniranja za ' . $co->name . ' ovog meseca.'];
     global $wpdb;
-    $new = (int) $co->balance - 1;
-    $wpdb->update(dry65_b2b_table(), ['balance' => $new], ['id' => (int) $co->id], ['%d'], ['%d']);
+    $type = dry65_b2b_type($co);
+    $note = 'Feniranje';
+    if ($type === 'mesecni-paket') {
+        if ((int) $co->balance <= 0) return ['ok' => false, 'msg' => 'Nema preostalih feniranja za ' . $co->name . ' ovog meseca.'];
+        $delta = -1; $new = (int) $co->balance - 1; $amt = 0;
+        $wpdb->update(dry65_b2b_table(), ['balance' => $new], ['id' => (int) $co->id], ['%d'], ['%d']);
+    } elseif ($type === 'sufinansiranje') {
+        $delta = -1; $new = 0; $amt = (int) $co->company_amount;
+        $note = 'Feniranje, firma plaća ' . dry65_b2b_din($amt);
+    } else { // vauceri
+        $employee = dry65_b2b_employee_get($employee->id); // sveže stanje iz baze
+        $amount = (int) $amount;
+        $bal = (int) $employee->balance;
+        if ($bal <= 0) return ['ok' => false, 'msg' => 'Vaučer je potrošen.'];
+        if ($amount <= 0) return ['ok' => false, 'msg' => 'Unesi iznos.'];
+        $amount = min($amount, $bal);
+        $delta = -$amount; $new = $bal - $amount; $amt = $amount;
+        $note = 'Potrošnja ' . dry65_b2b_din($amount);
+        $wpdb->update(dry65_b2b_emp_table(), ['balance' => $new], ['id' => (int) $employee->id], ['%d'], ['%d']);
+    }
     $wpdb->insert(dry65_b2b_txn_table(), [
         'company_id'    => (int) $co->id,
         'employee_id'   => (int) $employee->id,
         'employee_name' => $employee->name,
-        'delta'         => -1,
+        'delta'         => $delta,
         'balance_after' => $new,
-        'note'          => 'Feniranje',
+        'amount'        => $amt,
+        'note'          => $note,
         'staff_id'      => get_current_user_id(),
         'staff_name'    => $staff_name,
         'created_at'    => dry65_b2b_now(),
-    ], ['%d','%d','%s','%d','%d','%s','%d','%s','%s']);
+    ], ['%d','%d','%s','%d','%d','%d','%s','%d','%s','%s']);
     // Isti denormalizovani log kao lični paketi — spaja se u budući presek dolazaka.
     if (function_exists('dry65_pk_stamp_log_table')) {
         $wpdb->insert(dry65_pk_stamp_log_table(), [
             'logged_at' => dry65_b2b_now(), 'account_id' => 0, 'customer_id' => 0,
-            'code' => $employee->code, 'type' => 'b2b', 'event' => 'feniranje',
-            'delta' => -1, 'balance_after' => $new, 'tier' => '', 'plan' => $co->name,
+            'code' => $employee->code, 'type' => 'b2b', 'event' => $type === 'vauceri' ? 'potrosnja' : 'feniranje',
+            'delta' => $delta, 'balance_after' => $new, 'tier' => $type, 'plan' => $co->name,
             'source' => $source, 'staff_id' => get_current_user_id(), 'staff_name' => $staff_name,
         ], ['%s','%d','%d','%s','%s','%s','%d','%d','%s','%s','%s','%d','%s']);
     }
-    do_action('dry65_b2b_balance_changed', (int) $co->id);
+    if ($type === 'mesecni-paket') do_action('dry65_b2b_balance_changed', (int) $co->id);
+    elseif ($type === 'vauceri')   dry65_b2b_wallet_sync_queue((int) $employee->id);
     return ['ok' => true, 'balance' => $new];
 }
 
@@ -450,8 +580,19 @@ function dry65_b2b_undo($txn_id) {
     $co = dry65_b2b_get($t->company_id);
     if (!$co) return false;
     $delta = (int) $t->delta;
-    $new = max(0, min((int) $co->initial, (int) $co->balance - $delta));
-    $wpdb->update(dry65_b2b_table(), ['balance' => $new], ['id' => (int) $co->id], ['%d'], ['%d']);
+    $type  = dry65_b2b_type($co);
+    $emp   = (int) $t->employee_id > 0 ? dry65_b2b_employee_get($t->employee_id) : null;
+    if ($type === 'vauceri' && $emp) {
+        $new = max(0, (int) $emp->balance - $delta);
+        $wpdb->update(dry65_b2b_emp_table(), ['balance' => $new], ['id' => (int) $emp->id], ['%d'], ['%d']);
+        if ($delta > 0) $wpdb->update(dry65_b2b_emp_table(), ['initial' => max(0, (int) $emp->initial - $delta)], ['id' => (int) $emp->id], ['%d'], ['%d']);
+        dry65_b2b_wallet_sync_queue((int) $emp->id);
+    } elseif ($type === 'sufinansiranje') {
+        $new = 0;
+    } else {
+        $new = max(0, min((int) $co->initial, (int) $co->balance - $delta));
+        $wpdb->update(dry65_b2b_table(), ['balance' => $new], ['id' => (int) $co->id], ['%d'], ['%d']);
+    }
     $wpdb->insert($tt, [
         'company_id' => (int) $co->id, 'employee_id' => (int) $t->employee_id, 'employee_name' => $t->employee_name,
         'delta' => -$delta, 'balance_after' => $new,
@@ -491,7 +632,7 @@ add_action('init', function () {
 add_action('dry65_b2b_daily_cron', function () {
     $today = dry65_b2b_today();
     foreach (dry65_b2b_all('active') as $co) {
-        if ($co->cycle_end <= $today) dry65_b2b_cycle_reset($co);
+        if (dry65_b2b_type($co) === 'mesecni-paket' && $co->cycle_end <= $today) dry65_b2b_cycle_reset($co);
     }
 });
 
@@ -500,12 +641,34 @@ add_action('dry65_b2b_daily_cron', function () {
    Reuse generičkih helpera iz wallet.php (JWT/potpis/token) —
    ta funkcija se ne dira, ovo je paralelni objekat-graditelj.
    ============================================================ */
+/* Šta kartica pokazuje, po tipu saradnje (isto za Google, Apple i web karticu). */
+function dry65_b2b_card_summary($employee, $co) {
+    $type = dry65_b2b_type($co);
+    if ($type === 'sufinansiranje') {
+        return [
+            'label' => 'Firma plaća', 'short' => 'FIRMA PLAĆA', 'value' => dry65_b2b_din($co->company_amount),
+            'info_h' => 'Kako radi', 'info_b' => $co->name . ' plaća ' . dry65_b2b_din($co->company_amount) . ' po feniranju, razliku doplaćujete na kasi.',
+        ];
+    }
+    if ($type === 'vauceri') {
+        return [
+            'label' => 'Vaučer (' . $co->name . ')', 'short' => 'PREOSTALO', 'value' => dry65_b2b_din($employee->balance),
+            'info_h' => 'Vaučer', 'info_b' => 'Iznos se skida na kasi za usluge u Dry65.',
+        ];
+    }
+    return [
+        'label' => 'Preostalo (' . $co->name . ')', 'short' => 'PREOSTALO', 'value' => (int) $co->balance . ' / ' . (int) $co->initial,
+        'info_h' => 'Obnova', 'info_b' => date_i18n('d.m.Y.', strtotime($co->cycle_end)),
+    ];
+}
+
 function dry65_b2b_wallet_google_object_id($employee) {
     return DRY65_GW_ISSUER_ID . '.' . DRY65_GW_CLASS . '-be' . (int) $employee->id;
 }
 function dry65_b2b_wallet_google_object($employee, $co) {
     $card_url = dry65_b2b_card_url($employee->code, $co->name);
     $hero_url = dry65_b2b_ensure_hero($co);
+    $sum      = dry65_b2b_card_summary($employee, $co);
     $obj = [
         'id'                 => dry65_b2b_wallet_google_object_id($employee),
         'classId'            => dry65_wallet_google_class_id(),
@@ -514,9 +677,9 @@ function dry65_b2b_wallet_google_object($employee, $co) {
         'accountId'          => $employee->code,
         'hexBackgroundColor' => $hero_url ? '#FFFFFF' : '#33302c',
         'barcode'            => ['type' => 'QR_CODE', 'value' => $card_url, 'alternateText' => $employee->code],
-        'loyaltyPoints'      => ['label' => 'Preostalo (' . $co->name . ')', 'balance' => ['string' => (int) $co->balance . ' / ' . (int) $co->initial]],
+        'loyaltyPoints'      => ['label' => $sum['label'], 'balance' => ['string' => $sum['value']]],
         'textModulesData'    => [[
-            'id' => 'obnova', 'header' => 'Obnova', 'body' => date_i18n('d.m.Y.', strtotime($co->cycle_end)),
+            'id' => 'obnova', 'header' => $sum['info_h'], 'body' => $sum['info_b'],
         ]],
     ];
     if ($hero_url) $obj['heroImage'] = ['sourceUri' => ['uri' => $hero_url]];
@@ -559,11 +722,12 @@ function dry65_b2b_wallet_google_patch($employee, $co) {
     $object_id = dry65_b2b_wallet_google_object_id($employee);
     $url = 'https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/' . rawurlencode($object_id);
     $hero_url = dry65_b2b_ensure_hero($co);
+    $sum      = dry65_b2b_card_summary($employee, $co);
     $body = [
         'accountName'        => $employee->name,
         'hexBackgroundColor' => $hero_url ? '#FFFFFF' : '#33302c',
-        'loyaltyPoints'      => ['label' => 'Preostalo (' . $co->name . ')', 'balance' => ['string' => (int) $co->balance . ' / ' . (int) $co->initial]],
-        'textModulesData'    => [[ 'id' => 'obnova', 'header' => 'Obnova', 'body' => date_i18n('d.m.Y.', strtotime($co->cycle_end)) ]],
+        'loyaltyPoints'      => ['label' => $sum['label'], 'balance' => ['string' => $sum['value']]],
+        'textModulesData'    => [[ 'id' => 'obnova', 'header' => $sum['info_h'], 'body' => $sum['info_b'] ]],
     ];
     if ($hero_url) $body['heroImage'] = ['sourceUri' => ['uri' => $hero_url]];
     $resp = wp_remote_request($url, [
@@ -587,8 +751,9 @@ function dry65_b2b_wallet_apple_passjson($employee, $co) {
     $serial   = dry65_b2b_wallet_apple_serial($employee);
     $card_url = dry65_b2b_card_url($employee->code, $co->name);
 
+    $sum  = dry65_b2b_card_summary($employee, $co);
     $back = [
-        ['key' => 'obnova', 'label' => 'Obnova fonda', 'value' => date_i18n('d.m.Y.', strtotime($co->cycle_end))],
+        ['key' => 'obnova', 'label' => $sum['info_h'], 'value' => $sum['info_b']],
         ['key' => 'about', 'label' => 'Dry65', 'value' => 'West 65, Novi Beograd. Pokažite karticu osoblju u salonu.'],
         ['key' => 'link', 'label' => 'Kartica', 'value' => $card_url],
     ];
@@ -613,7 +778,7 @@ function dry65_b2b_wallet_apple_passjson($employee, $co) {
         'storeCard' => [
             'secondaryFields' => [
                 ['key' => 'zaposleni', 'label' => 'ZAPOSLENI', 'value' => (string) $employee->name],
-                ['key' => 'preostalo', 'label' => 'PREOSTALO', 'value' => (int) $co->balance . ' / ' . (int) $co->initial, 'textAlignment' => 'PKTextAlignmentRight'],
+                ['key' => 'preostalo', 'label' => $sum['short'], 'value' => $sum['value'], 'textAlignment' => 'PKTextAlignmentRight'],
             ],
             'backFields' => $back,
         ],
@@ -772,7 +937,7 @@ add_action('admin_post_dry65_b2b_spend', function () {
         wp_safe_redirect(add_query_arg('pinreq', '1', $return)); exit;
     }
     if ($employee) {
-        $res = dry65_b2b_spend($employee, $worker, 'kartica');
+        $res = dry65_b2b_spend($employee, $worker, 'kartica', (int) ($_POST['amount'] ?? 0));
         if ($return !== '') {
             wp_safe_redirect(add_query_arg($res['ok'] ? 'sk' : 'full', '1', $return)); exit;
         }
@@ -797,7 +962,9 @@ add_action('template_redirect', function () {
     $can_staff = current_user_can(DRY65_PK_CAP);
     $has_staff = count(dry65_pk_staff_all()) > 0;
     $pin_nonce = $can_staff ? wp_create_nonce('dry65_pk_scan') : '';
-    $blocked   = $co && (int) $co->balance <= 0;
+    $type      = $co ? dry65_b2b_type($co) : 'mesecni-paket';
+    $sum       = ($employee && $co) ? dry65_b2b_card_summary($employee, $co) : null;
+    $blocked   = $co && (($type === 'mesecni-paket' && (int) $co->balance <= 0) || ($type === 'vauceri' && (int) $employee->balance <= 0) || $co->status !== 'active');
     $hero_url  = $co ? dry65_b2b_ensure_hero($co) : '';
     ?>
     <main class="page-enter" style="min-height:100vh;padding:26px 16px calc(40px + env(safe-area-inset-bottom));">
@@ -832,7 +999,7 @@ add_action('template_redirect', function () {
               <?php endif; ?>
               <div style="padding:10px 20px 8px;border-bottom:1px solid #f0f0f0;display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-family:'Hanken Grotesk',system-ui,-apple-system,sans-serif;font-weight:600;font-size:14px;line-height:1;">
                 <span><?php echo esc_html($employee->name); ?></span>
-                <span><?php echo (int) $co->balance; ?> / <?php echo (int) $co->initial; ?></span>
+                <span><?php echo esc_html($sum['value']); ?></span>
               </div>
               <div style="padding:clamp(20px,5vw,28px) clamp(20px,5vw,30px) clamp(26px,6vw,38px);">
               <div style="width:clamp(150px,44vw,178px);aspect-ratio:1;margin:0 auto;background:#fff;border:1px solid #eee;border-radius:20px;padding:14px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;">
@@ -841,23 +1008,37 @@ add_action('template_redirect', function () {
 
               <?php if ($can_staff): ?>
                 <?php if ($blocked): ?>
-                  <p style="margin:16px 0 0;color:#a00;font-weight:600;">Nema preostalih feniranja za <?php echo esc_html($co->name); ?> ovog meseca.</p>
+                  <p style="margin:16px 0 0;color:#a00;font-weight:600;"><?php
+                    if ($co->status !== 'active') echo 'Saradnja sa ' . esc_html($co->name) . ' je pauzirana.';
+                    elseif ($type === 'vauceri') echo 'Vaučer je potrošen.';
+                    else echo 'Nema preostalih feniranja za ' . esc_html($co->name) . ' ovog meseca.';
+                  ?></p>
                 <?php else: ?>
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:18px;">
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:18px auto 0;max-width:280px;display:grid;gap:10px;">
                   <input type="hidden" name="action" value="dry65_b2b_spend">
                   <input type="hidden" name="code" value="<?php echo esc_attr($employee->code); ?>">
                   <input type="hidden" name="return" value="<?php echo esc_url($card_url); ?>">
                   <input type="hidden" name="pin" class="pk-card-pin" value="">
                   <?php wp_nonce_field('dry65_b2b_spend'); ?>
-                  <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:14px 32px;font-size:16px;font-weight:600;color:#fff;background:#111C1D;">Skini 1 feniranje</button>
+                  <?php if ($type === 'vauceri'): ?>
+                    <label style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#6b625c;text-align:left;">Iznos za skidanje (din)
+                      <input type="number" name="amount" min="1" max="<?php echo (int) $employee->balance; ?>" step="1" inputmode="numeric" required style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:12px 14px;border:1px solid rgba(17,28,29,0.18);border-radius:12px;font-size:20px;text-align:center;">
+                    </label>
+                    <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:14px 32px;font-size:16px;font-weight:600;color:#fff;background:#111C1D;">Skini iznos</button>
+                  <?php elseif ($type === 'sufinansiranje'): ?>
+                    <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:14px 32px;font-size:16px;font-weight:600;color:#fff;background:#111C1D;">Zabeleži feniranje</button>
+                    <p style="margin:0;font-size:13px;color:#6b625c;"><?php echo esc_html($co->name); ?> plaća <?php echo esc_html(dry65_b2b_din($co->company_amount)); ?>. Naplati razliku do cene usluge.</p>
+                  <?php else: ?>
+                    <button type="submit" style="cursor:pointer;border:0;border-radius:999px;padding:14px 32px;font-size:16px;font-weight:600;color:#fff;background:#111C1D;">Skini 1 feniranje</button>
+                  <?php endif; ?>
                 </form>
                 <?php endif; ?>
               <?php endif; ?>
 
-              <?php if (isset($_GET['sk'])): ?><p style="margin:16px 0 0;font-weight:600;">Skinuto. Novo stanje je gore.</p><?php endif; ?>
-              <?php if (isset($_GET['full'])): ?><p style="margin:16px 0 0;color:#a00;font-weight:600;">Fond je potrošen ovog meseca.</p><?php endif; ?>
+              <?php if (isset($_GET['sk'])): ?><p style="margin:16px 0 0;font-weight:600;"><?php echo $type === 'sufinansiranje' ? 'Feniranje zabeleženo.' : 'Skinuto. Novo stanje je gore.'; ?></p><?php endif; ?>
+              <?php if (isset($_GET['full'])): ?><p style="margin:16px 0 0;color:#a00;font-weight:600;"><?php echo $type === 'vauceri' ? 'Nije skinuto, proveri iznos.' : 'Fond je potrošen ovog meseca.'; ?></p><?php endif; ?>
 
-              <p style="margin:16px 0 0;font-size:12.5px;color:#6b625c;">Obnova fonda: <?php echo esc_html(date_i18n('d.m.Y.', strtotime($co->cycle_end))); ?></p>
+              <p style="margin:16px 0 0;font-size:12.5px;color:#6b625c;"><?php echo $type === 'mesecni-paket' ? 'Obnova fonda: ' . esc_html($sum['info_b']) : esc_html($sum['info_b']); ?></p>
               </div>
             </div>
 
@@ -1032,17 +1213,16 @@ add_action('template_redirect', function () {
           <?php endif; ?>
         </div>
       <?php else:
-        $txns = dry65_b2b_txns($company_id, 150);
+        $type = dry65_b2b_type($co);
+        $ym   = isset($_GET['mesec']) ? sanitize_text_field(wp_unslash($_GET['mesec'])) : '';
+        $rep  = dry65_b2b_month_report($co, $ym);
+        $ym   = $rep['ym'];
+        $is_now = $ym === substr(dry65_b2b_today(), 0, 7);
+        $base = $admin_preview ? home_url('/b2b/?firma=' . (int) $co->id) : home_url('/b2b/');
+        $prev = add_query_arg('mesec', dry65_b2b_month_shift($ym, -1), $base);
+        $next = add_query_arg('mesec', dry65_b2b_month_shift($ym, 1), $base);
         $used = (int) $co->initial - (int) $co->balance;
-        $per_emp = [];
-        foreach ($txns as $t) {
-            if ((int) $t->employee_id <= 0 || (int) $t->reversed === 1) continue;
-            if ($t->created_at < $co->cycle_start) continue;
-            $key = (int) $t->employee_id;
-            if (!isset($per_emp[$key])) $per_emp[$key] = ['name' => $t->employee_name, 'count' => 0];
-            if ((int) $t->delta < 0) $per_emp[$key]['count']++;
-        }
-        uasort($per_emp, function ($a, $b) { return $b['count'] - $a['count']; });
+        $cell = 'padding:8px 0;border-bottom:1px solid var(--sage-line,#eee);';
       ?>
       <div class="wrap" style="max-width:720px;margin:0 auto;">
         <?php if ($admin_preview): ?>
@@ -1055,38 +1235,61 @@ add_action('template_redirect', function () {
           <div>
             <img src="<?php echo esc_url($logo); ?>" alt="Dry65" style="height:26px;width:auto;display:block;margin-bottom:8px;">
             <h1 class="display caps" style="font-size:clamp(22px,3.4vw,30px);margin:0;"><?php echo esc_html($co->name); ?></h1>
+            <div class="muted" style="font-size:13px;margin-top:4px;"><?php echo esc_html(preg_replace('/^\d\.\s*/', '', dry65_b2b_types()[$type])); ?></div>
           </div>
           <?php if (!$admin_preview): ?><a href="<?php echo esc_url(home_url('/b2b/?logout=1')); ?>" style="font-size:13px;">Odjavi se</a><?php endif; ?>
         </div>
 
+        <?php if ($type === 'mesecni-paket'): ?>
         <div style="background:#33302c;color:#efe1d2;border-radius:20px;padding:22px 24px;margin-bottom:22px;">
-          <div class="mono" style="letter-spacing:0.14em;text-transform:uppercase;font-size:11.5px;color:#c8beb4;">Ovaj mesec (<?php echo esc_html(date_i18n('d.m.', strtotime($co->cycle_start))); ?>–<?php echo esc_html(date_i18n('d.m.Y.', strtotime($co->cycle_end))); ?>)</div>
+          <div class="mono" style="letter-spacing:0.14em;text-transform:uppercase;font-size:11.5px;color:#c8beb4;">Tekući ciklus (<?php echo esc_html(date_i18n('d.m.', strtotime($co->cycle_start))); ?> do <?php echo esc_html(date_i18n('d.m.Y.', strtotime($co->cycle_end))); ?>)</div>
           <div style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-size:clamp(30px,5vw,40px);margin-top:4px;"><?php echo $used; ?> / <?php echo (int) $co->initial; ?> feniranja</div>
           <div style="font-size:13px;color:#c8beb4;margin-top:4px;">Preostalo: <?php echo (int) $co->balance; ?> · Obnova <?php echo esc_html(date_i18n('d.m.Y.', strtotime($co->cycle_end))); ?></div>
         </div>
+        <?php endif; ?>
 
-        <h2 style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;">Po zaposlenom (ovaj mesec)</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0 12px;">
+          <a href="<?php echo esc_url($prev); ?>" style="font-size:14px;">Prethodni mesec</a>
+          <h2 style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;margin:0;"><?php echo esc_html(dry65_b2b_month_label($ym)); ?></h2>
+          <?php if (!$is_now): ?><a href="<?php echo esc_url($next); ?>" style="font-size:14px;">Sledeći mesec</a><?php else: ?><span style="width:110px;"></span><?php endif; ?>
+        </div>
+
+        <div style="background:#fff;box-shadow:0 1px 2px rgba(17,28,29,0.08),0 8px 20px -10px rgba(17,28,29,0.30);border-radius:16px;padding:18px 20px;margin-bottom:22px;">
+          <?php if ($type === 'sufinansiranje'): ?>
+            <div style="font-size:14px;color:var(--muted);">Za fakturu</div>
+            <div style="font-size:22px;font-weight:600;margin-top:4px;"><?php echo esc_html(dry65_b2b_fens($rep['count'])); ?> × <?php echo esc_html(dry65_b2b_din($co->company_amount)); ?> = <?php echo esc_html(dry65_b2b_din($rep['sum'])); ?></div>
+          <?php elseif ($type === 'vauceri'):
+            $left = 0; foreach (dry65_b2b_employees($co->id) as $e) $left += (int) $e->balance; ?>
+            <div style="font-size:14px;color:var(--muted);">Potrošeno sa vaučera</div>
+            <div style="font-size:22px;font-weight:600;margin-top:4px;"><?php echo esc_html(dry65_b2b_din($rep['sum'])); ?> <span style="font-size:14px;font-weight:400;color:var(--muted);">(<?php echo esc_html(dry65_b2b_visits($rep['count'])); ?>)</span></div>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;">Trenutno preostalo na svim vaučerima: <?php echo esc_html(dry65_b2b_din($left)); ?></div>
+          <?php else: ?>
+            <div style="font-size:14px;color:var(--muted);">Feniranja u mesecu</div>
+            <div style="font-size:22px;font-weight:600;margin-top:4px;"><?php echo (int) $rep['count']; ?><?php if ((int) $co->price_rsd): ?> <span style="font-size:14px;font-weight:400;color:var(--muted);">· mesečni paket <?php echo esc_html(dry65_b2b_din($co->price_rsd)); ?></span><?php endif; ?></div>
+          <?php endif; ?>
+        </div>
+
+        <h2 style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;">Po zaposlenom</h2>
         <table style="width:100%;border-collapse:collapse;margin:10px 0 24px;">
-          <?php if (!$per_emp): ?>
-            <tr><td style="padding:8px 0;color:var(--muted);">Još nema očitavanja ovog meseca.</td></tr>
-          <?php else: foreach ($per_emp as $row): ?>
-            <tr style="border-bottom:1px solid var(--sage-line,#eee);">
-              <td style="padding:8px 0;"><?php echo esc_html($row['name']); ?></td>
-              <td style="padding:8px 0;text-align:right;font-weight:600;"><?php echo (int) $row['count']; ?></td>
+          <?php if (!$rep['per']): ?>
+            <tr><td style="padding:8px 0;color:var(--muted);">Nema dolazaka u ovom mesecu.</td></tr>
+          <?php else: foreach ($rep['per'] as $row): ?>
+            <tr>
+              <td style="<?php echo $cell; ?>"><?php echo esc_html($row['name']); ?></td>
+              <td style="<?php echo $cell; ?>text-align:right;font-weight:600;"><?php echo esc_html(dry65_b2b_visits($row['count'])); ?><?php if ($type !== 'mesecni-paket'): ?> · <?php echo esc_html(dry65_b2b_din($row['sum'])); ?><?php endif; ?></td>
             </tr>
           <?php endforeach; endif; ?>
         </table>
 
-        <h2 style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;">Istorija</h2>
+        <h2 style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;">Dolasci</h2>
         <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;">
-          <?php if (!$txns): ?>
-            <tr><td style="padding:8px 0;color:var(--muted);">Nema istorije.</td></tr>
-          <?php else: foreach ($txns as $t): if ((int) $t->reversed === 1) continue; ?>
-            <tr style="border-bottom:1px solid var(--sage-line,#eee);">
-              <td style="padding:7px 0;white-space:nowrap;color:var(--muted);"><?php echo esc_html(mysql2date('d.m.Y. H:i', $t->created_at)); ?></td>
-              <td style="padding:7px 10px;"><?php echo esc_html($t->employee_name ?: '—'); ?></td>
-              <td style="padding:7px 0;"><?php echo esc_html($t->note); ?></td>
-              <td style="padding:7px 0;text-align:right;font-weight:600;"><?php echo (int) $t->delta; ?></td>
+          <?php if (!$rep['rows']): ?>
+            <tr><td style="padding:8px 0;color:var(--muted);">Nema dolazaka u ovom mesecu.</td></tr>
+          <?php else: foreach ($rep['rows'] as $t): ?>
+            <tr>
+              <td style="<?php echo $cell; ?>white-space:nowrap;color:var(--muted);"><?php echo esc_html(mysql2date('d.m.Y. H:i', $t->created_at)); ?></td>
+              <td style="<?php echo $cell; ?>padding-left:10px;padding-right:10px;"><?php echo esc_html($t->employee_name); ?></td>
+              <td style="<?php echo $cell; ?>text-align:right;font-weight:600;white-space:nowrap;"><?php echo $type === 'mesecni-paket' ? 'Feniranje' : esc_html(dry65_b2b_din($t->amount)); ?></td>
             </tr>
           <?php endforeach; endif; ?>
         </table>
@@ -1110,11 +1313,66 @@ add_action('admin_menu', function () {
     add_submenu_page('dry65-b2b', 'B2B Firme', 'Firme', DRY65_PK_CAP, 'dry65-b2b', 'dry65_b2b_admin_page');
 }, 9);
 
+/* Polja tipa saradnje u admin formi (nova firma i izmena). JS prikazuje samo polja izabranog tipa. */
+function dry65_b2b_admin_type_fields($model, $initial, $price_rsd, $company_amount, $uid) {
+    ?>
+    <p><label>Tip saradnje<br>
+      <select name="model" id="<?php echo esc_attr($uid); ?>-model" style="width:100%;">
+        <?php foreach (dry65_b2b_types() as $k => $label): ?>
+          <option value="<?php echo esc_attr($k); ?>" <?php selected($model, $k); ?>><?php echo esc_html($label); ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label></p>
+    <div data-b2b-type="mesecni-paket">
+      <p><label>Mesečni fond (feniranja)<br>
+        <input type="number" name="initial" min="1" step="1" value="<?php echo (int) $initial; ?>" list="dry65-b2b-plans" style="width:100%;">
+        <datalist id="dry65-b2b-plans"><option value="40"><option value="60"><option value="90"></datalist>
+      </label></p>
+      <p><label>Cena mesečno (din)<br><input type="number" name="price_rsd" min="0" step="1" value="<?php echo (int) $price_rsd ?: ''; ?>" style="width:100%;"></label></p>
+      <p class="description">Kartica skida 1 feniranje iz zajedničkog fonda. Fond se obnavlja svakog meseca.</p>
+    </div>
+    <div data-b2b-type="sufinansiranje">
+      <p><label>Firma plaća po feniranju (din)<br><input type="number" name="company_amount_suf" min="0" step="1" value="<?php echo (int) $company_amount ?: ''; ?>" style="width:100%;"></label></p>
+      <p class="description">QR beleži dolazak, zaposleni doplaćuje razliku na kasi. Na kraju meseca faktura: dolasci × iznos.</p>
+    </div>
+    <div data-b2b-type="vauceri">
+      <p><label>Iznos vaučera po zaposlenom (din)<br><input type="number" name="company_amount_vau" min="0" step="1" value="<?php echo (int) $company_amount ?: ''; ?>" style="width:100%;"></label></p>
+      <p class="description">Podrazumevani iznos pri dodavanju zaposlenog (može da se promeni za svakog). Na kasi se skida iznos.</p>
+    </div>
+    <script>
+    (function(){
+      var sel=document.getElementById(<?php echo wp_json_encode($uid . '-model'); ?>); if(!sel) return;
+      var form=sel.form;
+      function upd(){ form.querySelectorAll('[data-b2b-type]').forEach(function(d){ var on=d.getAttribute('data-b2b-type')===sel.value; d.style.display=on?'':'none'; d.querySelectorAll('input').forEach(function(i){ i.disabled=!on; }); }); }
+      sel.addEventListener('change',upd); upd();
+    })();
+    </script>
+    <?php
+}
+function dry65_b2b_post_company_amount() {
+    $m = sanitize_key($_POST['model'] ?? '');
+    if ($m === 'sufinansiranje') return (int) ($_POST['company_amount_suf'] ?? 0);
+    if ($m === 'vauceri')        return (int) ($_POST['company_amount_vau'] ?? 0);
+    return 0;
+}
+
 function dry65_b2b_admin_page() {
     if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
     $id = isset($_GET['company']) ? (int) $_GET['company'] : 0;
     if ($id) { dry65_b2b_admin_detail($id); return; }
     $rows = dry65_b2b_all();
+    // Popuni formu iz online prijave (Prijave > „Napravi firmu iz prijave").
+    $pf = ['name' => '', 'email' => '', 'model' => 'mesecni-paket', 'note' => ''];
+    $pid = isset($_GET['prijava']) ? (int) $_GET['prijava'] : 0;
+    if ($pid && get_post_type($pid) === 'dry65_b2b_prijava') {
+        $pm = fn($k) => (string) get_post_meta($pid, '_b2bp_' . $k, true);
+        $pf = [
+            'name'  => $pm('company'),
+            'email' => $pm('email'),
+            'model' => isset(dry65_b2b_types()[$pm('model')]) ? $pm('model') : 'mesecni-paket',
+            'note'  => trim('PIB ' . $pm('pib') . ', ' . $pm('contact') . ', ' . $pm('phone') . ($pm('employees') ? ', ' . $pm('employees') . ' zaposlenih' : '')),
+        ];
+    }
     ?>
     <div class="wrap">
       <h1>B2B Firme</h1>
@@ -1127,29 +1385,31 @@ function dry65_b2b_admin_page() {
           <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="dry65_b2b_create">
             <?php wp_nonce_field('dry65_b2b_create'); ?>
-            <p><label>Naziv firme<br><input type="text" name="name" class="regular-text" required style="width:100%;"></label></p>
-            <p><label>Kontakt email<br><input type="email" name="contact_email" class="regular-text" style="width:100%;"></label></p>
-            <p><label>Mesečni fond (feniranja)<br>
-              <input type="number" name="initial" min="1" step="1" value="30" list="dry65-b2b-plans" style="width:100%;">
-              <datalist id="dry65-b2b-plans"><option value="30"><option value="60"><option value="90"></datalist>
-            </label></p>
-            <p><label>Cena mesečno (din)<br><input type="number" name="price_rsd" min="0" step="1" style="width:100%;"></label></p>
-            <p><label>Napomena<br><input type="text" name="note" style="width:100%;"></label></p>
+            <?php if ($pid && $pf['name'] !== ''): ?><p class="description" style="margin-top:0;">Popunjeno iz online prijave.</p><?php endif; ?>
+            <p><label>Naziv firme<br><input type="text" name="name" class="regular-text" required value="<?php echo esc_attr($pf['name']); ?>" style="width:100%;"></label></p>
+            <p><label>Kontakt email<br><input type="email" name="contact_email" class="regular-text" value="<?php echo esc_attr($pf['email']); ?>" style="width:100%;"></label></p>
+            <?php dry65_b2b_admin_type_fields($pf['model'], 40, 0, 0, 'b2b-new'); ?>
+            <p><label>Napomena<br><input type="text" name="note" value="<?php echo esc_attr($pf['note']); ?>" style="width:100%;"></label></p>
             <p><button type="submit" class="button button-primary">Napravi firmu</button></p>
           </form>
         </div>
         <div style="flex:1;min-width:360px;">
           <table class="widefat striped">
-            <thead><tr><th>Firma</th><th>Fond</th><th>Status</th><th>Obnova</th><th></th></tr></thead>
+            <thead><tr><th>Firma</th><th>Tip</th><th>Stanje</th><th>Status</th><th></th></tr></thead>
             <tbody>
               <?php if (!$rows): ?>
                 <tr><td colspan="5"><em>Još nema firmi.</em></td></tr>
               <?php else: foreach ($rows as $r): ?>
               <tr>
                 <td><strong><?php echo esc_html($r->name); ?></strong></td>
-                <td><?php echo (int) $r->balance; ?> / <?php echo (int) $r->initial; ?></td>
+                <?php $rt = dry65_b2b_type($r); ?>
+                <td><?php echo esc_html(substr(dry65_b2b_types()[$rt], 0, 1)); ?>. <?php echo esc_html(['mesecni-paket' => 'Paket', 'sufinansiranje' => 'Deo firma', 'vauceri' => 'Vaučeri'][$rt]); ?></td>
+                <td><?php
+                  if ($rt === 'mesecni-paket') echo (int) $r->balance . ' / ' . (int) $r->initial . ', obnova ' . esc_html(date_i18n('d.m.', strtotime($r->cycle_end)));
+                  elseif ($rt === 'sufinansiranje') echo esc_html(dry65_b2b_din($r->company_amount)) . ' po feniranju';
+                  else echo esc_html(dry65_b2b_din($r->company_amount)) . ' po zaposlenom';
+                ?></td>
                 <td><?php echo $r->status === 'active' ? 'Aktivna' : 'Pauzirana'; ?></td>
-                <td><?php echo esc_html(date_i18n('d.m.Y.', strtotime($r->cycle_end))); ?></td>
                 <td><a class="button button-small" href="<?php echo esc_url(admin_url('admin.php?page=dry65-b2b&company=' . $r->id)); ?>">Otvori</a></td>
               </tr>
               <?php endforeach; endif; ?>
@@ -1167,6 +1427,11 @@ function dry65_b2b_admin_detail($id) {
     if (!$co) { echo '<div class="wrap"><p>Firma nije pronađena.</p></div>'; return; }
     $employees = dry65_b2b_employees($id);
     $txns      = dry65_b2b_txns($id, 300);
+    $type      = dry65_b2b_type($co);
+    $ym        = isset($_GET['mesec']) ? sanitize_text_field(wp_unslash($_GET['mesec'])) : '';
+    $rep       = dry65_b2b_month_report($co, $ym);
+    $ym        = $rep['ym'];
+    $self      = admin_url('admin.php?page=dry65-b2b&company=' . (int) $co->id);
     $is_admin  = current_user_can(DRY65_PK_ADMIN_CAP);
     global $wpdb;
     $uid = $wpdb->get_var($wpdb->prepare("SELECT user_id FROM $wpdb->usermeta WHERE meta_key='dry65_b2b_company_id' AND meta_value=%s", (string) $id));
@@ -1192,8 +1457,7 @@ function dry65_b2b_admin_detail($id) {
             <?php wp_nonce_field('dry65_b2b_update'); ?>
             <p><label>Naziv<br><input type="text" name="name" value="<?php echo esc_attr($co->name); ?>" class="regular-text" required style="width:100%;"></label></p>
             <p><label>Kontakt email<br><input type="email" name="contact_email" value="<?php echo esc_attr($co->contact_email); ?>" style="width:100%;"></label></p>
-            <p><label>Mesečni fond<br><input type="number" name="initial" min="1" value="<?php echo (int) $co->initial; ?>" style="width:100%;"></label></p>
-            <p><label>Cena mesečno (din)<br><input type="number" name="price_rsd" min="0" value="<?php echo (int) $co->price_rsd; ?>" style="width:100%;"></label></p>
+            <?php dry65_b2b_admin_type_fields(dry65_b2b_type($co), (int) $co->initial ?: 40, (int) $co->price_rsd, (int) $co->company_amount, 'b2b-edit'); ?>
             <p><label>Status<br>
               <select name="status" style="width:100%;">
                 <option value="active" <?php selected($co->status, 'active'); ?>>Aktivna</option>
@@ -1203,6 +1467,7 @@ function dry65_b2b_admin_detail($id) {
             <p><label>Napomena<br><input type="text" name="note" value="<?php echo esc_attr($co->note); ?>" style="width:100%;"></label></p>
             <p><button type="submit" class="button button-primary">Sačuvaj</button></p>
           </form>
+          <?php if (dry65_b2b_type($co) === 'mesecni-paket'): ?>
           <hr>
           <p><strong>Ciklus:</strong> <?php echo esc_html(date_i18n('d.m.Y.', strtotime($co->cycle_start))); ?> – <?php echo esc_html(date_i18n('d.m.Y.', strtotime($co->cycle_end))); ?></p>
           <p><strong>Preostalo:</strong> <?php echo (int) $co->balance; ?> / <?php echo (int) $co->initial; ?></p>
@@ -1212,6 +1477,7 @@ function dry65_b2b_admin_detail($id) {
             <?php wp_nonce_field('dry65_b2b_reset_now'); ?>
             <button type="submit" class="button">Resetuj mesec sada</button>
           </form>
+          <?php endif; ?>
 
           <hr>
           <h2>Logo za Wallet karticu</h2>
@@ -1260,6 +1526,9 @@ function dry65_b2b_admin_detail($id) {
               <?php wp_nonce_field('dry65_b2b_employee_add'); ?>
               <input type="text" name="name" placeholder="Ime zaposlenog" required style="flex:1;min-width:0;">
               <input type="email" name="email" placeholder="Email (šaljemo karticu)" style="flex:1;min-width:0;">
+              <?php if ($type === 'vauceri'): ?>
+              <input type="number" name="voucher" min="0" step="1" value="<?php echo (int) $co->company_amount ?: ''; ?>" placeholder="Iznos (din)" title="Iznos vaučera (din)" style="width:110px;">
+              <?php endif; ?>
               <button type="submit" class="button">Dodaj</button>
             </form>
             <table class="widefat striped">
@@ -1269,7 +1538,20 @@ function dry65_b2b_admin_detail($id) {
                   <tr><td colspan="3"><em>Još nema zaposlenih.</em></td></tr>
                 <?php else: foreach ($employees as $e): ?>
                 <tr>
-                  <td><?php echo esc_html($e->name); ?></td>
+                  <td>
+                    <?php echo esc_html($e->name); ?>
+                    <?php if ($type === 'vauceri'): ?>
+                      <div style="margin-top:4px;color:#555;">Vaučer: <strong><?php echo esc_html(dry65_b2b_din($e->balance)); ?></strong> / <?php echo esc_html(dry65_b2b_din($e->initial)); ?></div>
+                      <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:4px;margin-top:6px;">
+                        <input type="hidden" name="action" value="dry65_b2b_employee_topup">
+                        <input type="hidden" name="id" value="<?php echo (int) $e->id; ?>">
+                        <input type="hidden" name="company_id" value="<?php echo (int) $co->id; ?>">
+                        <?php wp_nonce_field('dry65_b2b_employee_topup'); ?>
+                        <input type="number" name="amount" min="1" step="1" placeholder="din" required style="width:80px;">
+                        <button type="submit" class="button button-small">Dopuni</button>
+                      </form>
+                    <?php endif; ?>
+                  </td>
                   <td>
                     <input type="text" readonly value="<?php echo esc_url(dry65_b2b_card_url($e->code, $co->name)); ?>" style="width:100%;" onclick="this.select();">
                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:6px;margin-top:6px;">
@@ -1295,6 +1577,41 @@ function dry65_b2b_admin_detail($id) {
               </tbody>
             </table>
             <p class="description">Kad uneseš email, kartica se odmah šalje zaposlenom. Link možeš poslati i ručno (WhatsApp). Na kartici zaposleni dodaje karticu u Apple/Google Wallet.</p>
+          </div>
+
+          <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+              <h2 style="margin:0;">Obračun za fakturu: <?php echo esc_html(dry65_b2b_month_label($ym)); ?></h2>
+              <span>
+                <a class="button button-small" href="<?php echo esc_url(add_query_arg('mesec', dry65_b2b_month_shift($ym, -1), $self)); ?>">Prethodni</a>
+                <a class="button button-small" href="<?php echo esc_url(add_query_arg('mesec', dry65_b2b_month_shift($ym, 1), $self)); ?>">Sledeći</a>
+                <a class="button button-small button-primary" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=dry65_b2b_csv&company=' . (int) $co->id . '&mesec=' . $ym), 'dry65_b2b_csv')); ?>">Preuzmi CSV</a>
+              </span>
+            </div>
+            <p style="font-size:15px;margin:12px 0;">
+              <?php if ($type === 'sufinansiranje'): ?>
+                <strong><?php echo esc_html(dry65_b2b_fens($rep['count'])); ?> × <?php echo esc_html(dry65_b2b_din($co->company_amount)); ?> = <?php echo esc_html(dry65_b2b_din($rep['sum'])); ?></strong>
+              <?php elseif ($type === 'vauceri'): ?>
+                <strong>Potrošeno sa vaučera: <?php echo esc_html(dry65_b2b_din($rep['sum'])); ?></strong> (<?php echo esc_html(dry65_b2b_visits($rep['count'])); ?>)
+              <?php else: ?>
+                <strong><?php echo esc_html(dry65_b2b_fens($rep['count'])); ?></strong><?php if ((int) $co->price_rsd): ?>, mesečni paket <?php echo esc_html(dry65_b2b_din($co->price_rsd)); ?><?php endif; ?>
+              <?php endif; ?>
+            </p>
+            <table class="widefat striped">
+              <thead><tr><th>Kad</th><th>Zaposleni</th><th>Iznos</th><th>Radnica</th></tr></thead>
+              <tbody>
+                <?php if (!$rep['rows']): ?>
+                  <tr><td colspan="4"><em>Nema dolazaka u ovom mesecu.</em></td></tr>
+                <?php else: foreach ($rep['rows'] as $t): ?>
+                <tr>
+                  <td><?php echo esc_html(mysql2date('d.m.Y. H:i', $t->created_at)); ?></td>
+                  <td><?php echo esc_html($t->employee_name); ?></td>
+                  <td><?php echo $type === 'mesecni-paket' ? '1 feniranje' : esc_html(dry65_b2b_din($t->amount)); ?></td>
+                  <td><?php echo esc_html($t->staff_name); ?></td>
+                </tr>
+                <?php endforeach; endif; ?>
+              </tbody>
+            </table>
           </div>
 
           <div style="background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;">
@@ -1341,11 +1658,13 @@ add_action('admin_post_dry65_b2b_create', function () {
     $id = dry65_b2b_create(
         $name,
         sanitize_email(wp_unslash($_POST['contact_email'] ?? '')),
-        (int) ($_POST['initial'] ?? 30),
+        (int) ($_POST['initial'] ?? 40),
         (int) ($_POST['price_rsd'] ?? 0),
-        sanitize_text_field(wp_unslash($_POST['note'] ?? ''))
+        sanitize_text_field(wp_unslash($_POST['note'] ?? '')),
+        sanitize_key($_POST['model'] ?? 'mesecni-paket'),
+        dry65_b2b_post_company_amount()
     );
-    wp_redirect(admin_url('admin.php?page=dry65-b2b' . ($id ? '&created=1' : '&err=1')));
+    wp_redirect(admin_url('admin.php?page=dry65-b2b' . ($id ? '&company=' . $id . '&saved=1' : '&err=1')));
     exit;
 });
 
@@ -1360,7 +1679,9 @@ add_action('admin_post_dry65_b2b_update', function () {
         (int) ($_POST['initial'] ?? 0),
         (int) ($_POST['price_rsd'] ?? 0),
         sanitize_key($_POST['status'] ?? 'active'),
-        sanitize_text_field(wp_unslash($_POST['note'] ?? ''))
+        sanitize_text_field(wp_unslash($_POST['note'] ?? '')),
+        sanitize_key($_POST['model'] ?? ''),
+        dry65_b2b_post_company_amount()
     );
     wp_redirect(admin_url('admin.php?page=dry65-b2b&company=' . $id . '&saved=1'));
     exit;
@@ -1384,12 +1705,48 @@ add_action('admin_post_dry65_b2b_employee_add', function () {
     $email = sanitize_email(wp_unslash($_POST['email'] ?? ''));
     $mail  = '';
     if ($name !== '') {
-        $emp_id = dry65_b2b_employee_create($company_id, $name, $email);
+        $emp_id = dry65_b2b_employee_create($company_id, $name, $email, isset($_POST['voucher']) ? (int) $_POST['voucher'] : null);
         if ($emp_id && $email !== '') {
             $mail = dry65_b2b_employee_send_email(dry65_b2b_employee_get($emp_id), dry65_b2b_get($company_id)) ? '1' : '0';
         }
     }
     wp_redirect(admin_url('admin.php?page=dry65-b2b&company=' . $company_id . '&emp_added=1' . ($mail !== '' ? '&mail=' . $mail : '')));
+    exit;
+});
+
+add_action('admin_post_dry65_b2b_employee_topup', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_b2b_employee_topup');
+    $company_id = (int) ($_POST['company_id'] ?? 0);
+    $emp = dry65_b2b_employee_get((int) ($_POST['id'] ?? 0));
+    if ($emp && (int) $emp->company_id === $company_id) dry65_b2b_employee_topup($emp, (int) ($_POST['amount'] ?? 0));
+    wp_redirect(admin_url('admin.php?page=dry65-b2b&company=' . $company_id . '&saved=1'));
+    exit;
+});
+
+/* CSV obračuna za mesec (za fakturu): datum, vreme, zaposleni, iznos, radnica + zbir. */
+add_action('admin_post_dry65_b2b_csv', function () {
+    if (!current_user_can(DRY65_PK_CAP)) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_b2b_csv');
+    $co = dry65_b2b_get((int) ($_GET['company'] ?? 0));
+    if (!$co) wp_die('Firma nije pronađena.');
+    $rep  = dry65_b2b_month_report($co, sanitize_text_field(wp_unslash($_GET['mesec'] ?? '')));
+    $type = dry65_b2b_type($co);
+    nocache_headers();
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="dry65-' . sanitize_title($co->name) . '-' . $rep['ym'] . '.csv"');
+    $out = fopen('php://output', 'w');
+    fwrite($out, "\xEF\xBB\xBF"); // BOM da Excel pravilno prikaže č, ć, š...
+    fputcsv($out, ['Datum', 'Vreme', 'Zaposleni', $type === 'mesecni-paket' ? 'Feniranja' : 'Iznos (din)', 'Radnica'], ';');
+    foreach ($rep['rows'] as $t) {
+        fputcsv($out, [
+            mysql2date('d.m.Y.', $t->created_at), mysql2date('H:i', $t->created_at), $t->employee_name,
+            $type === 'mesecni-paket' ? 1 : (int) $t->amount, $t->staff_name,
+        ], ';');
+    }
+    fputcsv($out, [], ';');
+    fputcsv($out, ['Ukupno', '', dry65_b2b_visits($rep['count']), $type === 'mesecni-paket' ? $rep['count'] : $rep['sum'], ''], ';');
+    fclose($out);
     exit;
 });
 

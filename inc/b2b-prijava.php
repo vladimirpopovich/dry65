@@ -174,6 +174,7 @@ add_action('add_meta_boxes_dry65_b2b_prijava', function () {
             echo '<tr><th scope="row">' . esc_html($label) . '</th><td>' . ($v === '' ? '/' : $v) . '</td></tr>';
         }
         echo '</tbody></table>';
-        echo '<p><a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=dry65-b2b')) . '">Otvori B2B Firme da kreiraš firmu</a></p>';
+        echo '<p><a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=dry65-b2b&prijava=' . (int) $post->ID)) . '">Napravi firmu iz prijave</a></p>';
+        echo '<p class="description">Otvara formu za novu firmu sa već popunjenim nazivom, emailom i tipom saradnje.</p>';
     }, 'dry65_b2b_prijava', 'normal', 'high');
 });
