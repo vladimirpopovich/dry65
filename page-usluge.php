@@ -29,7 +29,7 @@ $tpl  = get_template_directory_uri();
       </div>
     </div>
     <button type="button" class="readmore-trigger" data-readmore-target="readmore-usluge" data-more-label="<?php echo esc_attr(t('Pročitaj više')); ?>" data-less-label="<?php echo esc_attr(t('Prikaži manje')); ?>" aria-expanded="false" aria-controls="readmore-usluge">
-      <span class="rm-label"><?php echo t('Pročitaj više'); ?></span> <span class="arrow">↓</span>
+      <span class="rm-label"><?php echo t('Pročitaj više'); ?></span>
     </button>
   </div>
 </section>
@@ -43,7 +43,7 @@ $tpl  = get_template_directory_uri();
   .usl-link { display:flex; align-items:center; gap:10px; padding:12px 0; color:var(--ink); text-decoration:none;
     font-family:var(--font-sans); font-size:17px; font-weight:500; border-bottom:1px solid var(--cream-deep,#ece7df);
     transition:color .2s, gap .2s; }
-  .usl-link:hover { color:var(--clay); gap:14px; }
+  .usl-link:hover { color:var(--clay); }
   .usl-link .arr { color:var(--clay); font-size:15px; }
   /* Stavke bez linka (strane još u pripremi) — isti izgled, bez hovera/klika */
   .usl-item { display:flex; align-items:center; gap:10px; padding:12px 0; color:var(--ink);
@@ -75,12 +75,12 @@ $no_link_cats = function_exists('dry65_unready_service_slugs') ? dry65_unready_s
         <?php if ($no_link): ?>
         <li class="usl-item"><span class="dot">•</span> <?php echo esc_html($c['title']); ?></li>
         <?php else: ?>
-        <li><a class="usl-link" href="<?php echo esc_url($c['url']); ?>"><span class="arr">→</span> <?php echo esc_html($c['title']); ?></a></li>
+        <li><a class="usl-link" href="<?php echo esc_url($c['url']); ?>"> <?php echo esc_html($c['title']); ?></a></li>
         <?php endif; ?>
         <?php endforeach; ?>
       </ul>
       <?php elseif (!$no_link): ?>
-      <a href="<?php echo esc_url($cat['url']); ?>" class="usl-link" style="display:inline-flex;border:0;margin-top:18px;font-weight:600;color:var(--clay);"><span class="arr">→</span> <?php echo t('Saznaj više'); ?></a>
+      <a href="<?php echo esc_url($cat['url']); ?>" class="usl-link" style="display:inline-flex;border:0;margin-top:18px;font-weight:600;color:var(--clay);"> <?php echo t('Saznaj više'); ?></a>
       <?php endif; ?>
     </div>
   </div>
@@ -110,7 +110,7 @@ $no_link_cats = function_exists('dry65_unready_service_slugs') ? dry65_unready_s
     <h2 class="display" style="font-size:clamp(30px,4.5vw,52px);"><?php echo t('Spremna za savršenu kosu?'); ?></h2>
     <div class="btn-row" style="justify-content:center;margin-top:26px;">
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark">
-        <?php echo t('Pogledaj cenovnik'); ?> <span class="arrow">→</span>
+        <?php echo t('Pogledaj cenovnik'); ?>
       </a>
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('paketi'))); ?>" class="btn btn-outline">
         <?php echo t('Mesečni paketi'); ?>

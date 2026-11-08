@@ -1439,7 +1439,7 @@ function dry65_live_admin_page() {
         }
         .dry65-live-circle .num { font-size: 23px; font-weight: 800; }
         .dry65-live-circle .unit { font-size: 11px; font-weight: 600; opacity: .8; margin-top: 2px; }
-        .dry65-live-circle:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.22); }
+        .dry65-live-circle:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.22); }
         .dry65-live-circle:active { transform: translateY(0); }
         .dry65-live-circle.is-current { border-color: #111 !important; box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--c-bg); }
         .dry65-live-actions {
@@ -1468,7 +1468,7 @@ function dry65_live_admin_page() {
             box-shadow: 0 2px 6px rgba(0,0,0,0.12);
             transition: transform .08s ease, box-shadow .12s ease;
         }
-        .dry65-live-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,0.2); }
+        .dry65-live-btn:hover { box-shadow: 0 5px 14px rgba(0,0,0,0.2); }
         .dry65-live-btn:active { transform: translateY(0); }
         .dry65-live-btn.is-current { border-color: #111 !important; box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--btn-bg); }
         @media (max-width: 640px) {
@@ -1538,7 +1538,7 @@ function dry65_live_widget() {
     <a class="live-strip" id="dry65-live-strip" href="<?php echo esc_url(home_url('/live/')); ?>">
         <span class="live-strip-dot" aria-hidden="true"></span>
         <span class="live-strip-text" id="dry65-live-strip-text"><?php echo t('Proveri uživo koliko se čeka'); ?></span>
-        <span class="live-strip-arrow" aria-hidden="true">→</span>
+
     </a>
 
     <style>
@@ -1553,7 +1553,7 @@ function dry65_live_widget() {
             transition: border-color .16s ease, transform .16s ease;
             --dot: var(--muted);
         }
-        .live-strip:hover { border-color: var(--clay); transform: translateY(-1px); }
+        .live-strip:hover { border-color: var(--clay); }
         .live-strip[data-tier="free"]   { --dot: #84B052; }
         .live-strip[data-tier="lime"]   { --dot: #C9DB5B; }
         .live-strip[data-tier="yellow"] { --dot: #F6D63B; }

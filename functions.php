@@ -17,6 +17,7 @@ require_once get_template_directory() . '/inc/paketi.php';
 require_once get_template_directory() . '/inc/wallet.php'; // digitalni wallet (Google) — koristi paketi.php
 require_once get_template_directory() . '/inc/wallet-apple.php'; // Apple Wallet (.pkpass)
 require_once get_template_directory() . '/inc/b2b.php'; // B2B paketi (firma -> zajednicki mesecni fond)
+require_once get_template_directory() . '/inc/b2b-prijava.php'; // online prijava firme sa /za-firme/
 require_once get_template_directory() . '/inc/seed-feniranje.php'; // jednokratni seed teksta (obrisati posle upotrebe)
 require_once get_template_directory() . '/inc/services-noindex.php'; // noindex + sitemap-exclude za nespremne kategorije (Stilizovanje/Nega)
 
@@ -42,7 +43,7 @@ add_action('after_setup_theme', 'dry65_setup');
 
 /* ---- Enqueue ---- */
 function dry65_scripts() {
-    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.1.13');
+    wp_enqueue_style('dry65-style', get_stylesheet_uri(), [], '1.1.17');
     wp_enqueue_script('dry65-js', get_template_directory_uri() . '/assets/js/dry65.js', [], '1.3.2', true);
     wp_localize_script('dry65-js', 'dry65', [
         'themeUrl' => get_template_directory_uri(),

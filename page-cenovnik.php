@@ -246,7 +246,7 @@ echo '<script type="application/ld+json">' . wp_json_encode($catalog, JSON_UNESC
     </p>
     <div class="btn-row" style="justify-content:center;margin-top:28px;">
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('paketi'))); ?>" class="btn btn-primary">
-        <?php echo t('Mesečni paketi'); ?> <span class="arrow">→</span>
+        <?php echo t('Mesečni paketi'); ?>
       </a>
       <a href="tel:<?php echo esc_attr($biz['phone']); ?>" class="btn btn-ghost-light">
         <?php echo esc_html($biz['phone_display']); ?>

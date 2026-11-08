@@ -137,7 +137,7 @@ $lengths_json = json_encode(array_map(fn($l) => [
       </p>
       <div class="btn-row" style="justify-content:center;margin-top:24px;">
         <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">
-          <?php echo t('Kako do nas'); ?> <span class="arrow">→</span>
+          <?php echo t('Kako do nas'); ?>
         </a>
       </div>
     </div>

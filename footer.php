@@ -50,6 +50,9 @@ $tpl  = get_template_directory_uri();
             $url = get_permalink(get_page_by_path($item['slug'])) ?: home_url('/' . $item['slug'] . '/'); ?>
             <li><a href="<?php echo esc_url($url); ?>"><?php echo esc_html(t($item['label'])); ?></a></li>
           <?php endforeach; ?>
+          <?php $b2b_page = get_page_by_path('za-firme'); if ($b2b_page): ?>
+            <li><a href="<?php echo esc_url(get_permalink($b2b_page)); ?>"><?php echo t('Za firme'); ?></a></li>
+          <?php endif; ?>
           <?php $faq_page = get_page_by_path('faq'); if ($faq_page): ?>
             <li><a href="<?php echo esc_url(get_permalink($faq_page)); ?>"><?php echo t('Česta pitanja'); ?></a></li>
           <?php endif; ?>

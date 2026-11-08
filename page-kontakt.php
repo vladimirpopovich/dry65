@@ -40,7 +40,7 @@ $rows = [
       </div>
     </div>
     <button type="button" class="readmore-trigger" data-readmore-target="readmore-kontakt" data-more-label="<?php echo esc_attr(t('Pročitaj više')); ?>" data-less-label="<?php echo esc_attr(t('Prikaži manje')); ?>" aria-expanded="false" aria-controls="readmore-kontakt">
-      <span class="rm-label"><?php echo t('Pročitaj više'); ?></span> <span class="arrow">↓</span>
+      <span class="rm-label"><?php echo t('Pročitaj više'); ?></span>
     </button>
   </div>
 </section>
@@ -49,14 +49,14 @@ $rows = [
   <div class="wrap kontakt-grid" style="display:grid;grid-template-columns:1fr 1.1fr;gap:clamp(32px,5vw,64px);">
 
     <div>
-      <div class="stack" style="border:1px solid var(--sage-line);border-radius:var(--radius-lg);overflow:hidden;">
+      <div class="stack" style="background:#fff;box-shadow:var(--shadow-soft);border-radius:var(--radius-lg);overflow:hidden;">
         <?php foreach ($rows as $i => $r): ?>
         <a href="<?php echo esc_url($r['href']); ?>"
           <?php if ($r['ext']): ?>target="_blank" rel="noopener"<?php endif; ?>
           class="row contact-row"
           style="justify-content:space-between;padding:22px 26px;<?php echo $i < count($rows) - 1 ? 'border-bottom:1px solid var(--sage-line);' : ''; ?>transition:background .2s;">
           <span class="mono" style="font-size:12px;color:var(--clay);text-transform:uppercase;letter-spacing:0.08em;"><?php echo esc_html(t($r["k"])); ?></span>
-          <span style="font-weight:500;font-size:17px;text-align:right;"><?php echo esc_html($r['v']); ?> <span style="color:var(--clay);">→</span></span>
+          <span style="font-weight:500;font-size:17px;text-align:right;"><?php echo esc_html($r['v']); ?></span>
         </a>
         <?php endforeach; ?>
       </div>
@@ -75,7 +75,7 @@ $rows = [
     </div>
 
     <div>
-      <div class="rounded" style="position:relative;overflow:hidden;aspect-ratio:4/3;border:1px solid var(--sage-line);">
+      <div class="rounded" style="position:relative;overflow:hidden;aspect-ratio:4/3;box-shadow:var(--shadow-soft);">
         <iframe
           title="dry65, West65, Novi Beograd"
           src="https://maps.google.com/maps?q=dry65%20Novi%20Beograd&z=16&output=embed"
@@ -83,7 +83,7 @@ $rows = [
           loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
         <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener"
           class="btn btn-dark" style="position:absolute;bottom:16px;right:16px;">
-          <?php echo t('Kako do nas'); ?> <span class="arrow">→</span>
+          <?php echo t('Kako do nas'); ?>
         </a>
       </div>
       <div style="margin-top:24px;padding:26px;background:var(--cream);border-radius:var(--radius-lg);">

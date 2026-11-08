@@ -48,7 +48,7 @@ $parent = (int) get_post_field('post_parent', $id);
   .svc-hub-links { list-style:none; padding:0; margin:0; max-width:720px; display:grid; grid-template-columns:repeat(2,1fr); gap:0 28px; }
   .svc-hub-link { display:flex; align-items:center; gap:10px; padding:12px 0; color:var(--ink); text-decoration:none;
     font-family:var(--font-sans); font-size:17px; font-weight:500; border-bottom:1px solid var(--cream-deep,#ece7df); transition:color .2s, gap .2s; }
-  .svc-hub-link:hover { color:var(--clay); gap:14px; }
+  .svc-hub-link:hover { color:var(--clay); }
   .svc-hub-link .arr { color:var(--clay); font-size:15px; }
   @media (max-width:600px){ .svc-hub-links { grid-template-columns:1fr; } }
 </style>
@@ -88,7 +88,7 @@ $parent = (int) get_post_field('post_parent', $id);
     <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:0 0 14px;"><?php echo t('Izaberi svoj stil'); ?></h2>
     <ul class="svc-hub-links">
       <?php foreach ($kids as $c): ?>
-      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($c->ID)); ?>"><span class="arr">→</span> <?php echo esc_html(dry65_svc_title($c->ID)); ?></a></li>
+      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($c->ID)); ?>"> <?php echo esc_html(dry65_svc_title($c->ID)); ?></a></li>
       <?php endforeach; ?>
     </ul>
     <?php endif; ?>
@@ -100,7 +100,7 @@ $parent = (int) get_post_field('post_parent', $id);
     <?php endif; ?>
 
     <div class="btn-row" style="margin-top:clamp(28px,4vw,44px);gap:12px;flex-wrap:wrap;">
-      <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark"><?php echo t('Kako do nas'); ?> <span class="arrow">→</span></a>
+      <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark"><?php echo t('Kako do nas'); ?></a>
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-outline"><?php echo t('Cenovnik'); ?></a>
     </div>
   </div>
@@ -114,7 +114,6 @@ $parent = (int) get_post_field('post_parent', $id);
   .svc-gallery-strip::-webkit-scrollbar { display:none; }
   .svc-gallery-item { flex:0 0 auto; width:clamp(180px,44vw,240px); aspect-ratio:3/4; border-radius:var(--radius-lg); overflow:hidden; scroll-snap-align:start; padding:0; border:0; margin:0; background:var(--cream); cursor:pointer; display:block; }
   .svc-gallery-item img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s var(--ease); }
-  .svc-gallery-item:hover img { transform:scale(1.05); }
   /* Lightbox */
   .svc-lb { position:fixed; inset:0; z-index:9999; background:rgba(17,28,29,0.94); display:none; align-items:center; justify-content:center; }
   .svc-lb.open { display:flex; }
@@ -132,18 +131,18 @@ $parent = (int) get_post_field('post_parent', $id);
   .svc-article > h3 { font-family:var(--font-display); font-weight:400; font-size:clamp(19px,2.2vw,25px); line-height:1.15; margin:30px 0 8px; color:var(--oxblood); }
   .svc-article > *:first-child { margin-top:0; }
   /* Cenovnik blok unutar članka */
-  .svc-price { border:1px solid var(--sage-line,#e5e5e0); border-radius:var(--radius-lg); background:var(--cream); padding:clamp(20px,3vw,30px); margin:38px 0; }
+  .svc-price { border-radius:var(--radius-lg); background:#fff; box-shadow:var(--shadow-soft); padding:clamp(20px,3vw,30px); margin:38px 0; }
   .svc-price-top { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
   .svc-price-top h2 { font-family:var(--font-display); font-weight:300; font-size:clamp(23px,2.8vw,32px); line-height:1.05; margin:0; }
-  .svc-price-list { margin-top:20px; background:var(--paper,#fff); border-radius:12px; border:1px solid var(--sage-line,#e5e5e0); overflow:hidden; }
+  .svc-price-list { margin-top:20px; background:#fff; border-radius:12px; box-shadow:var(--shadow-sm); overflow:hidden; }
   .svc-price-row { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; }
   .svc-price-row + .svc-price-row { border-top:1px solid var(--sage-line,#e5e5e0); }
   /* dry65 live poziv */
-  .svc-live { display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; border:1px solid var(--sage-line,#e5e5e0); border-radius:var(--radius-lg); background:var(--paper,#fff); padding:clamp(20px,3vw,28px); margin:38px 0; }
+  .svc-live { display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; border-radius:var(--radius-lg); background:#fff; box-shadow:var(--shadow-soft); padding:clamp(20px,3vw,28px); margin:38px 0; }
   .svc-live-h { font-family:var(--font-display); font-weight:300; font-size:clamp(22px,2.6vw,28px); line-height:1.05; }
   .svc-live p { font-family:var(--font-sans); font-size:16px; color:var(--ink-soft); margin:8px 0 0; max-width:44ch; }
-  .svc-live-link { display:inline-flex; align-items:center; gap:9px; white-space:nowrap; font-family:var(--font-sans); font-weight:600; font-size:15px; color:var(--ink); text-decoration:none; border:1px solid rgba(17,28,29,0.18); border-radius:999px; padding:11px 20px; transition:border-color .2s, background .2s; }
-  .svc-live-link:hover { border-color:rgba(17,28,29,0.45); }
+  .svc-live-link { display:inline-flex; align-items:center; gap:9px; white-space:nowrap; font-family:var(--font-sans); font-weight:600; font-size:15px; color:var(--ink); text-decoration:none; background:#fff; box-shadow:var(--shadow-sm); border-radius:999px; padding:11px 20px; transition:box-shadow .2s, background .2s; }
+  .svc-live-link:hover { box-shadow:var(--shadow-soft); }
   .svc-live-dot { width:9px; height:9px; border-radius:50%; background:#2f9e44; flex-shrink:0; box-shadow:0 0 0 0 rgba(47,158,68,0.5); animation:svcLivePulse 2s ease-out infinite; }
   @keyframes svcLivePulse { 0%{box-shadow:0 0 0 0 rgba(47,158,68,0.5);} 70%{box-shadow:0 0 0 6px rgba(47,158,68,0);} 100%{box-shadow:0 0 0 0 rgba(47,158,68,0);} }
   @media (prefers-reduced-motion: reduce){ .svc-live-dot{animation:none;} }
@@ -278,7 +277,7 @@ if ($g_total > 0 || $g_quote):
   .svc-trust-num { font-weight:700; font-size:17px; }
   .svc-trust-total { color:var(--muted); font-size:15px; }
   .svc-trust-rate:hover .svc-trust-total { color:var(--clay); }
-  .svc-trust-card { margin:0; background:#fff; border:1px solid var(--cream-deep,#ece7df); border-radius:16px; padding:24px 26px; box-shadow:0 16px 44px -26px rgba(17,28,29,0.3); }
+  .svc-trust-card { margin:0; background:#fff; border-radius:16px; padding:24px 26px; box-shadow:0 16px 44px -26px rgba(17,28,29,0.3); }
   .svc-trust-stars-top { color:#f5a623; font-size:19px; letter-spacing:2px; margin-bottom:14px; }
   .svc-trust-body p { margin:0 0 12px; font-family:var(--font-sans); font-size:16px; line-height:1.62; color:var(--ink); }
   .svc-trust-body p:last-child { margin-bottom:0; }
@@ -307,14 +306,14 @@ endif;
           <div>
             <h2><?php echo esc_html($price_title); ?></h2>
           </div>
-          <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark" style="white-space:nowrap;"><?php echo t('Ceo cenovnik'); ?> <span class="arrow">→</span></a>
+          <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-dark" style="white-space:nowrap;"><?php echo t('Ceo cenovnik'); ?></a>
         </div>
         <?php if ($lengths): ?>
         <div class="svc-price-list">
           <?php foreach ($lengths as $li => $l):
             $row_label = t($l['label']) . ' ' . t('kosa'); ?>
           <div class="svc-price-row">
-            <span class="row" style="gap:12px;"><span class="mono" style="color:var(--clay);"><?php echo str_pad($li + 1, 2, '0', STR_PAD_LEFT); ?></span><span style="font-weight:500;font-size:17px;"><?php echo esc_html($row_label); ?></span></span>
+            <span class="row" style="gap:12px;"><span style="font-weight:500;font-size:17px;"><?php echo esc_html($row_label); ?></span></span>
             <span class="display num" style="font-size:26px;"><?php echo dry65_rsd($l['price']); ?><span class="u" style="font-size:13px;margin-left:3px;"><?php echo t('din'); ?></span></span>
           </div>
           <?php endforeach; ?>
@@ -327,7 +326,7 @@ endif;
           <div class="svc-live-h"><?php echo t('Danas dolazite?'); ?></div>
           <p><?php echo t('Pogledajte trenutno stanje u salonu i procenu čekanja uživo.'); ?></p>
         </div>
-        <a href="<?php echo esc_url(home_url('/live/')); ?>" class="svc-live-link"><span class="svc-live-dot" aria-hidden="true"></span> dry65 live <span class="arrow">→</span></a>
+        <a href="<?php echo esc_url(home_url('/live/')); ?>" class="svc-live-link"><span class="svc-live-dot" aria-hidden="true"></span> dry65 live</a>
       </div>
       <?php $live_block = ob_get_clean();
 
@@ -362,7 +361,7 @@ endif;
       <?php endif; ?>
 
       <div class="btn-row" style="margin-top:36px;gap:12px;flex-wrap:wrap;">
-        <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark"><?php echo t('Kako do nas'); ?> <span class="arrow">→</span></a>
+        <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark"><?php echo t('Kako do nas'); ?></a>
         <a href="<?php echo esc_url(get_permalink(get_page_by_path('cenovnik'))); ?>" class="btn btn-outline"><?php echo t('Cenovnik'); ?></a>
       </div>
       <p class="muted" style="margin-top:18px;font-size:15px;"><?php echo t('Bez zakazivanja, samo svrati. West 65, Novi Beograd.'); ?></p>
@@ -386,10 +385,10 @@ if ($siblings): ?>
     <h2 class="display" style="font-size:clamp(22px,3vw,32px);margin:0 0 14px;"><?php echo t('Ostali stilovi feniranja'); ?></h2>
     <ul class="svc-hub-links">
       <?php foreach ($siblings as $s): ?>
-      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($s->ID)); ?>"><span class="arr">→</span> <?php echo esc_html(dry65_svc_title($s->ID)); ?></a></li>
+      <li><a class="svc-hub-link" href="<?php echo esc_url(get_permalink($s->ID)); ?>"> <?php echo esc_html(dry65_svc_title($s->ID)); ?></a></li>
       <?php endforeach; ?>
     </ul>
-    <a href="<?php echo esc_url(get_permalink($parent)); ?>" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;color:var(--clay);font-weight:600;text-decoration:none;"><?php echo t('Sve o:'); ?> <?php echo esc_html(dry65_svc_title($parent)); ?> <span class="arrow">→</span></a>
+    <a href="<?php echo esc_url(get_permalink($parent)); ?>" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;color:var(--clay);font-weight:600;text-decoration:none;"><?php echo t('Sve o:'); ?> <?php echo esc_html(dry65_svc_title($parent)); ?></a>
   </div>
 </section>
 <?php endif; ?>

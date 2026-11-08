@@ -58,11 +58,11 @@ add_action('template_redirect', function () {
       .menu-h { font-family:var(--font-display); font-weight:300; font-size:clamp(19px,2.6vw,24px); line-height:1.05; letter-spacing:0.01em; margin:0 0 10px; }
       .menu-more { display:inline-flex; align-items:center; gap:6px; margin-top:14px; color:var(--clay); font-weight:600; font-size:15px; }
       .menu-note { font-size:13.5px; color:var(--muted); margin:14px 0 0; line-height:1.5; }
-      .menu-more-btn { border:1px solid var(--clay); border-radius:999px; padding:10px 18px; transition:background .2s, color .2s; }
+      .menu-more-btn { background:#fff; box-shadow:var(--shadow-sm); border-radius:999px; padding:10px 18px; transition:background .2s, color .2s; }
       .menu-card:hover .menu-more-btn { background:var(--clay); color:#fff; }
       .menu-card:hover .menu-more-btn .arrow { color:#fff; }
-      .menu-card { display:block; text-decoration:none; color:inherit; border:1px solid var(--sage-line,#e5e5e0); border-radius:var(--radius-lg); background:var(--paper,#fff); padding:clamp(18px,3vw,24px); transition:border-color .2s, transform .2s; }
-      .menu-card:hover { border-color:rgba(17,28,29,0.28); transform:translateY(-2px); }
+      .menu-card { display:block; text-decoration:none; color:inherit; border-radius:var(--radius-lg); background:#fff; box-shadow:var(--shadow-soft); padding:clamp(18px,3vw,24px); transition:box-shadow .2s, transform .2s; }
+      .menu-card:hover { box-shadow:0 2px 6px rgba(17,28,29,0.05), 0 30px 56px -28px rgba(17,28,29,0.42); }
       .menu-card-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
       .menu-card-head h2 { font-family:var(--font-display); font-weight:300; font-size:clamp(22px,3.4vw,28px); margin:0; }
       /* Live */
@@ -115,7 +115,7 @@ add_action('template_redirect', function () {
                 <strong id="menuLiveHead"><?php echo esc_html($lv_b); ?></strong>
                 <span id="menuLiveWait"><?php echo esc_html($lv_s); ?></span>
               </span>
-              <span class="arrow" style="margin-left:auto;color:var(--clay);">→</span>
+
             </a>
           </div>
 
@@ -131,7 +131,7 @@ add_action('template_redirect', function () {
               </div>
               <?php endif; ?>
               <p class="menu-note"><?php echo tk('menu.cen.note', 'Cene feniranja po dužini kose. U <strong>detaljnom cenovniku</strong> su i ostale usluge, tretmani i paketi.'); ?></p>
-              <span class="menu-more menu-more-btn"><?php echo t('Vidi ceo cenovnik'); ?> <span class="arrow">→</span></span>
+              <span class="menu-more menu-more-btn"><?php echo t('Vidi ceo cenovnik'); ?></span>
             </a>
           </div>
 
@@ -141,7 +141,7 @@ add_action('template_redirect', function () {
             <div class="menu-card" style="padding:0;overflow:hidden;">
               <iframe src="https://maps.google.com/maps?q=<?php echo rawurlencode('Dry65, Omladinskih Brigada 86Ž, Novi Beograd'); ?>&amp;z=16&amp;hl=sr&amp;output=embed" style="width:100%;height:clamp(220px,42vw,300px);border:0;display:block;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa, Dry65 Novi Beograd"></iframe>
             </div>
-            <a href="<?php echo esc_url($maps); ?>" target="_blank" rel="noopener" class="btn btn-dark" style="margin-top:14px;"><?php echo t('Kako do nas'); ?> <span class="arrow">→</span></a>
+            <a href="<?php echo esc_url($maps); ?>" target="_blank" rel="noopener" class="btn btn-dark" style="margin-top:14px;"><?php echo t('Kako do nas'); ?></a>
           </div>
 
           <!-- MINI GALERIJA -->
@@ -153,7 +153,7 @@ add_action('template_redirect', function () {
                 <div class="gi"><?php echo dry65_picture('assets/salon/' . $s . '.webp', 'Dry65 salon, Novi Beograd', ['loading' => 'lazy', 'style' => 'width:100%;height:100%;object-fit:cover;display:block;']); ?></div>
                 <?php endforeach; ?>
               </div>
-              <span class="menu-more"><?php echo t('Pogledaj salon'); ?> <span class="arrow">→</span></span>
+              <span class="menu-more"><?php echo t('Pogledaj salon'); ?></span>
             </a>
           </div>
 

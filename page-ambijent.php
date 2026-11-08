@@ -39,7 +39,7 @@ $ratios  = ['3/4','1/1','4/5','4/5','3/4','4/5','1/1','3/4','4/5'];
       </div>
     </div>
     <button type="button" class="readmore-trigger" data-readmore-target="readmore-ambijent" data-more-label="<?php echo esc_attr(t('Pročitaj više')); ?>" data-less-label="<?php echo esc_attr(t('Prikaži manje')); ?>" aria-expanded="false" aria-controls="readmore-ambijent">
-      <span class="rm-label"><?php echo t('Pročitaj više'); ?></span> <span class="arrow">↓</span>
+      <span class="rm-label"><?php echo t('Pročitaj više'); ?></span>
     </button>
   </div>
 </section>
@@ -65,7 +65,7 @@ $ratios  = ['3/4','1/1','4/5','4/5','3/4','4/5','1/1','3/4','4/5'];
     <div class="center" style="margin-top:44px;">
       <a href="<?php echo esc_url($biz['instagram_url']); ?>" target="_blank" rel="noopener" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;vertical-align:-3px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-        <?php echo t('Prati nas'); ?> · <?php echo esc_html($biz['instagram']); ?> <span class="arrow">→</span>
+        <?php echo t('Prati nas'); ?> · <?php echo esc_html($biz['instagram']); ?>
       </a>
     </div>
   </div>

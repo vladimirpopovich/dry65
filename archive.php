@@ -38,14 +38,14 @@
             <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
           </h2>
           <div style="margin-top:20px;">
-            <a href="<?php the_permalink(); ?>" class="textlink">Pročitaj više <span>→</span></a>
+            <a href="<?php the_permalink(); ?>" class="textlink">Pročitaj više</a>
           </div>
         </div>
       </article>
       <?php endwhile; ?>
     </div>
     <div style="margin-top:clamp(40px,5vw,60px);">
-      <?php the_posts_pagination(['prev_text' => '← Stariji', 'next_text' => 'Noviji →']); ?>
+      <?php the_posts_pagination(['prev_text' => 'Stariji', 'next_text' => 'Noviji']); ?>
     </div>
     <?php else: ?>
     <div class="center" style="padding:80px 0;">

@@ -93,7 +93,7 @@ $positions = [
       </div>
     </div>
     <button type="button" class="readmore-trigger" data-readmore-target="readmore-karijera" data-more-label="Pročitaj više" data-less-label="Prikaži manje" aria-expanded="false" aria-controls="readmore-karijera">
-      <span class="rm-label">Pročitaj više</span> <span class="arrow">↓</span>
+      <span class="rm-label">Pročitaj više</span>
     </button>
   </div>
 </section>
@@ -105,7 +105,7 @@ $positions = [
   <div class="wrap stack" style="gap:clamp(40px,6vw,72px);">
 
     <?php foreach ($positions as $p): $is_soon = ($p['status'] ?? 'open') === 'soon'; ?>
-    <article class="reveal karijera-card <?php echo $is_soon ? 'is-soon' : ''; ?>" id="<?php echo esc_attr($p['id']); ?>" style="background:var(--paper);border:1px solid var(--sage-line);border-radius:var(--radius-lg);padding:clamp(28px,4vw,48px);<?php echo $is_soon ? 'opacity:0.72;' : ''; ?>">
+    <article class="reveal karijera-card <?php echo $is_soon ? 'is-soon' : ''; ?>" id="<?php echo esc_attr($p['id']); ?>" style="background:#fff;box-shadow:var(--shadow-soft);border-radius:var(--radius-lg);padding:clamp(28px,4vw,48px);<?php echo $is_soon ? 'opacity:0.72;' : ''; ?>">
 
       <div style="display:grid;grid-template-columns:1fr;gap:clamp(20px,3vw,32px);">
 
@@ -114,7 +114,7 @@ $positions = [
           <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
             <span class="mono" style="color:var(--clay);font-size:14px;"><?php echo esc_html($p['kicker']); ?></span>
             <?php if ($is_soon): ?>
-            <span class="soon-badge" style="display:inline-flex;align-items:center;gap:6px;background:var(--cream);color:var(--ink);border:1px solid var(--cream-deep);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">
+            <span class="soon-badge" style="display:inline-flex;align-items:center;gap:6px;background:var(--cream);color:var(--ink);box-shadow:var(--shadow-sm);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">
               <span style="width:6px;height:6px;background:var(--clay);border-radius:50%;"></span>
               Uskoro
             </span>
@@ -138,7 +138,7 @@ $positions = [
             <ul style="margin:0;padding:0;list-style:none;">
               <?php foreach ($p['reqs'] as $r): ?>
               <li style="display:flex;gap:10px;padding:8px 0;line-height:1.55;">
-                <span style="color:var(--clay);flex-shrink:0;">→</span>
+
                 <span><?php echo esc_html($r); ?></span>
               </li>
               <?php endforeach; ?>
@@ -169,7 +169,7 @@ $positions = [
           </p>
           <?php else: ?>
           <a href="mailto:<?php echo esc_attr($biz['email']); ?>?subject=Prijava%20za%20poziciju:%20<?php echo rawurlencode($p['title']); ?>&body=Zdravo,%20zainteresovan%20sam%20za%20poziciju%20<?php echo rawurlencode($p['title']); ?>%20u%20Dry65.%20U%20nastavku%20su%20moji%20podaci..." class="btn btn-dark">
-            Prijavi se <span class="arrow">→</span>
+            Prijavi se
           </a>
           <a href="mailto:<?php echo esc_attr($biz['email']); ?>" class="btn btn-outline" style="margin-left:10px;">
             Pošalji CV

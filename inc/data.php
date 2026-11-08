@@ -552,7 +552,7 @@ function dry65_render_faq_section($category, $title = null, $subtitle = null) {
             <?php endif; ?>
           </div>
           <?php $faq_page = get_page_by_path('faq'); if ($faq_page): ?>
-            <a href="<?php echo esc_url(get_permalink($faq_page)); ?>" class="textlink"><?php echo t('Vidi sva pitanja'); ?> <span>→</span></a>
+            <a href="<?php echo esc_url(get_permalink($faq_page)); ?>" class="textlink"><?php echo t('Vidi sva pitanja'); ?></a>
           <?php endif; ?>
         </div>
 

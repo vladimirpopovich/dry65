@@ -135,7 +135,7 @@ $faq_groups = [
         </h2>
         <div class="faq-list">
           <?php foreach ($group['items'] as $i_i => $item): ?>
-            <details class="faq-item" style="border:1px solid var(--sage-line);border-radius:var(--radius-lg);padding:0;margin-bottom:12px;background:#fff;">
+            <details class="faq-item" style="border-radius:var(--radius-lg);padding:0;margin-bottom:12px;background:#fff;">
               <summary class="faq-q" style="padding:20px 24px;cursor:pointer;font-family:var(--font-sans);font-weight:600;font-size:17px;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;">
                 <span><?php echo esc_html(t($item['q'])); ?></span>
                 <span class="faq-icon" aria-hidden="true" style="flex-shrink:0;font-size:20px;color:var(--clay);transition:transform .25s var(--ease);">+</span>
@@ -159,7 +159,7 @@ $faq_groups = [
     </p>
     <div class="btn-row" style="justify-content:center;margin-top:26px;">
       <a href="tel:<?php echo esc_attr($biz['phone']); ?>" class="btn btn-dark">
-        <?php echo t('Pozovi nas'); ?> <span class="arrow">→</span>
+        <?php echo t('Pozovi nas'); ?>
       </a>
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('kontakt'))); ?>" class="btn btn-outline">
         <?php echo t('Sve kontakt info'); ?>

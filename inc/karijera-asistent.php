@@ -82,7 +82,7 @@ add_action('template_redirect', function () {
 
     <section class="bg-paper2 section-sm" style="padding-top:clamp(24px,3vw,44px);padding-bottom:clamp(20px,2.5vw,32px);">
       <div class="wrap" style="max-width:760px;">
-        <div style="display:inline-flex;align-items:center;gap:8px;background:var(--cream);color:var(--ink);border:1px solid var(--cream-deep);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:16px;">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:var(--cream);color:var(--ink);box-shadow:var(--shadow-sm);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:16px;">
           <span style="width:6px;height:6px;background:#2f9e44;border-radius:50%;"></span> Otvorena pozicija
         </div>
         <h1 class="display" style="font-size:clamp(28px,4vw,46px);margin:0;line-height:1.1;letter-spacing:0.005em;">
@@ -101,7 +101,7 @@ add_action('template_redirect', function () {
 
     <section class="section" style="padding-top:clamp(24px,3vw,36px);">
       <div class="wrap" style="max-width:760px;">
-        <article style="background:var(--paper);border:1px solid var(--sage-line);border-radius:var(--radius-lg);padding:clamp(28px,4vw,48px);">
+        <article style="background:#fff;box-shadow:var(--shadow-soft);border-radius:var(--radius-lg);padding:clamp(28px,4vw,48px);">
 
           <div class="asistent-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,3vw,44px);">
             <div>
@@ -109,7 +109,7 @@ add_action('template_redirect', function () {
               <ul style="margin:0;padding:0;list-style:none;">
                 <?php foreach ($duties as $d): ?>
                 <li style="display:flex;gap:10px;padding:8px 0;line-height:1.55;">
-                  <span style="color:var(--clay);flex-shrink:0;">→</span>
+
                   <span><?php echo esc_html($d); ?></span>
                 </li>
                 <?php endforeach; ?>
@@ -133,7 +133,7 @@ add_action('template_redirect', function () {
               Ako tražiš posao koji možeš da uklopiš uz fakultet ili druge obaveze, možda si baš ti osoba koju tražimo.
             </p>
             <a href="<?php echo esc_url($mailto); ?>" class="btn btn-dark">
-              📩 Pošalji CV na <?php echo esc_html($email); ?> <span class="arrow">→</span>
+              📩 Pošalji CV na <?php echo esc_html($email); ?>
             </a>
             <p class="muted" style="margin-top:18px;max-width:640px;font-size:14.5px;line-height:1.6;">
               U CV-ju ne moraš da imaš iskustvo u frizerskoj industriji, zanima nas ko si, šta si do sada radila i kada možeš da radiš.

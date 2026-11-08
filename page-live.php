@@ -55,7 +55,7 @@ get_header();
     </div>
 
     <div class="btn-row live-cta" style="justify-content:center;flex-wrap:wrap;">
-      <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark"><?php echo t('Kako do nas'); ?> <span class="arrow">→</span></a>
+      <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark"><?php echo t('Kako do nas'); ?></a>
       <a href="tel:<?php echo esc_attr(preg_replace('/\s+/', '', $biz['phone'])); ?>" class="btn btn-ghost"><?php echo t('Pozovi'); ?></a>
     </div>
 
@@ -89,7 +89,6 @@ dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi wa
     padding: clamp(18px,3vw,30px) clamp(20px,4vw,44px) clamp(30px,5vw,52px);
     border-radius: 22px;
     background: #ffffff;
-    border: 1px solid rgba(17,28,29,0.08);
     box-shadow: 0 30px 70px -50px rgba(17,28,29,0.5);
     /* akcent boja po tier-u (default green) */
     --accent: #1f9d55;
@@ -155,7 +154,7 @@ dry65_render_faq_section('live', t('Česta pitanja o čekanju'), t('Kako radi wa
   }
   .live-eye { opacity: 0.75; flex-shrink: 0; }
   .btn-ghost {
-    background: transparent; border: 1px solid rgba(17,28,29,0.25); color: var(--ink);
+    background: #fff; border: 0; box-shadow: var(--shadow-sm); color: var(--ink);
   }
 </style>
 

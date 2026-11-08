@@ -43,7 +43,7 @@ $stats = [
       </div>
     </div>
     <button type="button" class="readmore-trigger" data-readmore-target="readmore-onama" data-more-label="<?php echo esc_attr(t('Pročitaj više')); ?>" data-less-label="<?php echo esc_attr(t('Prikaži manje')); ?>" aria-expanded="false" aria-controls="readmore-onama">
-      <span class="rm-label"><?php echo t('Pročitaj više'); ?></span> <span class="arrow">↓</span>
+      <span class="rm-label"><?php echo t('Pročitaj više'); ?></span>
     </button>
   </div>
 </section>
@@ -71,7 +71,7 @@ $stats = [
     <div class="grid cols-4" style="margin-top:clamp(34px,4vw,52px);">
       <?php foreach ($team as $i => $m): ?>
       <div class="reveal" data-delay="<?php echo $i * 70; ?>">
-        <div style="aspect-ratio:3/4;border-radius:var(--radius-lg);overflow:hidden;background:var(--cream);border:1px solid var(--cream-deep);">
+        <div style="aspect-ratio:3/4;border-radius:var(--radius-lg);overflow:hidden;background:var(--cream);box-shadow:var(--shadow-soft);">
           <div class="ph" style="width:100%;height:100%;aspect-ratio:3/4;border:0;">
             <span class="ph-tag"><?php echo esc_html(strtolower($m['name'])); ?></span>
           </div>
@@ -111,7 +111,7 @@ $stats = [
     </div>
     <div style="margin-top:44px;">
       <a href="<?php echo esc_url(get_permalink(get_page_by_path('kontakt'))); ?>" class="btn btn-dark">
-        <?php echo t('Kako do nas'); ?> <span class="arrow">→</span>
+        <?php echo t('Kako do nas'); ?>
       </a>
     </div>
   </div>

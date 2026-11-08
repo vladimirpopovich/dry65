@@ -15,10 +15,10 @@
     display: inline-flex; align-items: center; gap: 8px;
     font-family: var(--font-sans); font-size: 14px; font-weight: 600;
     letter-spacing: 0.02em; color: var(--ink); text-decoration: none; white-space: nowrap;
-    border: 1px solid rgba(17,28,29,0.16); border-radius: 999px;
-    padding: 7px 15px; background: #fff; transition: border-color .2s, background .2s;
+    border: 0; border-radius: 999px; box-shadow: var(--shadow-sm);
+    padding: 7px 15px; background: #fff; transition: box-shadow .2s, background .2s;
   }
-  .nav-live:hover { border-color: rgba(17,28,29,0.4); }
+  .nav-live:hover { box-shadow: var(--shadow-soft); }
   .nav-live-dot {
     width: 9px; height: 9px; border-radius: 50%; background: #2f9e44; flex-shrink: 0;
     box-shadow: 0 0 0 0 rgba(47,158,68,0.5);
@@ -41,11 +41,11 @@
     font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.03em;
   }
   .lang-switch .lang-opt {
-    color: rgba(17,28,29,0.45); text-decoration: none; padding: 2px 3px; transition: color .15s;
+    color: #6E6A60; text-decoration: none; padding: 2px 3px; transition: color .15s;
   }
-  .lang-switch .lang-opt:hover { color: var(--ink); }
+  .lang-switch .lang-opt:hover { color: var(--oxblood); }
   .lang-switch .lang-opt.is-active { color: var(--ink); }
-  .lang-switch .lang-sep { color: rgba(17,28,29,0.25); }
+  .lang-switch .lang-sep { color: #6E6A60; }
   .mobile-lang { margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(17,28,29,0.1); }
   .mobile-lang .lang-switch { font-size: 16px; gap: 8px; }
 </style>
@@ -60,7 +60,7 @@
       <?php dry65_nav_links(); ?>
     </nav>
 
-    <a class="nav-live" href="<?php echo esc_url(home_url('/live/')); ?>" aria-label="Dry65 — status uživo">
+    <a class="nav-live" href="<?php echo esc_url(home_url('/live/')); ?>" aria-label="dry65 live, status salona uživo">
       <span class="nav-live-dot" aria-hidden="true"></span>dry65 live
     </a>
 
