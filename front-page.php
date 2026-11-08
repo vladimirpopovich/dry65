@@ -86,7 +86,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
           $dates_str = t('Do ') . date_i18n('j. M Y', strtotime($offer['end_date']));
         }
       ?>
-        <article class="offer-card" role="button" tabindex="0" data-offer-open="<?php echo esc_attr($modal_id); ?>" aria-label="<?php echo esc_attr(t('Otvori detalje') . ': ' . $offer['title']); ?>">
+        <div class="offer-card" role="button" tabindex="0" data-offer-open="<?php echo esc_attr($modal_id); ?>" aria-label="<?php echo esc_attr(t('Otvori detalje') . ': ' . $offer['title']); ?>">
           <?php if (!empty($offer['image'])): ?>
             <div class="offer-image">
               <img src="<?php echo esc_url($offer['image']); ?>" alt="<?php echo esc_attr($offer['title']); ?>" loading="lazy" width="600" height="338">
@@ -111,7 +111,7 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
               <?php echo t('Saznaj više'); ?>
             </span>
           </div>
-        </article>
+        </div>
 
         <!-- MODAL / BOTTOM SHEET (u <template>: Google ne indeksira dupli tekst, JS klonira na otvaranje) -->
         <template class="offer-modal-tpl" data-offer-modal="<?php echo esc_attr($modal_id); ?>">
