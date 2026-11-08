@@ -56,22 +56,62 @@ add_action('wp_enqueue_scripts', 'dry65_scripts');
    - Async load preko preload trick-a — ne blokira render */
 function dry65_head_fonts() {
     $tpl = get_template_directory_uri();
-    // Preload ključnih fontova (telo + glavni naslovi) da su spremni pre iscrtavanja
-    // hanken-grotesk-600-latin: <strong> u hero lead-u + dugmad; bez preload-a stizao kasno i pomerao hero (CLS)
-    foreach (['hanken-grotesk-400-latin', 'hanken-grotesk-400-latin-ext', 'hanken-grotesk-600-latin', 'cormorant-garamond-300-latin'] as $f) {
+
+    // KRITIČNI fontovi = samo ono što se vidi na prvom ekranu (izmereno na mobilnom hero-u):
+    // h1 Cormorant 300, lead Hanken 400 (+ext za š/ž), <strong>/dugmad/nav chip Hanken 600 (+ext za „Mesečni").
+    // Oni se preload-uju i deklarišu odmah. SVI OSTALI (Cormorant 400/600/italic, Hanken 500, Inter, ostali -ext)
+    // deklarišu se tek posle window load-a: inače ~160 KB fontova visokog prioriteta otima protok hero slici (LCP).
+    // Do tada tekst koristi "… Fallback" lica čije su mere podešene na prave fontove, pa zamena ne pravi CLS.
+    $critical = [
+        'cormorant-garamond-300-latin',
+        'hanken-grotesk-400-latin',
+        'hanken-grotesk-400-latin-ext',
+        'hanken-grotesk-600-latin',
+        'hanken-grotesk-600-latin-ext',
+    ];
+    // Podstrane: h1 je .display.caps = Cormorant 600 (sa š/č/đ), a /live/ h1 je 300 sa „đ" -> i to je prvi ekran
+    // $now = deklariše se odmah (preload samo $critical). Na podstranama prvi ekran koristi i Hanken 500 / Cormorant 400
+    // (proveren /kontakt, /usluge, /cenovnik, /live) -> odmah ali bez preload-a, da ne bi bilo CLS-a.
+    $now = $critical;
+    if (!is_front_page()) {
+        array_push($critical, 'cormorant-garamond-600-latin', 'cormorant-garamond-600-latin-ext', 'cormorant-garamond-300-latin-ext');
+        $now = array_merge($critical, ['hanken-grotesk-500-latin', 'hanken-grotesk-500-latin-ext', 'cormorant-garamond-400-latin', 'cormorant-garamond-400-latin-ext']);
+    }
+    // Desktop (>=1081px, gde je meni vidljiv): nav linkovi su Hanken 500, a na širokim ekranima i Cormorant 300 sa š/č.
+    // Deklarišu se odmah samo kroz @media; na mobilnom (meni sakriven) ostaju kasni.
+    $now_desktop = ['hanken-grotesk-500-latin', 'cormorant-garamond-300-latin-ext'];
+    foreach ($critical as $f) {
         echo '<link rel="preload" href="' . esc_url($tpl . '/assets/fonts/' . $f . '.woff2') . '" as="font" type="font/woff2" crossorigin>' . "\n";
     }
+
     // @font-face UGRAĐEN u head (ne eksterni fajl).
     // data-no-optimize="1" je OBAVEZAN: bez njega LiteSpeed (CSS Combine + Load CSS Async) izvlači ovaj
     // <style> u asinhroni CSS, pa prvi prikaz nema fontove ni fallback mere -> tekst se preslaguje i hero skače.
-    static $css = null;
-    if ($css === null) {
-        $raw = @file_get_contents(get_template_directory() . '/assets/fonts/fonts.css');
-        $css = $raw ? str_replace('url(fonts/', 'url(' . $tpl . '/assets/fonts/', $raw) : '';
-        // fonts.css sadrži i "… Fallback" @font-face (Georgia/Arial sa size-adjust izmerenim prema pravim fontovima),
-        // da zamena fallback -> pravi font ne menja prelom redova u hero-u.
+    $split = ['now' => '', 'desktop' => '', 'late' => ''];
+    $raw = @file_get_contents(get_template_directory() . '/assets/fonts/fonts.css');
+    if ($raw && preg_match_all('/@font-face\s*\{[^}]*\}/', $raw, $m)) {
+        foreach ($m[0] as $rule) {
+            $rule = str_replace('url(fonts/', 'url(' . $tpl . '/assets/fonts/', $rule);
+            // Pravilo bez fajla (fallback lica sa local()) ili kritičan fajl -> odmah; ostalo -> posle load-a
+            $file = preg_match('/\/assets\/fonts\/([a-z0-9-]+)\.woff2/', $rule, $fm) ? $fm[1] : null;
+            if ($file === null || in_array($file, $now, true)) {
+                $split['now'] .= $rule . "\n";
+                continue;
+            }
+            if (in_array($file, $now_desktop, true)) $split['desktop'] .= $rule . "\n";
+            $split['late'] .= $rule . "\n";
+        }
     }
-    if ($css) echo '<style id="dry65-fonts" data-no-optimize="1">' . $css . '</style>' . "\n";
+    if ($split['desktop']) $split['now'] .= '@media (min-width:1081px){' . "\n" . $split['desktop'] . '}' . "\n";
+    if ($split['now']) echo '<style id="dry65-fonts" data-no-optimize="1">' . $split['now'] . '</style>' . "\n";
+    if ($split['late']) {
+        // data-no-optimize/data-no-defer: LiteSpeed ne sme da ga spaja ni odlaže (sam već čeka load)
+        echo '<script id="dry65-fonts-late" data-no-optimize="1" data-no-defer="1">'
+           . '(function(){var c=' . wp_json_encode($split['late'], JSON_UNESCAPED_SLASHES) . ';'
+           . 'function a(){var s=document.createElement("style");s.id="dry65-fonts-late-css";s.textContent=c;document.head.appendChild(s);}'
+           . 'if(document.readyState==="complete"){a();}else{addEventListener("load",function(){setTimeout(a,0);});}})();'
+           . '</script>' . "\n";
+    }
 }
 add_action('wp_head', 'dry65_head_fonts', 1);
 
@@ -90,7 +130,7 @@ function dry65_hero_preload() {
        . 'href="' . esc_url($tpl) . '/assets/salon/s06.webp" '
        . 'media="(min-width: 861px)" fetchpriority="high">' . "\n";
 }
-add_action('wp_head', 'dry65_hero_preload', 1);
+add_action('wp_head', 'dry65_hero_preload', 0); // pre fontova: slika je LCP, neka njen zahtev krene prvi
 
 /* ---- Google Analytics 4 + Google Ads (gtag.js) ----
    Async load, samo frontend, skip za logovane admine da ne merimo sebe.
