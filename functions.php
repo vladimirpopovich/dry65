@@ -139,7 +139,9 @@ function dry65_google_analytics() {
     <?php
     // gtag.js (+ AW skript koji on povlači) je ~330 KB. Kao <script async/defer> se SKIDA odmah (defer odlaže samo
     // izvršavanje), pa na sporom mobilnom (PSI) otima protok hero slici -> LCP ~4 s. Zato se biblioteka ubacuje tek
-    // posle window load-a. dataLayer + gtag() stub su odmah: svi pozivi (config, conversion na /menu) se čuvaju u redu
+    // na prvu interakciju (skrol, dodir, klik, taster, pomeranje miša) ili najkasnije 3.5 s posle window load-a.
+    // Samo "posle load-a" nije bilo dovoljno: kad PSI server kasnije zabeleži LCP, 330 KB uđe u simulaciju (LCP 3.4 s).
+    // dataLayer + gtag() stub su odmah: svi pozivi (config, conversion na /menu) se čuvaju u redu
     // i šalju čim se biblioteka učita. data-no-optimize: LiteSpeed ne sme da ga odlaže/menja.
     ?>
     <script data-no-optimize="1" data-no-defer="1">
@@ -149,8 +151,15 @@ function dry65_google_analytics() {
       gtag('config', 'G-LWNT24N69L');
       gtag('config', 'AW-18483512541');
       (function(){
-        function load(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-LWNT24N69L';document.head.appendChild(s);}
-        if (document.readyState === 'complete') load(); else addEventListener('load', function(){ setTimeout(load, 0); });
+        var done=false, ev=['scroll','pointerdown','touchstart','keydown','mousemove'];
+        function load(){
+          if (done) return; done=true;
+          ev.forEach(function(e){ removeEventListener(e, load, {passive:true}); });
+          var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-LWNT24N69L';document.head.appendChild(s);
+        }
+        ev.forEach(function(e){ addEventListener(e, load, {passive:true, once:true}); });
+        function later(){ setTimeout(load, 3500); }
+        if (document.readyState === 'complete') later(); else addEventListener('load', later);
       })();
     </script>
     <?php
@@ -335,6 +344,7 @@ Osnovan 2026. godine, Dry65 je walk-in blowout hair bar u Novom Beogradu. Radimo
 - Hair Infusion tretmani
 - Feniranje na afro curls i nadogradnje
 - Mesečni paketi (4, 8 ili 12 feniranja mesečno)
+- Feniranje za firme: benefit za zaposlene (mesečni paket 1.850 din po feniranju za 40+, deo firma ostatak zaposleni, digitalni poklon vaučeri), online registracija firme. <?php echo home_url('/za-firme/'); ?>
 
 ## Stilovi feniranja (feniranje na četke)
 

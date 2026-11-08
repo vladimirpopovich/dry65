@@ -253,7 +253,11 @@ echo '<script type="application/ld+json">' . wp_json_encode($catalog, JSON_UNESC
       </a>
     </div>
     <p class="muted" style="font-size:13px;margin-top:26px;">
-      <?php echo t('Za firme i poslovne pakete preko fakture, javite nam se za ponudu.'); ?>
+      <?php if (dry65_is_en()): ?>
+        <?php echo t('Za firme i poslovne pakete preko fakture, javite nam se za ponudu.'); ?>
+      <?php else: ?>
+        Za firme i poslovne pakete preko fakture: <a href="<?php echo esc_url(home_url('/za-firme/')); ?>" style="color:inherit;text-decoration:underline;">feniranje za firme</a>.
+      <?php endif; ?>
     </p>
   </div>
 </section>

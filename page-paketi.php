@@ -135,6 +135,11 @@ $lengths_json = json_encode(array_map(fn($l) => [
       <p class="muted" style="font-size:15px;">
         <?php echo t('Paketi se kupuju u salonu. Profesionalni tretmani dubinske nege, vredni i do 6.000 dinara, uključeni su u svako članstvo. Zdrava kosa drži feniranje duže.'); ?>
       </p>
+      <?php if (!dry65_is_en()): ?>
+      <p class="muted" style="font-size:15px;margin-top:12px;">
+        Tražite paket za ceo tim? Pogledajte <a href="<?php echo esc_url(home_url('/za-firme/')); ?>" class="textlink" style="font-size:15px;">feniranje za firme</a>.
+      </p>
+      <?php endif; ?>
       <div class="btn-row" style="justify-content:center;margin-top:24px;">
         <a href="<?php echo esc_url($biz['maps_url']); ?>" target="_blank" rel="noopener" class="btn btn-dark">
           <?php echo t('Kako do nas'); ?>

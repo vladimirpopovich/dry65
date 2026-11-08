@@ -151,6 +151,11 @@ function dry65_seo_map() {
             'title' => 'Karijera - Posao u frizerskom salonu Novi Beograd | Dry65',
             'desc'  => 'Otvorene pozicije u Dry65 frizerskom salonu na Novom Beogradu: asistent u radu, blowout specijalista, recepcionar. Prijavi se ili pošalji CV.',
         ],
+        'za-firme' => [
+            // Fokus: "feniranje za firme" + "benefit za zaposlene" + korporativni poklon vaučeri (B2B, samo SR)
+            'title' => 'Feniranje za firme i benefit za zaposlene | Dry65 Novi Beograd',
+            'desc'  => 'Feniranje kao benefit za zaposlene: mesečni paket od 1.850 din, sufinansiranje ili digitalni poklon vaučeri. Dry65 salon blizu Airport City, Novi Beograd.',
+        ],
         'faq' => [
             // Fokus: "cesta pitanja + featured snippets + AI SEO"
             'title' => 'Česta pitanja - Feniranje Dry65 Novi Beograd | Radno vreme, cene',

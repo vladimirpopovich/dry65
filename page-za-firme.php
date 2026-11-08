@@ -87,6 +87,9 @@ $steps = [
   .b2b-amount { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-top: 16px; min-height: 48px; }
   .b2b-amount-n { font-family: var(--font-sans); font-weight: 600; font-size: clamp(30px, 3vw, 38px); color: var(--oxblood); line-height: 1; }
   #ponude, #prijava { scroll-margin-top: 72px; }
+  .b2b-about-cols { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 3vw, 48px); margin-top: 20px; }
+  .b2b-about-cols p { font-size: 16.5px; line-height: 1.65; color: var(--ink-soft); }
+  @media (max-width: 760px) { .b2b-about-cols { grid-template-columns: 1fr; } }
   .b2b-offer h2 .b2b-num { font-family: var(--font-sans) !important; font-weight: 500; font-size: 0.86em; letter-spacing: -0.01em; }
   .b2b-btn-soft { background: #fff; color: var(--ink); border-color: transparent; box-shadow: 0 1px 2px rgba(17,28,29,0.08), 0 10px 22px -10px rgba(17,28,29,0.35); }
   .b2b-btn-soft:hover { background: var(--oxblood); color: var(--cream); }
@@ -181,6 +184,18 @@ $steps = [
         </div>
       </article>
       <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+
+<section class="section-sm" style="padding-top:0;">
+  <div class="wrap b2b-about">
+    <h2 class="display" style="font-size:clamp(26px,3.4vw,40px);font-weight:400;max-width:22ch;">
+      <?php echo t('Feniranje za firme na Novom Beogradu, blizu Airport City'); ?>
+    </h2>
+    <div class="b2b-about-cols">
+      <p><?php echo t('Dry65 je frizerski salon specijalizovan za feniranje, u kompleksu West 65 na Novom Beogradu, nekoliko minuta od Airport City poslovne zone. Zato je feniranje kod nas praktičan benefit za zaposlene: svrate pre posla, na pauzi ili posle radnog vremena, bez zakazivanja i bez čekanja na termin.'); ?></p>
+      <p><?php echo t('Za razliku od opštih benefit programa, ovde zaposleni dobijaju konkretnu uslugu koju koriste svake nedelje, a firma plaća samo ono što je dogovoreno. Uz mesečni paket, sufinansiranje ili poklon vaučere za Novu godinu, 8. mart i rođendane, sve ide preko jedne fakture.'); ?></p>
     </div>
   </div>
 </section>
@@ -290,6 +305,50 @@ $steps = [
 </script>
 
 <?php dry65_render_faq_section('za-firme', t('Pitanja firmi'), t('Najčešća pitanja o ponudama za firme.')); ?>
+
+<?php
+// Service + OfferCatalog schema (B2B ponude), provider = glavni HairSalon entitet sa naslovne
+$b2b_schema = [
+    '@context' => 'https://schema.org',
+    '@type'    => 'Service',
+    'name'     => 'Feniranje za firme, benefit za zaposlene',
+    'serviceType' => 'Feniranje kose kao benefit za zaposlene',
+    'description' => 'Feniranje kao benefit za zaposlene u Dry65 salonu na Novom Beogradu: mesečni paket po fiksnoj ceni, sufinansiranje feniranja ili digitalni poklon vaučeri, uz jednu fakturu za firmu.',
+    'url'      => get_permalink(),
+    'provider' => ['@id' => home_url('/#business')],
+    'areaServed' => ['@type' => 'City', 'name' => 'Beograd'],
+    'audience' => ['@type' => 'BusinessAudience', 'audienceType' => 'Firme i zaposleni'],
+    'hasOfferCatalog' => [
+        '@type' => 'OfferCatalog',
+        'name'  => 'Ponude za firme',
+        'itemListElement' => [
+            [
+                '@type' => 'Offer',
+                'name'  => 'Mesečni paketi po fiksnoj ceni',
+                'description' => 'Fiksna cena po feniranju za pakete od 40 ili više feniranja mesečno, bez obzira na dužinu kose.',
+                'priceSpecification' => [
+                    '@type' => 'UnitPriceSpecification',
+                    'price' => 1850, 'priceCurrency' => 'RSD',
+                    'unitText' => 'feniranje',
+                ],
+                'eligibleQuantity' => ['@type' => 'QuantitativeValue', 'minValue' => 40, 'unitText' => 'feniranja mesečno'],
+                'businessFunction' => 'http://purl.org/goodrelations/v1#Sell',
+            ],
+            [
+                '@type' => 'Offer',
+                'name'  => 'Deo firma, ostatak zaposleni',
+                'description' => 'Firma pokriva dogovoreni iznos svakog feniranja, zaposleni doplaćuje razliku. Mesečna faktura po broju dolazaka.',
+            ],
+            [
+                '@type' => 'Offer',
+                'name'  => 'Digitalni poklon vaučer',
+                'description' => 'Digitalni vaučer na ime zaposlenog ili klijenta, u iznosu po izboru firme, za Novu godinu, 8. mart ili rođendan.',
+            ],
+        ],
+    ],
+];
+?>
+<script type="application/ld+json"><?php echo wp_json_encode($b2b_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 
 </main>
 

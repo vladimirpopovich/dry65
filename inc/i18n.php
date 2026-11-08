@@ -129,7 +129,7 @@ function dry65_prefix_en_url($url) {
     if ($rest === '/en' || strpos($rest, '/en/') === 0) return $url; // vec ima
 
     // SR-only strane (nemaju EN verziju) - ne prefiksiraj, /en/... bi 301-ovao nazad
-    if (preg_match('#^/(karijera|politika-privatnosti|uslovi-koriscenja)(/|$)#', $rest)) return $url;
+    if (preg_match('#^/(karijera|politika-privatnosti|uslovi-koriscenja|za-firme)(/|$)#', $rest)) return $url;
 
     // ne diraj staticke fajlove (favicon.ico, sitemap.xml, robots.txt, *.png...)
     $rpath = parse_url($rest, PHP_URL_PATH) ?: '';
@@ -300,6 +300,7 @@ function dry65_has_en_version() {
     $p = dry65_current_path();
     if (preg_match('#^/karijera(/|$)#', $p)) return false;
     if (preg_match('#^/politika-privatnosti(/|$)#', $p)) return false;
+    if (preg_match('#^/za-firme(/|$)#', $p)) return false; // B2B ponuda samo na srpskom
     return true;
 }
 

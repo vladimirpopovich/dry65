@@ -416,6 +416,42 @@ function dry65_faqs_data() {
             'a' => 'Najmirnije je obično radnim danima između 13h i 16h, pa ako Vam raspored dozvoljava, to je idealno vreme za opušteno feniranje uz najkraće čekanje. Pošto se gužva menja iz dana u dan, najsigurnije je da uživo proverite status na ovoj strani pre nego što krenete.',
             'cats' => ['live'],
         ],
+        // ZA FIRME — B2B pitanja (kategorija 'za-firme', samo na /za-firme/ strani)
+        'firme_kako' => [
+            'q' => 'Kako funkcioniše feniranje kao benefit za zaposlene?',
+            'a' => 'Firma izabere model (mesečni paket, deo firma ostatak zaposleni ili poklon vaučeri), a svaki zaposleni dobija svoj QR kod na telefonu. Zaposleni dolaze u Dry65 bez zakazivanja, pokažu QR kod na kasi i svaki dolazak se evidentira. Firma dobija jednu fakturu.',
+            'cats' => ['za-firme'],
+        ],
+        'firme_cena' => [
+            'q' => 'Koliko košta mesečni paket feniranja za firme?',
+            'a' => 'Za pakete od 40 ili više feniranja mesečno cena je fiksna, 1.850 din po feniranju, bez obzira na dužinu kose. Za manji broj feniranja ili drugačiji dogovor, pošaljite prijavu i napravićemo ponudu po meri.',
+            'cats' => ['za-firme'],
+        ],
+        'firme_deo' => [
+            'q' => 'Može li firma da plati samo deo feniranja?',
+            'a' => 'Može. U modelu „Deo firma, ostatak zaposleni" firma pokriva dogovoreni iznos svakog feniranja, a zaposleni na licu mesta doplaćuje razliku. Na kraju meseca firma dobija fakturu za broj stvarnih dolazaka, bez minimuma.',
+            'cats' => ['za-firme'],
+        ],
+        'firme_vauceri' => [
+            'q' => 'Da li prodajete poklon vaučere za zaposlene ili klijente?',
+            'a' => 'Da. Digitalni poklon vaučer glasi na ime osobe, u iznosu koji vi odredite. Idealan je za Novu godinu, 8. mart ili rođendane. Osoba dobija QR kod, a posle usluge se iznos skida sa vaučera i ostatak ostaje za sledeći put.',
+            'cats' => ['za-firme'],
+        ],
+        'firme_zakazivanje' => [
+            'q' => 'Da li zaposleni moraju da zakazuju termin?',
+            'a' => 'Ne. Dry65 je walk-in salon za feniranje, zaposleni dolaze kad im odgovara u radno vreme, ponedeljak do petak 08:00 do 20:00 i subotom 10:00 do 18:00. Trenutnu gužvu mogu da provere na dry65.com/live pre polaska.',
+            'cats' => ['za-firme'],
+        ],
+        'firme_lokacija' => [
+            'q' => 'Gde se nalazi salon i da li je blizu Airport City?',
+            'a' => 'Dry65 je u kompleksu West 65 na Novom Beogradu, Omladinskih Brigada 86Ž, u blizini Airport City poslovne zone. Zaposleni iz okolnih kancelarija mogu da svrate pre posla, na pauzi ili posle radnog vremena.',
+            'cats' => ['za-firme'],
+        ],
+        'firme_prijava' => [
+            'q' => 'Kako da registrujem firmu?',
+            'a' => 'Popunite online prijavu na ovoj strani: naziv firme, PIB, kontakt i model koji vas zanima. Javljamo vam se da potvrdimo detalje, a zatim zaposleni dobijaju svoje QR kodove. Prijava vas ni na šta ne obavezuje.',
+            'cats' => ['za-firme'],
+        ],
         // GENERALNA — za home + FAQ stranicu
         'zakazivanje' => [
             'q' => 'Da li treba da zakažem termin za feniranje u Dry65?',
