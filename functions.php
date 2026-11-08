@@ -135,13 +135,22 @@ function dry65_google_analytics() {
     if (is_user_logged_in() && current_user_can('manage_options')) return;
     ?>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LWNT24N69L"></script>
-    <script>
+    <?php
+    // gtag.js (+ AW skript koji on povlači) je ~330 KB. Kao <script async/defer> se SKIDA odmah (defer odlaže samo
+    // izvršavanje), pa na sporom mobilnom (PSI) otima protok hero slici -> LCP ~4 s. Zato se biblioteka ubacuje tek
+    // posle window load-a. dataLayer + gtag() stub su odmah: svi pozivi (config, conversion na /menu) se čuvaju u redu
+    // i šalju čim se biblioteka učita. data-no-optimize: LiteSpeed ne sme da ga odlaže/menja.
+    ?>
+    <script data-no-optimize="1" data-no-defer="1">
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-LWNT24N69L');
       gtag('config', 'AW-18483512541');
+      (function(){
+        function load(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-LWNT24N69L';document.head.appendChild(s);}
+        if (document.readyState === 'complete') load(); else addEventListener('load', function(){ setTimeout(load, 0); });
+      })();
     </script>
     <?php
 }
