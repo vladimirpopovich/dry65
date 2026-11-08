@@ -350,13 +350,8 @@ function dry65_lang_switcher() {
     $sr = dry65_lang_url('sr');
     $cur = dry65_lang();
     if (!dry65_has_en_version()) {
-        // Nema EN verzije (npr. Karijera) — prikazi samo SR, bez EN opcije
-        // koja bi vodila na neprevedenu/redirect-ovanu stranu.
-        ?>
-        <div class="lang-switch" role="group" aria-label="Jezik / Language">
-          <span class="lang-opt is-active" aria-current="true">SR</span>
-        </div>
-        <?php
+        // Nema EN verzije (Karijera, Za firme...): bez prekidača, usamljeno
+        // „SR" koje se ne klikće samo zbunjuje.
         return;
     }
     $en = dry65_lang_url('en');
