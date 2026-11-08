@@ -566,7 +566,10 @@ html.lp-locked, body.lp-locked {
   grid-template-columns: none;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
+  /* BEZ scroll-behavior:smooth i sa scroll-padding = padding: inače se slajder pri učitavanju sam
+     animirano „snap-uje", Chrome to vidi kao skrol i PREKIDA merenje LCP-a (PSI mobilni LCP 4+ s).
+     Strelice ionako šalju behavior:'smooth' iz JS-a. */
+  scroll-padding-left: 4px;
   scrollbar-width: none;
   padding: 4px 4px 10px;
 }
@@ -587,6 +590,7 @@ html.lp-locked, body.lp-locked {
   .offers-grid.offers-slider {
     padding-left: var(--gutter);
     padding-right: 0;
+    scroll-padding-left: var(--gutter); /* = padding-left, da nema početnog snap skrola (LCP) */
     gap: 12px;
   }
   .offers-slider > .offer-card { flex-basis: 85%; }
@@ -889,7 +893,8 @@ body.offer-modal-open { overflow: hidden; }
   gap: 16px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
+  /* Vidi .offers-slider: bez smooth + scroll-padding = padding, inače početni snap-skrol prekida LCP */
+  scroll-padding-left: 4px;
   scrollbar-width: none;
   padding: 6px 4px 18px;
 }
@@ -984,7 +989,7 @@ body.offer-modal-open { overflow: hidden; }
   .reviews-slider {
     padding-left: var(--gutter);
     padding-right: 0;
-    scroll-padding-left: 0;
+    scroll-padding-left: var(--gutter); /* bilo 0 -> slajder se pri učitavanju sam pomerao i gasio LCP */
     gap: 12px;
   }
   .rs-card { flex-basis: 88%; min-height: auto; }
