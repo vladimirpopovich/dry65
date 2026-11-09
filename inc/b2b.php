@@ -193,7 +193,8 @@ function dry65_b2b_employee_by_code($code) {
 }
 function dry65_b2b_employees($company_id) {
     global $wpdb;
-    return $wpdb->get_results($wpdb->prepare("SELECT * FROM " . dry65_b2b_emp_table() . " WHERE company_id=%d ORDER BY name", (int) $company_id));
+    // Uklonjeni zaposleni (status removed) se ne prikazuju; red ostaje zbog Wallet poništavanja i istorije.
+    return $wpdb->get_results($wpdb->prepare("SELECT * FROM " . dry65_b2b_emp_table() . " WHERE company_id=%d AND status<>'removed' ORDER BY name", (int) $company_id));
 }
 function dry65_b2b_txns($company_id, $limit = 200) {
     global $wpdb;
@@ -510,10 +511,14 @@ function dry65_b2b_employee_send_email($employee, $co) {
     remove_filter('wp_mail_content_type', $set_ctype);
     return $ok;
 }
+/* Uklanjanje = meko brisanje: status removed. Red ostaje da bi Google kartica prešla u „istekle"
+   a Apple dobio poništenu (voided) verziju preko push-a; na kasi kartica više ne radi. */
 function dry65_b2b_employee_delete($id) {
     global $wpdb;
-    $wpdb->delete(dry65_b2b_emp_table(), ['id' => (int) $id], ['%d']);
+    $wpdb->update(dry65_b2b_emp_table(), ['status' => 'removed'], ['id' => (int) $id], ['%s'], ['%d']);
+    dry65_b2b_wallet_sync_queue((int) $id);
 }
+function dry65_b2b_employee_removed($employee) { return is_object($employee) && $employee->status === 'removed'; }
 
 /* ---- Trošenje po tipu saradnje ----
    mesecni-paket:  -1 iz zajedničkog fonda firme (BLOKIRA na 0, nema overage-a)
@@ -521,6 +526,7 @@ function dry65_b2b_employee_delete($id) {
    vauceri:        skida $amount din sa vaučera zaposlenog (ne ispod 0)            */
 function dry65_b2b_spend($employee, $staff_name = '', $source = '', $amount = 0) {
     if (!is_object($employee)) return ['ok' => false, 'msg' => 'Nepoznata kartica.'];
+    if (dry65_b2b_employee_removed(dry65_b2b_employee_get($employee->id))) return ['ok' => false, 'msg' => 'Kartica više ne važi.'];
     $co = dry65_b2b_get($employee->company_id);
     if (!$co) return ['ok' => false, 'msg' => 'Nepoznata firma.'];
     if ($co->status !== 'active') return ['ok' => false, 'msg' => 'Firma nije aktivna.'];
@@ -644,6 +650,9 @@ add_action('dry65_b2b_daily_cron', function () {
 /* Šta kartica pokazuje, po tipu saradnje (isto za Google, Apple i web karticu). */
 function dry65_b2b_card_summary($employee, $co) {
     $type = dry65_b2b_type($co);
+    if (dry65_b2b_employee_removed($employee)) {
+        return ['label' => $co->name, 'short' => 'STATUS', 'value' => 'Ne važi', 'info_h' => 'Kartica', 'info_b' => 'Ova kartica više ne važi. Za pitanja se obratite firmi.'];
+    }
     if ($type === 'sufinansiranje') {
         return [
             'label' => 'Firma plaća', 'short' => 'FIRMA PLAĆA', 'value' => dry65_b2b_din($co->company_amount),
@@ -724,6 +733,7 @@ function dry65_b2b_wallet_google_patch($employee, $co) {
     $hero_url = dry65_b2b_ensure_hero($co);
     $sum      = dry65_b2b_card_summary($employee, $co);
     $body = [
+        'state'              => dry65_b2b_employee_removed($employee) ? 'EXPIRED' : 'ACTIVE',
         'accountName'        => $employee->name,
         'hexBackgroundColor' => $hero_url ? '#FFFFFF' : '#33302c',
         'loyaltyPoints'      => ['label' => $sum['label'], 'balance' => ['string' => $sum['value']]],
@@ -765,6 +775,7 @@ function dry65_b2b_wallet_apple_passjson($employee, $co) {
         'teamIdentifier'      => DRY65_AW_TEAM_ID,
         'organizationName'    => 'Dry65',
         'description'         => 'Dry65 B2B kartica',
+        'voided'              => dry65_b2b_employee_removed($employee),
         'serialNumber'        => $serial,
         'backgroundColor'     => 'rgb(255,255,255)',
         'foregroundColor'     => 'rgb(17,28,29)',
@@ -952,6 +963,19 @@ add_action('template_redirect', function () {
     if (!$code) return;
     $employee  = dry65_b2b_employee_by_code($code);
     $co        = $employee ? dry65_b2b_get($employee->company_id) : null;
+    $removed   = dry65_b2b_employee_removed($employee);
+    if ($removed) { // uklonjen zaposleni: kartica ne važi, bez akcija i Wallet dugmadi
+        status_header(410);
+        nocache_headers();
+        add_filter('wp_robots', 'wp_robots_no_robots');
+        add_filter('show_admin_bar', '__return_false');
+        dry65_pk_bare_head();
+        echo '<main style="min-height:100vh;padding:60px 16px;text-align:center;"><img src="' . esc_url(get_template_directory_uri() . '/assets/logo.svg') . '" alt="Dry65" style="height:30px;width:auto;margin:0 auto 28px;display:block;">'
+           . '<h1 class="display caps" style="font-size:clamp(26px,4vw,38px);">Kartica više ne važi</h1>'
+           . '<p class="lead" style="margin-top:14px;">Ova B2B kartica je ukinuta. Za pitanja se obratite svojoj firmi ili salonu.</p></main>';
+        dry65_pk_bare_foot();
+        exit;
+    }
     status_header(($employee && $co) ? 200 : 404);
     nocache_headers();
     do_action('litespeed_control_set_nocache', 'dry65 b2b kartica');
@@ -1194,7 +1218,7 @@ add_action('template_redirect', function () {
         $act  = sanitize_key($_POST['emp_act'] ?? '');
         $msg  = '';
         $emp  = isset($_POST['emp_id']) ? dry65_b2b_employee_get((int) $_POST['emp_id']) : null;
-        if ($emp && (int) $emp->company_id !== (int) $co->id) $emp = null; // samo svoji zaposleni
+        if ($emp && ((int) $emp->company_id !== (int) $co->id || dry65_b2b_employee_removed($emp))) $emp = null; // samo svoji, aktivni
         $name  = mb_substr(sanitize_text_field(wp_unslash($_POST['emp_name'] ?? '')), 0, 120);
         $email = sanitize_email(wp_unslash($_POST['emp_email'] ?? ''));
         $is_vau = dry65_b2b_type($co) === 'vauceri';
