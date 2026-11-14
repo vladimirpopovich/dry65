@@ -88,7 +88,16 @@ function dry65_wallet_apple_passjson($acc) {
     $back[] = ['key' => 'link',  'label' => 'Kartica', 'value' => $card_url];
     $header = $is_paket
         ? [['key' => 'stamps', 'label' => 'PEČATI', 'value' => $used . ' / ' . $initial]]
-        : [['key' => 'bal', 'label' => 'STANJE', 'value' => number_format((int) $acc->balance, 0, ',', '.') . ' din']];
+        : [['key' => 'bal', 'label' => 'STANJE', 'value' => number_format((int) $acc->balance, 0, ',', '.') . ' din', 'changeMessage' => 'Novo stanje vaučera: %@']];
+    // Vaučer nema pečate: na licu poslednja potrošnja, na poleđini istorija.
+    $aux = [];
+    if (!$is_paket) {
+        $spends = function_exists('dry65_wallet_voucher_spends') ? dry65_wallet_voucher_spends($acc, 1) : [];
+        if ($spends) {
+            $aux[] = ['key' => 'last', 'label' => 'POSLEDNJA POTROŠNJA', 'value' => $spends[0]['date'] . ' · ' . number_format($spends[0]['amount'], 0, ',', '.') . ' din'];
+        }
+        array_unshift($back, ['key' => 'history', 'label' => 'Potrošnja', 'value' => function_exists('dry65_wallet_voucher_spends_text') ? dry65_wallet_voucher_spends_text($acc, 10) : '']);
+    }
 
     $pass = [
         'formatVersion'       => 1,
@@ -111,6 +120,7 @@ function dry65_wallet_apple_passjson($acc) {
         'storeCard' => [
             'headerFields'    => $header,
             'secondaryFields' => $fields_secondary,
+            'auxiliaryFields' => $aux,
             'backFields'      => $back,
         ],
     ];
@@ -192,9 +202,12 @@ function dry65_wallet_apple_build($acc) {
     $files['logo.png']     = dry65_wallet_apple_asset('logo.png');
     $files['logo@2x.png']  = dry65_wallet_apple_asset('logo@2x.png');
     $files['logo@3x.png']  = dry65_wallet_apple_asset('logo@3x.png');
-    $files['strip.png']    = dry65_wallet_apple_strip_png($acc, 1);
-    $files['strip@2x.png'] = dry65_wallet_apple_strip_png($acc, 2);
-    $files['strip@3x.png'] = dry65_wallet_apple_strip_png($acc, 3);
+    // Traka sa pečatima samo za paket; vaučer je bez nje (inače bi se „pečati" računali iz dinara).
+    if ($acc->type === 'paket') {
+        $files['strip.png']    = dry65_wallet_apple_strip_png($acc, 1);
+        $files['strip@2x.png'] = dry65_wallet_apple_strip_png($acc, 2);
+        $files['strip@3x.png'] = dry65_wallet_apple_strip_png($acc, 3);
+    }
     foreach ($files as $k => $v) { if ($v === '' && $k !== 'pass.json') unset($files[$k]); }
 
     // manifest.json = sha1 svakog fajla

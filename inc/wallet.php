@@ -137,6 +137,26 @@ function dry65_wallet_hero($acc) {
     return get_template_directory_uri() . '/assets/packages/' . $map[$init];
 }
 
+/* Poslednje potrošnje sa vaučera (bez poništenih): [['date' => '12.11.', 'amount' => 1800], ...].
+   Deli ih Google (tekst modul) i Apple (lice + poleđina). */
+function dry65_wallet_voucher_spends($acc, $limit = 5) {
+    if (!is_object($acc) || $acc->type === 'paket' || !function_exists('dry65_pk_txns')) return [];
+    $out = [];
+    foreach (dry65_pk_txns($acc->id) as $t) {
+        if ((int) $t->delta >= 0 || (int) ($t->reversed ?? 0) === 1) continue;
+        $out[] = ['date' => date_i18n('d.m.', strtotime($t->created_at)), 'year' => date_i18n('Y', strtotime($t->created_at)), 'amount' => -(int) $t->delta];
+        if (count($out) >= $limit) break;
+    }
+    return $out;
+}
+function dry65_wallet_voucher_spends_text($acc, $limit = 5) {
+    $lines = [];
+    foreach (dry65_wallet_voucher_spends($acc, $limit) as $s) {
+        $lines[] = $s['date'] . $s['year'] . '.  ' . number_format($s['amount'], 0, ',', '.') . ' din';
+    }
+    return $lines ? implode("\n", $lines) : 'Još nema potrošnje.';
+}
+
 /* Definicija Loyalty OBJEKTA za konkretan nalog (pečati + QR). */
 function dry65_wallet_google_object($acc) {
     $bg        = dry65_wallet_bg($acc);
@@ -162,13 +182,18 @@ function dry65_wallet_google_object($acc) {
     // Broj pečata (deljeno sa PATCH-om da se instalacija i apdejt ne raziđu).
     $obj = array_merge($obj, dry65_wallet_google_points($acc));
 
+    $modules = [];
+    if ($acc->type !== 'paket') { // vaučer: umesto pečata istorija potrošnje
+        $modules[] = ['id' => 'potrosnja', 'header' => 'Potrošnja', 'body' => dry65_wallet_voucher_spends_text($acc)];
+    }
     if (!empty($acc->expires_at)) {
-        $obj['textModulesData'] = [[
+        $modules[] = [
             'id'     => 'vazi_do',
             'header' => 'Važi do',
             'body'   => date_i18n('d.m.Y.', strtotime($acc->expires_at)),
-        ]];
+        ];
     }
+    if ($modules) $obj['textModulesData'] = $modules;
 
     return $obj;
 }
@@ -301,16 +326,12 @@ function dry65_wallet_google_patch($acc) {
     $object_id = dry65_wallet_google_object_id($acc);
     $url  = 'https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/' . rawurlencode($object_id);
 
-    // Ceo promenljivi deo (pečati + boja/hero/QR po tiru), da dopuna paketa osveži sve na kartici.
-    $body = dry65_wallet_google_points($acc);
-    $body['accountName']        = $acc->name;
-    $body['hexBackgroundColor'] = dry65_wallet_bg($acc);
-    $body['barcode']            = ['type' => 'QR_CODE', 'value' => dry65_pk_card_url($acc->code), 'alternateText' => $acc->code];
-    $hero = dry65_wallet_hero($acc);
-    if ($hero) $body['heroImage'] = ['sourceUri' => ['uri' => $hero]];
+    // PUT celog objekta (ne PATCH): kad gost pređe sa paketa na vaučer, PATCH bi ostavio staru
+    // hero sliku sa pečatima, „Tretman" i stare tekst module. PUT zamenjuje sve.
+    $body = dry65_wallet_google_object($acc);
 
     $resp = wp_remote_request($url, [
-        'method'  => 'PATCH',
+        'method'  => 'PUT',
         'timeout' => 10,
         'headers' => [
             'Authorization' => 'Bearer ' . $token,
