@@ -118,6 +118,7 @@ function dry65_wallet_bg($acc) {
         4 => '#783332',
         8 => '#501918',
     ];
+    if (($acc->type ?? '') !== 'paket') return '#783332'; // vaučer: brend bordo (ne boja po iznosu)
     $init = (int) $acc->initial;
     if (isset($map[$init])) return $map[$init];
     $th = function_exists('dry65_pk_card_theme') ? dry65_pk_card_theme($acc) : ['bg' => '#783332'];
