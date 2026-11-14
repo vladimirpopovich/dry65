@@ -365,3 +365,48 @@ add_action('shutdown', function () {
         if ($acc) dry65_wallet_google_patch($acc);
     }
 }, 99);
+
+/* ============================================================
+   Osveži SVE Wallet kartice odjednom (admin dugme u Paketi i vaučeri).
+   Kartica u telefonu se inače menja tek kad se na nalogu nešto promeni;
+   posle izmene izgleda kartice (npr. vaučer bez pečata) ovo je gura svima.
+   Google: PUT celog objekta za aktivni nalog svakog kupca (404 = kupac nije
+   sačuvao karticu, preskače se). Apple: push na sve registrovane uređaje,
+   telefon onda sam povuče novu verziju.
+   ============================================================ */
+function dry65_wallet_refresh_all() {
+    global $wpdb;
+    $res = ['google' => 0, 'google_ok' => 0, 'apple' => 0];
+    if (function_exists('set_time_limit')) @set_time_limit(300);
+
+    if (dry65_wallet_google_ready() && function_exists('dry65_pk_table')) {
+        $t = dry65_pk_table();
+        $accs = [];
+        foreach ($wpdb->get_col("SELECT DISTINCT customer_id FROM $t WHERE customer_id > 0") as $cid) {
+            $a = function_exists('dry65_aw_acc_from_serial') ? dry65_aw_acc_from_serial('c' . (int) $cid) : null;
+            if ($a) $accs[] = $a;
+        }
+        foreach ($wpdb->get_results("SELECT * FROM $t WHERE customer_id = 0") as $a) $accs[] = $a;
+        foreach ($accs as $a) {
+            $res['google']++;
+            if (dry65_wallet_google_patch($a)) $res['google_ok']++;
+        }
+    }
+    if (function_exists('dry65_wallet_apple_ready') && dry65_wallet_apple_ready()) {
+        $dt = dry65_wallet_dev_table();
+        foreach ($wpdb->get_col("SELECT DISTINCT serial_number FROM $dt") as $serial) {
+            dry65_wallet_apple_apns_queue($serial); // šalje se na shutdown
+            $res['apple']++;
+        }
+    }
+    return $res;
+}
+
+add_action('admin_post_dry65_wallet_refresh_all', function () {
+    if (!current_user_can('manage_options')) wp_die('Nemate dozvolu.');
+    check_admin_referer('dry65_wallet_refresh_all');
+    $r = dry65_wallet_refresh_all();
+    wp_redirect(admin_url('admin.php?page=dry65-paketi&wrefresh=' . (int) $r['google_ok'] . '-' . (int) $r['google'] . '-' . (int) $r['apple']));
+    exit;
+});
+

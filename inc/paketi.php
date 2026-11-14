@@ -920,6 +920,17 @@ function dry65_pk_admin_page() {
     ?>
     <div class="wrap">
       <h1>Paketi i vaučeri</h1>
+      <?php if (isset($_GET['wrefresh'])): $wr = array_map('intval', explode('-', sanitize_text_field(wp_unslash($_GET['wrefresh'])))); ?>
+        <div class="notice notice-success is-dismissible"><p>Wallet kartice osvežene. Google: <?php echo (int) ($wr[0] ?? 0); ?> sačuvanih kartica ažurirano (od <?php echo (int) ($wr[1] ?? 0); ?> kupaca). Apple: poslato na <?php echo (int) ($wr[2] ?? 0); ?> kartica, telefoni povlače novu verziju za par minuta.</p></div>
+      <?php endif; ?>
+      <?php if (current_user_can('manage_options')): ?>
+      <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:8px 0 14px;" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='Osvežavam…';">
+        <input type="hidden" name="action" value="dry65_wallet_refresh_all">
+        <?php wp_nonce_field('dry65_wallet_refresh_all'); ?>
+        <button type="submit" class="button">Osveži sve Wallet kartice</button>
+        <span class="description">Pošalji novi izgled svim karticama u Google i Apple Wallet-u (posle izmene dizajna kartice).</span>
+      </form>
+      <?php endif; ?>
       <?php if (isset($_GET['created'])): ?><div class="notice notice-success is-dismissible"><p>Nalog napravljen.</p></div><?php endif; ?>
       <?php if (isset($_GET['err'])): ?><div class="notice notice-error is-dismissible"><p>Nalog nije napravljen — ime i telefon su obavezni.</p></div><?php endif; ?>
 
