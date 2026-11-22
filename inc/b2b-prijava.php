@@ -62,7 +62,7 @@ function dry65_b2b_prijava_fields() {
 /* ---- Obrada formulara ---- */
 function dry65_b2b_prijava_handle() {
     $back = wp_get_referer() ?: home_url('/za-firme/');
-    $back = remove_query_arg(['prijava', 'model'], $back);
+    $back = remove_query_arg(['prijava', 'model', 'tip'], $back);
     $go = function ($code) use ($back) {
         wp_safe_redirect(add_query_arg('prijava', $code, $back) . '#prijava');
         exit;
@@ -132,7 +132,10 @@ function dry65_b2b_prijava_handle() {
     remove_filter('wp_mail_from', $set_from, 99);
     remove_filter('wp_mail_from_name', $set_name, 99);
 
-    $go('ok');
+    // Prava prijava: tip saradnje ide u adresu da ga merenje (GA4 generate_lead) pošalje kao parametar.
+    // Bot putanja (honeypot) gore ide bez tipa, pa se ne meri kao konverzija.
+    wp_safe_redirect(add_query_arg(['prijava' => 'ok', 'tip' => $d['model']], $back) . '#prijava');
+    exit;
 }
 add_action('admin_post_nopriv_dry65_b2b_prijava', 'dry65_b2b_prijava_handle');
 add_action('admin_post_dry65_b2b_prijava', 'dry65_b2b_prijava_handle');

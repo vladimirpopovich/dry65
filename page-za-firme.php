@@ -352,4 +352,23 @@ $b2b_schema = [
 
 </main>
 
+<?php
+// Merenje: uspešna online prijava firme = GA4 događaj generate_lead (označiti kao key event i uvesti u Google Ads).
+// Samo prava prijava (ima ?tip=); posle slanja se ?prijava/?tip brišu iz adrese da osvežavanje ne broji ponovo.
+$lead_tip = sanitize_key($_GET['tip'] ?? '');
+if ($status === 'ok' && isset($models[$lead_tip])): ?>
+<script data-no-optimize="1" data-no-defer="1">
+(function(){
+  if (typeof gtag === 'function') {
+    gtag('event', 'generate_lead', { lead_source: 'za_firme', form_name: 'b2b_prijava', b2b_model: <?php echo wp_json_encode($lead_tip); ?> });
+  }
+  try {
+    var u = new URL(location.href);
+    u.searchParams.delete('prijava'); u.searchParams.delete('tip');
+    history.replaceState(null, '', u.pathname + u.search + u.hash);
+  } catch (e) {}
+})();
+</script>
+<?php endif; ?>
+
 <?php get_footer(); ?>
