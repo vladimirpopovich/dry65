@@ -48,6 +48,8 @@ $stats = [
   </div>
 </section>
 
+<?php dry65_render_facts('about'); ?>
+
 <!-- Stats -->
 <section class="section-sm bg-ink">
   <div class="wrap grid cols-4">

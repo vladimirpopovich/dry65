@@ -508,6 +508,11 @@ $base_price = $lengths[0]['price']; // kratka = lowest "od" price
 <?php endif; // kraj: karijera CTA sakriven na EN ?>
 
 <!-- ======================================================
+     UKRATKO (cinjenice za AI citiranje) — pre FAQ
+     ====================================================== -->
+<?php dry65_render_facts('home'); ?>
+
+<!-- ======================================================
      FAQ SEKCIJA (pred footer) — home varijanta
      ====================================================== -->
 <?php dry65_render_faq_section('home', t('Sve što treba da znate'), t('Odgovori na najčešća pitanja o feniranju u Dry65 salonu.')); ?>

@@ -47,6 +47,14 @@ echo '<script type="application/ld+json">' . wp_json_encode($catalog, JSON_UNESC
     <p class="lead" style="margin-top:26px;max-width:680px;">
       <?php echo t('Cena pranja i feniranja, stilizovanja (talasi, lokne, ravno, volumen) i tretmana nege kose.'); ?>
     </p>
+    <?php [$pmin, $pmax] = dry65_price_range(); ?>
+    <p class="muted" style="margin-top:12px;max-width:680px;font-size:15px;">
+      <?php if (dry65_is_en()): ?>
+        All prices are in Serbian dinars (RSD). Roughly in euros, a wash and blowout costs about €<?php echo dry65_eur($pmin); ?> to €<?php echo dry65_eur($pmax); ?>, depending on hair length. No appointment needed, cash and cards accepted, our staff speak English.
+      <?php else: ?>
+        Sve cene su u dinarima. Okvirno u evrima, pranje i feniranje košta oko <?php echo dry65_eur($pmin); ?> do <?php echo dry65_eur($pmax); ?> €, zavisno od dužine kose. Bez zakazivanja, plaćanje gotovinom ili karticom.
+      <?php endif; ?>
+    </p>
   </div>
 </section>
 

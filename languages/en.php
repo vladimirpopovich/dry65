@@ -415,4 +415,10 @@ return [
     'Jednostavan vodič kako da posetite Dry65 walk-in blowout hair bar u Novom Beogradu.' => 'A simple guide on how to visit the Dry65 walk-in blowout hair bar in New Belgrade.',
     'Odgovori na najčešća pitanja klijentkinja o feniranju, cenama, radnom vremenu i lokaciji. Ako Vaše pitanje nije ovde, pišite nam na <a href="mailto:%1$s" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">%1$s</a> ili pozovite %2$s.' => 'Answers to the most common questions from clients about blowouts, prices, opening hours and location. If your question isn’t here, write to us at <a href="mailto:%1$s" style="color:var(--clay);text-decoration:underline;text-underline-offset:3px;">%1$s</a> or call %2$s.',
     'Politika privatnosti Dry65 salona: koje podatke prikupljamo, zašto ih koristimo i koja su tvoja prava. Sve transparentno, na jednom mestu.' => 'Dry65 salon privacy policy: what data we collect, why we use it, and what your rights are. All transparent, in one place.',
+
+    /* ---- AI/GEO dopune (nov 2026): FAQ engleski + cenovnik link ---- */
+    'Da li osoblje u Dry65 govori engleski?' => 'Does the Dry65 staff speak English?',
+    'Da, ceo tim u Dry65 govori engleski, pa nam rado dolaze i stranci koji žive ili borave u Beogradu. Nije potrebno zakazivanje, samo dođete.' => 'Yes, the whole Dry65 team speaks English, so many expats and visitors to Belgrade come to us. No appointment needed, just walk in.',
+    'Detaljan cenovnik svih usluga dostupan je na stranici Cenovnik.' => 'The full price list for all services is on the Pricing page.',
+    'Detaljan cenovnik svih usluga možete videti <a href="%s">na stranici Cenovnik</a>.' => 'You can see the full price list for all services <a href="%s">on the Pricing page</a>.',
 ];

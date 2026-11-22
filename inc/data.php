@@ -456,7 +456,7 @@ function dry65_faqs_data() {
         'zakazivanje' => [
             'q' => 'Da li treba da zakažem termin za feniranje u Dry65?',
             'a' => 'Ne, Dry65 je walk-in salon. Samo dođete kad Vam odgovara, bez zakazivanja i bez pritiska. Nalazimo se u lameli Ž kompleksa West 65 na Novom Beogradu, blizu West 65 mall-a.',
-            'cats' => ['home', 'kontakt', 'faq'],
+            'cats' => ['home', 'cenovnik', 'kontakt', 'faq'],
         ],
         'radno_vreme' => [
             'q' => 'Koje je radno vreme Dry65 salona?',
@@ -492,7 +492,8 @@ function dry65_faqs_data() {
         // CENOVNIK
         'cena' => [
             'q' => 'Koliko košta feniranje u Dry65?',
-            'a' => 'Cene feniranja: kratka kosa 1.400 din, srednja 1.800 din, duga 2.000 din, extra duga 2.200 din. Detaljan cenovnik svih usluga dostupan je na stranici Cenovnik.',
+            // dinamicki iz dry65_lengths() (sve duzine + EUR), po jeziku
+            'a' => dry65_price_answer() . ' ' . t('Detaljan cenovnik svih usluga dostupan je na stranici Cenovnik.'),
             'cats' => ['home', 'cenovnik', 'faq'],
         ],
         'paketi_dostupni' => [
@@ -533,6 +534,11 @@ function dry65_faqs_data() {
             'q' => 'Gde se nalazi Dry65 salon?',
             'a' => 'Omladinskih Brigada 86Ž, lamela Ž, Novi Beograd, blizu West 65 mall-a i Airport City poslovne zone.',
             'cats' => ['home', 'kontakt', 'faq'],
+        ],
+        'engleski' => [
+            'q' => 'Da li osoblje u Dry65 govori engleski?',
+            'a' => 'Da, ceo tim u Dry65 govori engleski, pa nam rado dolaze i stranci koji žive ili borave u Beogradu. Nije potrebno zakazivanje, samo dođete.',
+            'cats' => ['home', 'cenovnik', 'kontakt', 'faq'],
         ],
         'parking' => [
             'q' => 'Da li ima parking?',

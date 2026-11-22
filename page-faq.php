@@ -55,7 +55,8 @@ $faq_groups = [
         'items' => [
             [
                 'q' => 'Koliko košta feniranje u Dry65?',
-                'a' => sprintf(t('Cene feniranja: kratka kosa 1.400 din, srednja 1.800 din, duga 2.000 din, extra duga 2.200 din. Detaljan cenovnik svih usluga možete videti <a href="%s">na stranici Cenovnik</a>.'), esc_url(get_permalink(get_page_by_path('cenovnik')))),
+                // cene dinamicki iz dry65_lengths() (sve duzine + EUR), po jeziku
+                'a' => esc_html(dry65_price_answer()) . ' ' . sprintf(t('Detaljan cenovnik svih usluga možete videti <a href="%s">na stranici Cenovnik</a>.'), esc_url(get_permalink(get_page_by_path('cenovnik')))),
             ],
             [
                 'q' => 'Da li imate mesečne pakete?',
@@ -85,6 +86,10 @@ $faq_groups = [
             [
                 'q' => 'Kako doći javnim prevozom?',
                 'a' => 'Autobuske linije 18, 65, 68 i 74 staju u neposrednoj blizini West 65 mall-a.',
+            ],
+            [
+                'q' => 'Da li osoblje u Dry65 govori engleski?',
+                'a' => 'Da, ceo tim u Dry65 govori engleski, pa nam rado dolaze i stranci koji žive ili borave u Beogradu. Nije potrebno zakazivanje, samo dođete.',
             ],
         ],
     ],
